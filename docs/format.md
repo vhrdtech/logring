@@ -90,18 +90,28 @@ u8    kind = 2 (a segment starts here)
 u64   seq
 u32   session
 u32   flags (0)
-u8    tracks: data tracks in the table (numbers 1..=tracks)
+uvar  tracks: data tracks in the table (numbers 1..=tracks), at most 65535
        tracks × track entry (§5)
 ```
 
-Every flush then has a **flush head**:
+Every flush then has a **flush head**: the positions the flush's records are delta-coded against.
 
 ```text
 u8    kind = 1 (only when the flush doesn't start a segment)
 u8    time length (0: no time) + the device time last seen, a ww_si::Second in its ShrinkWrap encoding
-uvar  count (tracks + 1)
-       count × uvar next: every track's next position (track 0 first), the base the records are delta-coded against
+uvar  full_back: 0 = a full head; otherwise its full head is that many blocks before this flush's first block
+uvar  entries
+       entries × (uvar gap, uvar next): track numbers in increasing order, each as the gap to the one before
+       (track - previous - 1; the first one as its number), and the track's next position
 ```
+
+A **full** head lists every track (track 0 included). A **sparse** head lists only the tracks that got records
+since its full head; a track it leaves out is where the full head put it. So any flush decodes with two heads, and
+a few busy tracks among many quiet ones cost only their own entries. The first flush of a segment always has a
+full head (its `full_back` points to block 0: that flush, right after the track table). The writer writes a full
+head instead of a sparse one once the sparse heads since the last full one would list, all together, as many
+entries as a full head has (so sparse heads never cost more than the full ones), and at the latest after 32 times
+a full head's size of data (`FULL_EVERY`).
 
 `uvar` is LEB128 (7 bits per byte, low bits first, at most 10 bytes); `ivar` is zigzag then `uvar`.
 
@@ -117,7 +127,7 @@ system track and is never in the table). One entry per data track, a `uvar` leng
 
 | field | type | what |
 |---|---|---|
-| number | u8 | track number in the session, 1 and up |
+| number | uvar | track number in the session, 1 to 65535 |
 | source | u8 | 0: this device (reserved for several devices logging into one card) |
 | durability | u8 | 0 normal, 1 immediate |
 | compression | u8 | 0 (reserved) |
@@ -196,7 +206,7 @@ every meta record is its own flush, written at once). Its items:
 
 | kind | record | fields |
 |---|---|---|
-| 1 | Session | session u32, api_root u64 (§5), api (uvar length + the API root's `FullVersion` in its ShrinkWrap encoding, at most 128 bytes), device_id, fw, hw, bundle_hash u64, tracks u8, then `tracks` track entries (§5, `released` 0) |
+| 1 | Session | session u32, api_root u64 (§5), api (uvar length + the API root's `FullVersion` in its ShrinkWrap encoding, at most 128 bytes), device_id, fw, hw, bundle_hash u64, tracks uvar, then `tracks` track entries (§5, `released` 0) |
 | 2 | Bundle | hash u64, len u32, then the bundle's bytes (the `ww_self` ApiBundle); stored once per hash while its record is still in the meta ring |
 | 3 | Recording | id u32, stopped u8, why u8 (trigger at a start, reason at a stop), session u32, data seq u64, time (length byte + Second) |
 
@@ -220,9 +230,9 @@ blocks, whatever happened before (asserted in `tests/writer.rs`, `mount_reads_ar
 3. The **end** of the tail segment: a binary search for the last valid block (the written blocks form a prefix of
    the segment), then four probes past it (a block the card damaged inside the prefix would stop the search early;
    torn blocks seen are counted).
-4. The last block's `flush_off` says where the **last flush** starts; its head gives every track's position at its
-   start, the segment head gives the track table (and `released` per track); the flush's records are parsed to the
-   end (a record cut short by the end is counted as torn). Tracks are matched to the new session's by key: their
+4. The last block's `flush_off` says where the **last flush** starts; its head and, when it is sparse, its full
+   head give every track's position at its start, the segment head gives the track table (and `released` per
+   track); the flush's records are parsed to the end (a record cut short by the end is counted as torn). Tracks are matched to the new session's by key: their
    `next` continues, new keys start at 0. Malformed content never fails a mount: what was parsed counts, the rest
    is reported as torn.
 5. The new session: `next_session`, the meta records (the bundle if it isn't in the ring, the session with its
@@ -248,7 +258,17 @@ pass, so the next mount takes the segment before it as the tail and reuses the s
 | `flush_interval_ms` | 1000 | `Config` / `set_flush` |
 | `full` | drop oldest | `Config`; drop newest refuses records (`Error::Full`) once the data ring has been written once |
 | stage buffer | `BUF` const generic, 512 B and up | whole blocks are assembled in it; a flush bigger than it is written in `BUF`-sized pieces, sequential inside the segment |
-| tracks | `TRACKS` const generic, up to 64 | the system track included |
+| tracks | `TRACKS` const generic, up to 65536 | the system track included; what one costs: below |
+
+**What a track costs.** In RAM: about 150 bytes per `TRACKS` slot in the writer (its state, positions and codec;
+asserted in `tests/many_tracks.rs`), plus its `TrackDesc` (80 bytes and the path's ids, can be a `static` in
+flash). A device picks `TRACKS` for what it logs; nothing else in the writer, the mount or the indexed reader grows
+with it (flush heads are written and read entry by entry; `AllTracks<N>` decodes tracks below its own `N`). On the
+medium: its track entry in every segment head (about 35 bytes with a short path, 1024 tracks take about 36 KB of a
+4 MB segment) and in the meta session record, an entry in every full flush head (2 to 4 bytes) and in the sparse
+heads after it was written, and per record one byte more for track numbers 7 to 134 (two from 135). With 1024
+tracks of which three are busy, the busy data takes about 7 % more room than with the three alone, nearly all of
+it the segment heads' tables (`a_thousand_tracks`).
 
 ## 10. On an SD card: the ring file
 
@@ -289,7 +309,8 @@ MBR | gap to the first boundary unit | exFAT boot regions | FAT | cluster heap:
 
 - **By track position**: a binary search over the data segments of the track's stream (`stream_start` and later)
   by the track's `next` in each segment's first flush head, then over the segment's blocks: a block's `flush_off`
-  gives the start of its flush, the flush head the track's `next` there. The last flush starting at or before the
+  gives the start of its flush, the flush head (or its full head, when the track isn't in a sparse one) the
+  track's `next` there. The last flush starting at or before the
   position is scanned (about 2 log₂ n + 2 log₂ blocks reads for the seek). Other tracks' records are stepped over
   by their lengths, without their delta state.
 - **By time**: the same over a session's consecutive segments and its flushes, by the device time in the flush

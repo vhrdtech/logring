@@ -5,7 +5,6 @@ use crate::format::Role;
 use crate::reader::{AllTracks, Reader, TrackSummary, Walker};
 use crate::scan::Scan;
 use crate::tests_support::block_on;
-use crate::writer::MAX_TRACKS;
 use crate::{Config, Durability, FullPolicy, Logring, SessionInfo, TrackDesc};
 use crate::{FullVersion, UNib32};
 use wire_weaver::ww_version::Version;
@@ -102,7 +101,7 @@ pub fn read_everything<M: ww_stream::store::LogMedium>(medium: &mut M) {
     };
     let range = rd.range(Role::Data);
     let mut item = vec![0u8; 4096];
-    let mut w = Walker::at_segment(AllTracks::default(), Role::Data, range.oldest);
+    let mut w = Walker::at_segment(AllTracks::<TRACKS>::default(), Role::Data, range.oldest);
     w.truncate = true;
     let mut keys = vec![0u64];
     let mut sessions = vec![];
@@ -126,18 +125,18 @@ pub fn read_everything<M: ww_stream::store::LogMedium>(medium: &mut M) {
             prefix: ww_si::Prefix::Micro,
             value: ww_si::ww_numeric::NumericValue::U32(1000),
         };
-        let _ = block_on(rd.seek_time(medium, *s, &t));
+        let _ = block_on(rd.seek_time::<TRACKS, _>(medium, *s, &t));
     }
     if let Some(tail) = range.tail {
-        let mut sums = [TrackSummary::default(); MAX_TRACKS];
+        let mut sums = [TrackSummary::default(); TRACKS];
         for seq in range.oldest..=tail.min(range.oldest + 64) {
-            let _ = block_on(rd.summary(medium, seq, &mut sums));
+            let _ = block_on(rd.summary::<TRACKS, _>(medium, seq, &mut sums));
         }
     }
     let mut recs = vec![];
     let _ = block_on(rd.recordings(medium, |r| recs.push(r)));
     for r in recs.iter().take(4) {
-        let mut w = rd.recording(r);
+        let mut w = rd.recording::<TRACKS>(r);
         w.walker.truncate = true;
         while let Ok(Some(_)) = block_on(w.next(&mut rd, medium, &mut item)) {}
     }

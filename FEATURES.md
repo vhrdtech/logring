@@ -22,7 +22,10 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   (17 Oct 2026, P2628#17oct-1507): the path as wire_weaver ids (`RefVec<UNib32>`), the item type as `ww_self`
   signature and `ww_global` id, the key from `api_root_id` (a `const fn` of `<ROOT_TRAIT>_FULL_GID`) and the ids;
   names come from the bundle on the PC. The session's meta record keeps the API root's `FullVersion` as a fallback
-  for a host without the bundle.
+  for a host without the bundle. Up to 65535 data tracks (track counts and numbers as uvar): flush heads are full
+  (every track) at a segment's start and now and then, sparse (only tracks written since) in between with the
+  distance to their full head, so a few busy tracks among many quiet ones cost little; the writer's RAM grows by
+  about 150 bytes per `TRACKS` slot and nothing else is sized by the maximum (1024-track test on `SimSd`).
 - 🧪 **LOG-2 reader-trackstore**: `ww_logring::reader` (no_std, no alloc): a block-cached `Walker` over the
   data or meta segments decoding one track by stable key (`OneTrack`, the other tracks stepped over) or all
   (`AllTracks`); `seek_track` (binary search over segment and flush heads by a track's position), `seek_time`

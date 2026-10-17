@@ -1,7 +1,7 @@
 //! The items of the system track (track 0 of the data ring) and of the meta area: hand-coded, evolvable
 //! (a kind byte, then fields; readers ignore bytes a later version appends).
 
-use crate::format::header::{TrackEntry, decode_time, encode_time};
+use crate::format::header::{MAX_TRACKS, TrackEntry, decode_time, encode_time};
 use crate::format::{Dec, Enc};
 use wire_weaver::shrink_wrap::{DeserializeShrinkWrap, SerializeShrinkWrap};
 use wire_weaver::ww_version::FullVersion;
@@ -178,7 +178,7 @@ pub enum MetaEvent<'a> {
         fw: &'a str,
         hw: &'a str,
         bundle_hash: u64,
-        tracks: u8,
+        tracks: u32,
     },
     /// The API bundle with this hash: the record's item holds this header and then the bundle's bytes.
     Bundle { hash: u64, len: u32 },
@@ -216,7 +216,10 @@ impl<'a> MetaEvent<'a> {
                 str_blob(enc, fw)?;
                 str_blob(enc, hw)?;
                 enc.u64le(bundle_hash)?;
-                enc.u8(tracks)
+                if tracks as usize >= MAX_TRACKS {
+                    return None;
+                }
+                enc.uvar(tracks as u64)
             }
             MetaEvent::Bundle { hash, len } => {
                 enc.u8(2)?;
@@ -253,7 +256,13 @@ impl<'a> MetaEvent<'a> {
                 fw: dec.str()?,
                 hw: dec.str()?,
                 bundle_hash: dec.u64le()?,
-                tracks: dec.u8()?,
+                tracks: {
+                    let n = u32::try_from(dec.uvar()?).ok()?;
+                    if n as usize >= MAX_TRACKS {
+                        return None;
+                    }
+                    n
+                },
             },
             2 => MetaEvent::Bundle {
                 hash: dec.u64le()?,
@@ -272,7 +281,7 @@ impl<'a> MetaEvent<'a> {
     }
 
     /// The track entries after a [MetaEvent::Session] header.
-    pub fn entries(dec: &mut Dec<'a>, tracks: u8) -> impl Iterator<Item = Option<TrackEntry<'a>>> {
+    pub fn entries(dec: &mut Dec<'a>, tracks: u32) -> impl Iterator<Item = Option<TrackEntry<'a>>> {
         let mut d = dec.clone();
         (0..tracks).map(move |_| TrackEntry::decode(&mut d))
     }

@@ -6,6 +6,8 @@ mod bdd;
 mod corrupt;
 #[cfg(feature = "exfat")]
 mod exfat;
+#[cfg(feature = "std")]
+mod many_tracks;
 mod reader;
 mod track_store;
 mod writer;

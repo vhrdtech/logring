@@ -1,7 +1,8 @@
 //! [BlockStream]: the payload bytes of one segment's blocks read in order from a [LogMedium], each block checked
 //! by its trailer, with a bounded number of reads: every block is read once.
 
-use crate::format::{BLOCK, BlockCheck, PAYLOAD, Role, check_block};
+use crate::format::header::{FlushEntry, FlushHead, MAX_FLUSH_ENTRY, MAX_FLUSH_HEAD};
+use crate::format::{BLOCK, BlockCheck, Dec, PAYLOAD, Role, check_block};
 use ww_stream::store::LogMedium;
 
 /// A sequential reader of one segment: block by block, payload bytes only, stopping at the first block that isn't
@@ -187,6 +188,38 @@ impl<'m, M: LogMedium> BlockStream<'m, M> {
             done += take;
         }
         Ok(true)
+    }
+
+    /// Read the flush head at the position (its kind byte already consumed when the flush doesn't start a
+    /// segment), its entries one by one into `entry` (`false`: refuse the head). `None` when it is malformed or
+    /// the stream ends inside it; the position is then somewhere in it.
+    pub async fn flush_head(
+        &mut self,
+        mut entry: impl FnMut(u32, u64) -> bool,
+    ) -> Result<Option<FlushHead>, M::Error> {
+        let mut b = [0u8; MAX_FLUSH_HEAD];
+        let n = self.peek(&mut b).await?;
+        let mut d = Dec::new(&b[..n]);
+        let Some(fh) = FlushHead::decode(&mut d) else {
+            return Ok(None);
+        };
+        if !self.skip(d.pos()).await? {
+            return Ok(None);
+        }
+        let mut prev = None;
+        for _ in 0..fh.entries {
+            let mut b = [0u8; MAX_FLUSH_ENTRY];
+            let n = self.peek(&mut b).await?;
+            let mut d = Dec::new(&b[..n]);
+            let Some(e) = FlushEntry::decode(&mut d, prev) else {
+                return Ok(None);
+            };
+            if !self.skip(d.pos()).await? || !entry(e.track, e.next) {
+                return Ok(None);
+            }
+            prev = Some(e.track);
+        }
+        Ok(Some(fh))
     }
 
     /// Skip the rest of the loaded block (after a padding byte).

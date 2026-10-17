@@ -3,7 +3,7 @@
 //!
 //! - **by track position**: a binary search over the data segments by every segment's first flush head (each
 //!   track's next position at its start), then over the segment's blocks by their flush (`flush_off` in every
-//!   trailer says where a block's flush starts, the flush head gives the positions there), then a scan of one
+//!   trailer says where a block's flush starts, the flush head gives the positions there, a sparse one with its full head), then a scan of one
 //!   flush: [Reader::seek_track];
 //! - **by time**: the same over a session's segments and flushes by the device time in the flush heads
 //!   ([Reader::seek_time]);
@@ -20,20 +20,21 @@
 //! Everything a medium holds is untrusted: every loop is bounded by the ring's geometry, malformed bytes end a
 //! segment (counted in [Reader::torn]), nothing panics.
 
-use crate::format::header::{FlushHead, KIND_FLUSH, MAX_TRACK_ENTRY, SegHead, TrackEntry};
-use crate::format::record::{Decoded, MAX_REC_HEADER, Skipped, TrackCodec, decode_record_with};
-use crate::format::{
-    BLOCK, BlockCheck, Dec, MAX_TIME, NONE, PAYLOAD, Role, Superblock, check_block,
+use crate::format::header::{
+    FlushEntry, FlushHead, KIND_FLUSH, MAX_FLUSH_ENTRY, MAX_FLUSH_HEAD, MAX_SEG_HEAD,
+    MAX_TRACK_ENTRY, SegHead, TrackEntry,
 };
+use crate::format::record::{Decoded, MAX_REC_HEADER, Skipped, TrackCodec, decode_record_with};
+use crate::format::{BLOCK, BlockCheck, Dec, NONE, PAYLOAD, Role, Superblock, check_block};
 use crate::system::{MetaEvent, SystemEvent};
-use crate::writer::{Geo, MAX_TRACKS};
+use crate::writer::Geo;
 use ww_si::ww_numeric::NumericValue;
 use ww_stream::store::LogMedium;
 use ww_stream::{Second, StreamHead};
 
-/// Bytes of the reader's look-ahead buffer: the longest flush head (time and a position per track).
-const LOOK: usize = 2 + MAX_TIME + 10 * (MAX_TRACKS + 1) + 8;
-const _: () = assert!(LOOK >= MAX_TRACK_ENTRY + 10 && LOOK >= MAX_REC_HEADER);
+/// Bytes of a look-ahead buffer: the longest track entry (flush heads are read entry by entry).
+const LOOK: usize = MAX_TRACK_ENTRY + 10;
+const _: () = assert!(LOOK >= MAX_REC_HEADER && LOOK >= MAX_FLUSH_HEAD && LOOK >= MAX_SEG_HEAD);
 
 /// Errors of a [Reader].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, thiserror::Error)]
@@ -84,8 +85,8 @@ impl Range {
     }
 }
 
-/// The indexed reader, see the [module docs](self). Holds a one-block cache and a look-ahead buffer (about
-/// 1.2 KB); the medium is passed to every call, so a writer can own it between reads.
+/// The indexed reader, see the [module docs](self). Holds a one-block cache (about 0.6 KB, look-ahead buffers
+/// live on the stack of a call); the medium is passed to every call, so a writer can own it between reads.
 pub struct Reader {
     geo: Geo,
     data: Range,
@@ -93,7 +94,6 @@ pub struct Reader {
     buf: [u8; BLOCK],
     /// The valid block in `buf`, and its flush offset
     cached: Option<(Role, u64, u32, u16)>,
-    look: [u8; LOOK],
     reads: u32,
     torn: u32,
 }
@@ -104,7 +104,7 @@ pub struct SegInfo {
     pub seq: u64,
     pub session: u32,
     /// Data tracks in its table; track numbers `0..=tracks`.
-    pub tracks: u8,
+    pub tracks: u32,
     first_flush: Place,
 }
 
@@ -116,7 +116,11 @@ pub trait Decode {
     fn entry(&mut self, entry: &TrackEntry<'_>);
     /// Whether the segment holds anything for this decoder (after its table): `false` skips it.
     fn wants_segment(&self) -> bool;
-    /// A flush head: track `track`'s next position at its start (every track, in order).
+    /// A flush head starts; `full` when it lists every track. Its entries follow through [flush](Self::flush). A
+    /// track a sparse head doesn't list is where the last full head put it (it has no records since).
+    fn begin_flush(&mut self, full: bool);
+    /// An entry of a flush head: track `track`'s next position at the flush's start. A full head lists every
+    /// track, a sparse one the tracks written since the full one, in increasing order.
     fn flush(&mut self, track: u32, next: u64);
     /// The codec of `track` when its records are decoded, `None` to step over them.
     fn codec(&mut self, track: u32) -> Option<&mut TrackCodec>;
@@ -133,6 +137,9 @@ pub struct OneTrack {
     /// The track's number in the current segment, `None` when it isn't in its table
     number: Option<u32>,
     codec: TrackCodec,
+    /// The track's position at the last full flush head, and whether the head being read is full
+    start: u64,
+    full: bool,
     /// The entry of the track in the current segment's table
     entry: Option<EntryFacts>,
 }
@@ -166,6 +173,8 @@ impl OneTrack {
             min_pos,
             number: None,
             codec: TrackCodec::default(),
+            start: 0,
+            full: false,
             entry: None,
         }
     }
@@ -193,9 +202,17 @@ impl Decode for OneTrack {
         self.number.is_some()
     }
 
+    fn begin_flush(&mut self, full: bool) {
+        self.full = full;
+        self.codec.reset(self.start);
+    }
+
     fn flush(&mut self, track: u32, next: u64) {
         if Some(track) == self.number {
             self.codec.reset(next);
+            if self.full {
+                self.start = next;
+            }
         }
     }
 
@@ -208,35 +225,43 @@ impl Decode for OneTrack {
     }
 }
 
-/// Every track; the keys of the current segment's tracks by number.
+/// Every track numbered below `N` (the ones above are stepped over); the keys of the current segment's tracks by
+/// number.
 #[derive(Debug, Clone)]
-pub struct AllTracks {
-    codecs: [TrackCodec; MAX_TRACKS],
-    keys: [u64; MAX_TRACKS],
+pub struct AllTracks<const N: usize> {
+    codecs: [TrackCodec; N],
+    keys: [u64; N],
+    /// Every track's position at the last full flush head, and whether the head being read is full
+    starts: [u64; N],
+    full: bool,
     n: u32,
 }
 
-impl Default for AllTracks {
+impl<const N: usize> Default for AllTracks<N> {
     fn default() -> Self {
         AllTracks {
-            codecs: [TrackCodec::default(); MAX_TRACKS],
-            keys: [0; MAX_TRACKS],
+            codecs: [TrackCodec::default(); N],
+            keys: [0; N],
+            starts: [0; N],
+            full: false,
             n: 1,
         }
     }
 }
 
-impl AllTracks {
+impl<const N: usize> AllTracks<N> {
     /// The stable key of track `number` in the current segment (0 for the system track).
     pub fn key(&self, number: u32) -> Option<u64> {
-        (number < self.n).then(|| self.keys[number as usize])
+        (number < self.n)
+            .then(|| self.keys.get(number as usize).copied())
+            .flatten()
     }
 }
 
-impl Decode for AllTracks {
+impl<const N: usize> Decode for AllTracks<N> {
     fn begin_segment(&mut self, seg: &SegInfo) {
-        self.n = seg.tracks as u32 + 1;
-        self.keys = [0; MAX_TRACKS];
+        self.n = seg.tracks + 1;
+        self.keys = [0; N];
     }
 
     fn entry(&mut self, e: &TrackEntry<'_>) {
@@ -249,9 +274,19 @@ impl Decode for AllTracks {
         true
     }
 
+    fn begin_flush(&mut self, full: bool) {
+        self.full = full;
+        for (c, s) in self.codecs.iter_mut().zip(self.starts.iter()) {
+            c.reset(*s);
+        }
+    }
+
     fn flush(&mut self, track: u32, next: u64) {
         if let Some(c) = self.codecs.get_mut(track as usize) {
             c.reset(next);
+            if self.full {
+                self.starts[track as usize] = next;
+            }
         }
     }
 
@@ -671,7 +706,6 @@ impl Reader {
             meta,
             buf: [0; BLOCK],
             cached: None,
-            look: [0; LOOK],
             reads: 0,
             torn: 0,
         }
@@ -898,13 +932,13 @@ impl Reader {
     ) -> Result<Option<SegInfo>, ReadError<M::Error>> {
         let mut look = [0u8; LOOK];
         let n = self
-            .peek(m, role, seq, Place::START, &mut look[..32])
+            .peek(m, role, seq, Place::START, &mut look[..MAX_SEG_HEAD])
             .await?;
         let mut d = Dec::new(&look[..n]);
         let Some(sh) = SegHead::decode(&mut d) else {
             return Ok(None);
         };
-        if sh.seq != seq || sh.tracks as usize >= MAX_TRACKS {
+        if sh.seq != seq {
             self.torn += 1;
             return Ok(None);
         }
@@ -933,8 +967,9 @@ impl Reader {
         Ok(Some(info))
     }
 
-    /// Parse the flush head at `place` (with its kind byte when `plain`) and move `place` past it; the positions
-    /// go to `decode` only once the whole head checked out. `false` when it doesn't.
+    /// Parse the flush head at `place` (with its kind byte when `plain`, the segment's first one has none) and
+    /// move `place` past it; the positions go to `decode` only once the whole head checked out. `false` when it
+    /// doesn't.
     async fn flush_head<M: LogMedium, D: Decode>(
         &mut self,
         m: &mut M,
@@ -944,51 +979,66 @@ impl Reader {
         plain: bool,
         decode: &mut D,
     ) -> Result<bool, ReadError<M::Error>> {
-        Ok(
-            match self.flush_head_at(m, role, seq, *place, plain).await? {
-                Some((len, _t)) => {
-                    let mut d = Dec::new(&self.look[usize::from(plain)..]);
-                    FlushHead::decode(&mut d, |track, next| {
-                        decode.flush(track, next);
-                        Some(())
-                    });
-                    place.advance(len);
-                    true
-                }
-                None => false,
-            },
-        )
+        let Some((fh, len)) = self
+            .read_flush_head(m, role, seq, *place, plain, |_, _| true)
+            .await?
+        else {
+            return Ok(false);
+        };
+        decode.begin_flush(fh.full_back == 0);
+        self.read_flush_head(m, role, seq, *place, plain, |track, next| {
+            decode.flush(track, next);
+            true
+        })
+        .await?;
+        place.advance(len);
+        Ok(true)
     }
 
-    /// The flush head at `place`, left in `self.look`: its length (kind byte included when `plain`) and time.
-    async fn flush_head_at<M: LogMedium>(
+    /// Read the flush head at `place` (with its kind byte when `plain`), its entries one by one into `entry`
+    /// (`false`: refuse the head): the head and its length in bytes. `None` when it is malformed or cut short.
+    async fn read_flush_head<M: LogMedium>(
         &mut self,
         m: &mut M,
         role: Role,
         seq: u64,
         place: Place,
         plain: bool,
-    ) -> Result<Option<(usize, Option<Second>)>, ReadError<M::Error>> {
-        let mut look = [0u8; LOOK];
-        let n = self.peek(m, role, seq, place, &mut look).await?;
-        self.look = look;
-        let mut d = Dec::new(&self.look[..n]);
+        mut entry: impl FnMut(u32, u64) -> bool,
+    ) -> Result<Option<(FlushHead, usize)>, ReadError<M::Error>> {
+        let mut b = [0u8; MAX_FLUSH_HEAD];
+        let n = self.peek(m, role, seq, place, &mut b).await?;
+        let mut d = Dec::new(&b[..n]);
         if plain && d.u8() != Some(KIND_FLUSH) {
             return Ok(None);
         }
-        let mut count = 0u32;
-        let Some(fh) = FlushHead::decode(&mut d, |_, _| {
-            count += 1;
-            (count as usize <= MAX_TRACKS).then_some(())
-        }) else {
+        let Some(fh) = FlushHead::decode(&mut d) else {
             return Ok(None);
         };
-        Ok(Some((d.pos(), fh.t)))
+        let mut len = d.pos();
+        let mut prev = None;
+        for _ in 0..fh.entries {
+            let mut at = place;
+            at.advance(len);
+            let mut b = [0u8; MAX_FLUSH_ENTRY];
+            let n = self.peek(m, role, seq, at, &mut b).await?;
+            let mut d = Dec::new(&b[..n]);
+            let Some(e) = FlushEntry::decode(&mut d, prev) else {
+                return Ok(None);
+            };
+            if !entry(e.track, e.next) {
+                return Ok(None);
+            }
+            prev = Some(e.track);
+            len += d.pos();
+        }
+        Ok(Some((fh, len)))
     }
 
     /// The next position of `track` (number in segment `seq`) and the time at the flush that block `index`
     /// belongs to, and where that flush starts; `None` when the block isn't valid. `first` is where the first
-    /// flush head of the segment starts (after the segment head and the track table).
+    /// flush head of the segment starts (after the segment head and the track table). A track a sparse head
+    /// doesn't list is where its full head put it.
     async fn flush_at<M: LogMedium>(
         &mut self,
         m: &mut M,
@@ -1009,21 +1059,36 @@ impl Reader {
                 off: 0,
             }
         };
-        let Some((_, t)) = self
-            .flush_head_at(m, Role::Data, seq, place, start != 0)
+        let mut next = None;
+        let Some((fh, _)) = self
+            .read_flush_head(m, Role::Data, seq, place, start != 0, |tr, p| {
+                if tr == track {
+                    next = Some(p);
+                }
+                true
+            })
             .await?
         else {
             return Ok(None);
         };
-        let mut next = None;
-        let mut d = Dec::new(&self.look[usize::from(start != 0)..]);
-        FlushHead::decode(&mut d, |tr, p| {
-            if tr == track {
-                next = Some(p);
-            }
-            Some(())
-        });
-        Ok(Some((start, next, t)))
+        if next.is_none() && fh.full_back != 0 {
+            let Some(at) = start.checked_sub(fh.full_back) else {
+                return Ok(None);
+            };
+            let place = if at == 0 {
+                first
+            } else {
+                Place { block: at, off: 0 }
+            };
+            self.read_flush_head(m, Role::Data, seq, place, at != 0, |tr, p| {
+                if tr == track {
+                    next = Some(p);
+                }
+                true
+            })
+            .await?;
+        }
+        Ok(Some((start, next, fh.t)))
     }
 
     /// The last seq of `role` with a valid block 0, from the superblock's hint (as a mount finds it).
@@ -1125,12 +1190,12 @@ impl Reader {
     /// records from there on are at `t` or a little before; times are compared as numbers, a clock that wraps
     /// inside the session breaks the order). Segments of `from..=to` are searched; `None` when none is of the
     /// session.
-    pub async fn seek_time<M: LogMedium>(
+    pub async fn seek_time<const N: usize, M: LogMedium>(
         &mut self,
         m: &mut M,
         session: u32,
         t: &Second,
-    ) -> Result<Option<Walker<AllTracks>>, ReadError<M::Error>> {
+    ) -> Result<Option<Walker<AllTracks<N>>>, ReadError<M::Error>> {
         let Some(tail) = self.data.tail else {
             return Ok(None);
         };
@@ -1253,6 +1318,29 @@ impl Reader {
             return Ok(Some(w));
         }
         let mut place = Place { block, off: 0 };
+        // a sparse head: first the positions of the tracks it doesn't list, from its full head
+        let Some((fh, _)) = self
+            .read_flush_head(m, Role::Data, seq, place, true, |_, _| true)
+            .await?
+        else {
+            return Ok(None);
+        };
+        if fh.full_back != 0 {
+            let Some(at) = block.checked_sub(fh.full_back) else {
+                return Ok(None);
+            };
+            let mut full = if at == 0 {
+                seg.first_flush
+            } else {
+                Place { block: at, off: 0 }
+            };
+            if !self
+                .flush_head(m, Role::Data, seq, &mut full, at != 0, &mut w.decode)
+                .await?
+            {
+                return Ok(None);
+            }
+        }
         if !self
             .flush_head(m, Role::Data, seq, &mut place, true, &mut w.decode)
             .await?
@@ -1269,15 +1357,15 @@ impl Reader {
     // -----------------------------------------------------------------------------------------------------------
     // Summaries and recordings
 
-    /// Sum up data segment `seq`: per track (by number, into `tracks`, which should hold [MAX_TRACKS]) its records,
+    /// Sum up data segment `seq`: per track (by number, into `tracks`, tracks numbered `N` and up are stepped over) its records,
     /// positions and times, and the markers. `None` when its block 0 isn't valid.
-    pub async fn summary<M: LogMedium>(
+    pub async fn summary<const N: usize, M: LogMedium>(
         &mut self,
         m: &mut M,
         seq: u64,
         tracks: &mut [TrackSummary],
     ) -> Result<Option<SegmentSummary>, ReadError<M::Error>> {
-        let mut all = AllTracks::default();
+        let mut all = AllTracks::<N>::default();
         let Some(seg) = self.segment(m, Role::Data, seq, &mut all).await? else {
             return Ok(None);
         };
@@ -1348,7 +1436,7 @@ impl Reader {
             return Ok(());
         };
         let mut w =
-            Walker::at_segment(AllTracks::default(), Role::Meta, self.meta.oldest).until(tail);
+            Walker::at_segment(AllTracks::<1>::default(), Role::Meta, self.meta.oldest).until(tail);
         w.truncate = true;
         let mut item = [0u8; 256];
         // a start waits for its stop (at most one recording runs at a time)
@@ -1394,7 +1482,7 @@ impl Reader {
 
     /// A walker over the records of recording `rec`: every track from its `RecordingStart` record in the system
     /// track on, up to its `RecordingStop` (see [RecordingWalker]).
-    pub fn recording(&self, rec: &Recording) -> RecordingWalker {
+    pub fn recording<const N: usize>(&self, rec: &Recording) -> RecordingWalker<N> {
         let mut w = Walker::at_segment(AllTracks::default(), Role::Data, rec.start_seq);
         if let Some((stop, _, _)) = rec.stop {
             w = w.until(stop);
@@ -1410,14 +1498,14 @@ impl Reader {
 
 /// The records of one recording, [Reader::recording]: those after its `RecordingStart` and before its
 /// `RecordingStop` in the system track (both markers are returned too).
-pub struct RecordingWalker {
-    pub walker: Walker<AllTracks>,
+pub struct RecordingWalker<const N: usize> {
+    pub walker: Walker<AllTracks<N>>,
     id: u32,
     inside: bool,
     done: bool,
 }
 
-impl RecordingWalker {
+impl<const N: usize> RecordingWalker<N> {
     /// The next record of the recording; `None` at its end or at the end of what is written.
     pub async fn next<M: LogMedium>(
         &mut self,
@@ -1458,6 +1546,7 @@ impl Decode for NoDecode {
     fn wants_segment(&self) -> bool {
         true
     }
+    fn begin_flush(&mut self, _full: bool) {}
     fn flush(&mut self, _track: u32, _next: u64) {}
     fn codec(&mut self, _track: u32) -> Option<&mut TrackCodec> {
         None

@@ -2,12 +2,11 @@
 //! fuzz target. The indexed reader (LOG-2) is the one for the device and for big cards; this one reads everything.
 
 use crate::format::header::{
-    Durability, FlushHead, KIND_FLUSH, MAX_TRACK_ENTRY, SegHead, TrackEntry,
+    Durability, KIND_FLUSH, MAX_SEG_HEAD, MAX_TRACK_ENTRY, SegHead, TrackEntry,
 };
 use crate::format::record::{Decoded, MAX_REC_HEADER, TrackCodec, decode_record};
-use crate::format::{BLOCK, BlockCheck, Dec, MAX_TIME, Role, Superblock, check_block};
+use crate::format::{BLOCK, BlockCheck, Dec, Role, Superblock, check_block};
 use crate::stream::BlockStream;
-use crate::writer::MAX_TRACKS;
 use std::vec::Vec;
 use ww_stream::StreamHead;
 use ww_stream::store::LogMedium;
@@ -199,18 +198,20 @@ async fn scan_segment<M: LogMedium>(
     };
     let mut stream = BlockStream::new(medium, buf, base, log_id, role, seq, blocks, 0);
     let mut peek = [0u8; crate::writer::PEEK];
-    let mut codecs = [TrackCodec::default(); MAX_TRACKS];
-    let mut nexts = [0u64; MAX_TRACKS];
+    let mut codecs = Vec::new();
+    // every track's position at the segment's first flush head, and where its records got to
+    let mut starts = Vec::new();
+    let mut nexts = Vec::new();
     let mut n_tracks = 1usize;
     let mut torn = false;
     // the segment head
     let n = stream
-        .peek(&mut peek[..32])
+        .peek(&mut peek[..MAX_SEG_HEAD])
         .await
         .map_err(ScanError::Medium)?;
     let mut d = Dec::new(&peek[..n]);
     match SegHead::decode(&mut d) {
-        Some(sh) if (sh.tracks as usize) < MAX_TRACKS => {
+        Some(sh) => {
             out.session = sh.session;
             n_tracks = sh.tracks as usize + 1;
             stream.skip(d.pos()).await.map_err(ScanError::Medium)?;
@@ -261,21 +262,40 @@ async fn scan_segment<M: LogMedium>(
             }
             flush_start = stream.block();
             first = false;
-            let need = 2 + MAX_TIME + 10 * n_tracks;
-            let n = stream
-                .peek(&mut peek[..need])
+            if codecs.is_empty() {
+                codecs = vec![TrackCodec::default(); n_tracks];
+                starts = vec![None; n_tracks];
+                nexts = vec![0u64; n_tracks];
+            }
+            let mut entries = Vec::new();
+            let fh = stream
+                .flush_head(|track, p| {
+                    entries.push((track as usize, p));
+                    (track as usize) < n_tracks
+                })
                 .await
                 .map_err(ScanError::Medium)?;
-            let mut d = Dec::new(&peek[..n]);
-            let fh = FlushHead::decode(&mut d, |track, p| {
-                *nexts.get_mut(track as usize)? = p;
-                Some(())
-            });
-            if fh.is_none() {
+            let Some(fh) = fh else {
+                torn = true;
+                break;
+            };
+            // a full head lists every track; a sparse one every track written since its full head, and the
+            // others are where that one put them
+            let full = fh.full_back == 0;
+            let mut listed = vec![false; n_tracks];
+            for &(track, p) in &entries {
+                listed[track] = true;
+                nexts[track] = p;
+                if full {
+                    starts[track] = Some(p);
+                }
+            }
+            let complete = (0..n_tracks)
+                .all(|i| listed[i] || (!full && starts[i].is_some_and(|s| s == nexts[i])));
+            if !complete || (out.flushes == 0 && !full) {
                 torn = true;
                 break;
             }
-            stream.skip(d.pos()).await.map_err(ScanError::Medium)?;
             for (c, n) in codecs.iter_mut().zip(nexts.iter()) {
                 c.reset(*n);
             }
@@ -289,7 +309,7 @@ async fn scan_segment<M: LogMedium>(
             break;
         }
         let mut d = Dec::new(&peek[..n]);
-        match decode_record(&mut d, &mut codecs[..n_tracks]) {
+        match decode_record(&mut d, &mut codecs) {
             Some(Decoded::Padding) => stream.skip_block(),
             Some(Decoded::Record {
                 track,

@@ -3,15 +3,18 @@
 //! power cut ([Recovery]). Layout: [format](crate::format), `docs/format.md`.
 
 use crate::api_root_id;
+pub use crate::format::header::MAX_TRACKS;
 use crate::format::header::{
-    Durability, FlushHead, KIND_FLUSH, MAX_TRACK_ENTRY, SegHead, TrackDesc, TrackEntry,
+    Durability, FlushEntry, FlushHead, KIND_FLUSH, MAX_FLUSH_ENTRY, MAX_FLUSH_HEAD, MAX_SEG_HEAD,
+    MAX_TRACK_ENTRY, SegHead, TrackDesc, TrackEntry,
 };
 use crate::format::record::{
-    Decoded, MAX_REC_HEADER, PAD, TrackCodec, decode_record, encode_record,
+    Decoded, MAX_REC_HEADER, PAD, Skipped, TrackCodec, decode_record_with, encode_record,
+    skip_record,
 };
 use crate::format::{
-    BLOCK, BlockCheck, Dec, Enc, MAX_TIME, NONE, PAYLOAD, Role, SB_LEN, Superblock, check_block,
-    fnv1a, seal_block,
+    BLOCK, BlockCheck, Dec, Enc, NONE, PAYLOAD, Role, SB_LEN, Superblock, check_block, fnv1a,
+    seal_block,
 };
 use crate::stream::BlockStream;
 use crate::system::{MetaEvent, SystemEvent};
@@ -23,14 +26,19 @@ use ww_stream::{Second, StreamHead};
 
 /// Bytes of the look-ahead buffer a mount parses headers through.
 pub const PEEK: usize = 1024;
-/// Most tracks a [Logring] can have, the system track included.
-pub const MAX_TRACKS: usize = 64;
 /// Longest API bundle, bytes.
 pub const MAX_BUNDLE: usize = 1 << 20;
 /// Longest item a record can carry.
 pub const MAX_ITEM: usize = 1 << 20;
-/// Longest flush head: kind, time, and a position per track.
-const FLUSH_HEAD_MAX: u64 = (2 + MAX_TIME + 10 * (MAX_TRACKS + 1)) as u64;
+/// Longest flush head of a session with `n` tracks (the system track included): kind, time, a position per track.
+const fn flush_head_max(n: usize) -> u64 {
+    (MAX_FLUSH_HEAD + MAX_FLUSH_ENTRY * n) as u64
+}
+/// A full flush head is written at the latest once the data since the last one reaches this many times its size:
+/// it bounds how far back the tracks a sparse head lists were written.
+const FULL_EVERY: u64 = 32;
+/// [Track::tail_map] of a track the tail segment doesn't name.
+const NO_TRACK: u32 = u32::MAX;
 
 /// How a [Logring] lays out and runs its medium.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -169,6 +177,13 @@ pub(crate) struct Track {
     pub(crate) stream_start: u64,
     /// Found in the tail segment's track table at the mount: positions continue
     known: bool,
+    /// Records since the data segment's last full flush head: listed in every sparse head after it
+    written: bool,
+    /// At the mount: the number of this track in the tail segment's table
+    tail_number: u32,
+    /// At the mount, by the tail segment's track number (this slot's index): this session's track with that key,
+    /// [NO_TRACK] for none. Mount-time scratch kept here so a mount needs no array of `TRACKS` on the stack.
+    tail_map: u32,
 }
 
 /// Where a ring's segments are: its id, segment size and counts, as the superblock gives them.
@@ -260,6 +275,12 @@ pub struct Logring<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> {
     sb_every: u64,
     recovery: Recovery,
     reads: u32,
+    /// The data segment's last full flush head: its flush's first block, the tracks written since (listed in the
+    /// sparse heads after it), the entries the sparse heads since listed in all, and the payload bytes since
+    full_block: u32,
+    since_full_written: usize,
+    since_full_listed: usize,
+    since_full_bytes: u64,
 }
 
 /// The stage buffer, aligned so a block device driver can hand it to DMA as it is: a flush goes to the medium
@@ -290,7 +311,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             BUF >= BLOCK && BUF.is_multiple_of(BLOCK),
             "BUF: whole blocks"
         );
-        assert!(TRACKS >= 1 && TRACKS <= MAX_TRACKS, "TRACKS: 1..=64");
+        assert!(TRACKS >= 1 && TRACKS <= MAX_TRACKS, "TRACKS: 1..=65536");
     };
 
     /// Open the log on `medium` in a new session, or start a new log when there is none. Finds the end of the
@@ -383,7 +404,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         }
         // a segment holds at least its head, the track table, a flush head and a record of a block
         let min_payload = (32 + (MAX_TRACK_ENTRY + 10) * info.tracks.len()) as u64
-            + FLUSH_HEAD_MAX
+            + flush_head_max(info.tracks.len() + 1)
             + (MAX_REC_HEADER + BLOCK) as u64;
         if (geo.blocks as u64) * (PAYLOAD as u64) < min_payload {
             return Err(Error::Geometry);
@@ -461,6 +482,10 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             sb_every: (geo.data_n / 4).clamp(1, 16),
             recovery: Recovery::default(),
             reads: 0,
+            full_block: 0,
+            since_full_written: 0,
+            since_full_listed: 0,
+            since_full_bytes: 0,
         })
     }
 
@@ -807,7 +832,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         // a flush needs room for its head and a record; otherwise the segment is done
         let r = *self.ring(role);
         let left = (self.geo.blocks.saturating_sub(r.block) as u64) * PAYLOAD as u64;
-        if r.open && left < FLUSH_HEAD_MAX + MAX_REC_HEADER as u64 {
+        if r.open && left < flush_head_max(self.n_tracks) + MAX_REC_HEADER as u64 {
             self.ring(role).open = false;
         }
         if !self.ring(role).open {
@@ -882,7 +907,11 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             SegHead {
                 seq: r.seq,
                 session: self.session,
-                tracks: if role == Role::Data { (n - 1) as u8 } else { 0 },
+                tracks: if role == Role::Data {
+                    (n - 1) as u32
+                } else {
+                    0
+                },
             }
             .encode(&mut enc)
             .ok_or(Error::Head)?;
@@ -909,26 +938,77 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                 }
             }
         }
-        let mut next = [0u64; TRACKS];
-        match role {
+        // the positions: every track in a full head (a segment's first, and after FULL_EVERY of its size of data
+        // or once half the tracks are written), the tracks written since the full head in a sparse one; every
+        // codec starts from its track's next position (unchanged since the full head when not listed)
+        // full once the sparse heads since the last full one would list as many entries as a full head has: the
+        // sparse heads never cost more than the full ones
+        let full = match role {
             Role::Data => {
-                for (slot, t) in next.iter_mut().zip(self.tracks[..n].iter_mut()) {
-                    *slot = t.next;
-                    t.codec.reset(t.next);
+                segment_start
+                    || self.since_full_listed + self.since_full_written >= n
+                    || self.since_full_bytes >= FULL_EVERY * flush_head_max(n)
+            }
+            Role::Meta => true,
+        };
+        let full_back = if full { 0 } else { r.block - self.full_block };
+        let entries = match role {
+            Role::Data if full => {
+                for t in self.tracks[..n].iter_mut() {
+                    t.written = false;
                 }
+                self.full_block = r.block;
+                self.since_full_written = 0;
+                self.since_full_listed = 0;
+                self.since_full_bytes = 0;
+                n as u32
             }
-            Role::Meta => {
-                next[0] = self.meta_next;
-                self.tracks[0].codec.reset(self.meta_next);
+            Role::Data => {
+                self.since_full_listed += self.since_full_written;
+                self.since_full_written as u32
             }
-        }
-        let mut tmp = [0u8; 2 + MAX_TIME + 10 * (MAX_TRACKS + 1)];
+            Role::Meta => 1,
+        };
+        let mut tmp = [0u8; MAX_FLUSH_HEAD];
         let mut enc = Enc::new(&mut tmp);
-        FlushHead { t: self.t_last }
-            .encode(&mut enc, !segment_start, &next[..n])
-            .ok_or(Error::Head)?;
+        FlushHead {
+            t: self.t_last,
+            full_back,
+            entries,
+        }
+        .encode(&mut enc, !segment_start)
+        .ok_or(Error::Head)?;
         let len = enc.len();
-        self.put(&tmp[..len]).await
+        self.put(&tmp[..len]).await?;
+        let mut prev = None;
+        for i in 0..n {
+            let (next, listed) = match role {
+                Role::Data => {
+                    let t = &mut self.tracks[i];
+                    t.codec.reset(t.next);
+                    (t.next, full || t.written)
+                }
+                Role::Meta => {
+                    self.tracks[0].codec.reset(self.meta_next);
+                    (self.meta_next, true)
+                }
+            };
+            if !listed {
+                continue;
+            }
+            let mut tmp = [0u8; MAX_FLUSH_ENTRY];
+            let mut enc = Enc::new(&mut tmp);
+            FlushEntry {
+                track: i as u32,
+                next,
+            }
+            .encode(&mut enc, prev)
+            .ok_or(Error::Head)?;
+            prev = Some(i as u32);
+            let len = enc.len();
+            self.put(&tmp[..len]).await?;
+        }
+        Ok(())
     }
 
     /// Append payload bytes to the open flush; the caller checked the room.
@@ -1055,6 +1135,15 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             let total = n as u64 + item_len as u64;
             if total <= self.room() {
                 self.tracks[track as usize].codec = codec;
+                if role == Role::Data {
+                    // listed in the sparse flush heads after this one, until the next full head
+                    let t = &mut self.tracks[track as usize];
+                    if !t.written {
+                        t.written = true;
+                        self.since_full_written += 1;
+                    }
+                    self.since_full_bytes += total;
+                }
                 self.put(&hdr[..n]).await?;
                 for p in parts {
                     self.put(p).await?;
@@ -1104,7 +1193,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             fw: self.info.fw,
             hw: self.info.hw,
             bundle_hash: self.sb.bundle_hash,
-            tracks: (n - 1) as u8,
+            tracks: (n - 1) as u32,
         }
         .encode(&mut enc)
         .ok_or(Error::Head)?;
@@ -1379,7 +1468,6 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         end: u32,
         rec: &mut Recovery,
     ) -> Result<u64, Error<M::Error>> {
-        const NONE_MAP: u8 = 0xff;
         let last = end - 1;
         let flush_off = match self.block_ok(role, seq, last).await? {
             BlockCheck::Ok { flush_off } => flush_off as u32,
@@ -1389,14 +1477,18 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         let base = self.geo.base(role, seq);
         let blocks = self.geo.blocks;
         let log_id = self.geo.log_id;
-        // old track number -> index in this session's tracks (by key)
-        let mut map = [NONE_MAP; MAX_TRACKS];
-        map[0] = 0;
-        let mut nexts = [0u64; MAX_TRACKS];
-        let mut newest = [None; MAX_TRACKS];
-        let mut codecs = [TrackCodec::default(); MAX_TRACKS];
-        let mut old_n = 1usize;
+        let n_tracks = self.n_tracks;
+        // the meta ring's one track goes through `meta`, the data ring's into this session's tracks: the tail
+        // segment's track `old` is this session's `self.tracks[i]` by key (`tail_map`, see [Track])
+        let mut meta = Track::default();
+        for t in self.tracks.iter_mut() {
+            t.tail_map = NO_TRACK;
+        }
+        self.tracks[0].tail_map = 0;
+        let mut tail_n = 1usize;
         let mut torn = false;
+        // payload bytes before the segment's first flush head
+        let mut first_off = 0usize;
 
         // block 0: the segment head and the track table
         let mut stream = BlockStream::new(
@@ -1410,14 +1502,15 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             0,
         );
         let n = stream
-            .peek(&mut self.peek[..32])
+            .peek(&mut self.peek[..MAX_SEG_HEAD])
             .await
             .map_err(Error::Medium)?;
         let mut d = Dec::new(&self.peek[..n]);
         match SegHead::decode(&mut d) {
-            Some(sh) if (sh.tracks as usize) < MAX_TRACKS => {
-                old_n = sh.tracks as usize + 1;
+            Some(sh) => {
+                tail_n = sh.tracks as usize + 1;
                 stream.skip(d.pos()).await.map_err(Error::Medium)?;
+                first_off += d.pos();
                 for _ in 0..sh.tracks {
                     let n = stream
                         .peek(&mut self.peek[..MAX_TRACK_ENTRY + 10])
@@ -1428,23 +1521,42 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                         torn = true;
                         break;
                     };
-                    if (e.number as usize) < MAX_TRACKS
-                        && let Some(i) = self.tracks[1..self.n_tracks]
-                            .iter()
-                            .position(|t| t.key == e.key)
+                    if role == Role::Data
+                        && let Some(i) =
+                            self.tracks[1..n_tracks].iter().position(|t| t.key == e.key)
                     {
-                        map[e.number as usize] = (i + 1) as u8;
                         let t = &mut self.tracks[i + 1];
                         t.released = e.released;
                         t.stream_session = e.stream_session;
                         t.stream_start = e.stream_start;
                         t.known = true;
+                        t.tail_number = e.number;
+                        if let Some(o) = self.tracks.get_mut(e.number as usize) {
+                            o.tail_map = (i + 1) as u32;
+                        }
                     }
                     stream.skip(d.pos()).await.map_err(Error::Medium)?;
+                    first_off += d.pos();
                 }
             }
-            _ => torn = true,
+            None => torn = true,
         }
+        let tracks = &mut self.tracks[..n_tracks];
+        // this session's track for the tail segment's track `old`
+        let slot = |tracks: &[Track], old: u32| -> Option<usize> {
+            if old as usize >= tail_n {
+                return None;
+            }
+            match tracks.get(old as usize) {
+                Some(t) if t.tail_map != NO_TRACK => Some(t.tail_map as usize),
+                // numbers past this session's tracks: look the track up
+                None => tracks.iter().position(|t| t.known && t.tail_number == old),
+                Some(_) => None,
+            }
+        };
+        // the last flush's head says where its full head is; positions come from that one, then from the last
+        // flush's own head when it is sparse
+        let mut full_at = 0u32;
         if !torn && start != 0 {
             rec.reads += stream.reads();
             stream = BlockStream::new(
@@ -1458,38 +1570,96 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                 start,
             );
             let n = stream
-                .peek(&mut self.peek[..1])
-                .await
-                .map_err(Error::Medium)?;
-            if n == 0 || self.peek[0] != KIND_FLUSH {
-                torn = true;
-            } else {
-                stream.skip(1).await.map_err(Error::Medium)?;
-            }
-        }
-        // the flush head: positions at its start
-        if !torn {
-            let need = 2 + MAX_TIME + 10 * old_n;
-            let n = stream
-                .peek(&mut self.peek[..need])
+                .peek(&mut self.peek[..MAX_FLUSH_HEAD])
                 .await
                 .map_err(Error::Medium)?;
             let mut d = Dec::new(&self.peek[..n]);
-            let fh = FlushHead::decode(&mut d, |track, p| {
-                *nexts.get_mut(track as usize)? = p;
-                Some(())
-            });
-            match fh {
-                Some(_) => {
-                    stream.skip(d.pos()).await.map_err(Error::Medium)?;
+            match (d.u8(), FlushHead::decode(&mut d)) {
+                (Some(KIND_FLUSH), Some(fh)) if fh.full_back <= start => {
+                    full_at = start - fh.full_back
                 }
-                None => torn = true,
+                _ => torn = true,
             }
         }
-        // the records
+        if !torn && start != 0 && full_at != start {
+            // the full head: the segment's first (right after the track table) or a later flush's
+            let (from, skip) = if full_at == 0 {
+                ((first_off / PAYLOAD) as u32, first_off % PAYLOAD)
+            } else {
+                (full_at, 1)
+            };
+            rec.reads += stream.reads();
+            stream = BlockStream::new(
+                &mut self.medium,
+                &mut self.scratch,
+                base,
+                log_id,
+                role,
+                seq,
+                blocks,
+                from,
+            );
+            torn = !stream.skip(skip).await.map_err(Error::Medium)?;
+        } else if !torn && start != 0 {
+            stream.skip(1).await.map_err(Error::Medium)?;
+        }
         if !torn {
-            for (c, n) in codecs.iter_mut().zip(nexts.iter()) {
-                c.reset(*n);
+            let fh = stream
+                .flush_head(|old, next| {
+                    if old as usize >= tail_n {
+                        return false;
+                    }
+                    let t = match role {
+                        Role::Meta => (old == 0).then_some(&mut meta),
+                        Role::Data => slot(tracks, old).map(|i| &mut tracks[i]),
+                    };
+                    if let Some(t) = t {
+                        t.next = next;
+                        t.newest = None;
+                    }
+                    true
+                })
+                .await
+                .map_err(Error::Medium)?;
+            torn = !fh.is_some_and(|fh| fh.full_back == 0);
+        }
+        if !torn && start != full_at {
+            rec.reads += stream.reads();
+            stream = BlockStream::new(
+                &mut self.medium,
+                &mut self.scratch,
+                base,
+                log_id,
+                role,
+                seq,
+                blocks,
+                start,
+            );
+            stream.skip(1).await.map_err(Error::Medium)?;
+            // the last flush's sparse head: the tracks written since the full one
+            let fh = stream
+                .flush_head(|old, next| {
+                    if old as usize >= tail_n {
+                        return false;
+                    }
+                    let t = match role {
+                        Role::Meta => (old == 0).then_some(&mut meta),
+                        Role::Data => slot(tracks, old).map(|i| &mut tracks[i]),
+                    };
+                    if let Some(t) = t {
+                        t.next = next;
+                    }
+                    true
+                })
+                .await
+                .map_err(Error::Medium)?;
+            torn = fh.is_none();
+        }
+        // the records of the last flush
+        if !torn {
+            meta.codec.reset(meta.next);
+            for t in tracks.iter_mut() {
+                t.codec.reset(t.next);
             }
             loop {
                 let n = stream
@@ -1500,27 +1670,44 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                     break; // the end of what was written
                 }
                 let mut d = Dec::new(&self.peek[..n]);
-                match decode_record(&mut d, &mut codecs[..old_n]) {
-                    Some(Decoded::Padding) => {
+                let (track, header, item_len) = match skip_record(&mut d.clone()) {
+                    Some(Skipped::Padding) => {
                         stream.skip_block();
+                        continue;
                     }
-                    Some(Decoded::Record {
+                    Some(Skipped::Record {
                         track,
-                        head,
+                        header,
                         item_len,
-                    }) => {
-                        stream.skip(d.pos()).await.map_err(Error::Medium)?;
-                        if !stream.skip(item_len).await.map_err(Error::Medium)? {
-                            torn = true;
-                            break;
-                        }
-                        nexts[track as usize] = head.end();
-                        newest[track as usize] = Some(head.pos);
-                    }
-                    None => {
+                    }) if (track as usize) < tail_n => (track, header, item_len),
+                    _ => {
                         torn = true;
                         break;
                     }
+                };
+                let t = match role {
+                    Role::Meta => (track == 0).then_some(&mut meta),
+                    Role::Data => slot(tracks, track).map(|i| &mut tracks[i]),
+                };
+                let head = match t {
+                    Some(t) => match decode_record_with(&mut d, |_| Some(&mut t.codec)) {
+                        Some(Decoded::Record { head, .. }) => Some((t, head)),
+                        _ => {
+                            torn = true;
+                            break;
+                        }
+                    },
+                    None => None,
+                };
+                stream.skip(header).await.map_err(Error::Medium)?;
+                // a record counts once its item is all there
+                if !stream.skip(item_len).await.map_err(Error::Medium)? {
+                    torn = true;
+                    break;
+                }
+                if let Some((t, head)) = head {
+                    t.next = head.end();
+                    t.newest = Some(head.pos);
                 }
             }
         }
@@ -1528,18 +1715,10 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         if torn {
             rec.torn_records += 1;
         }
-        if role == Role::Data {
-            self.tracks[0].next = nexts[0];
-            self.tracks[0].newest = newest[0];
-            for old in 1..old_n {
-                if map[old] != NONE_MAP {
-                    let t = &mut self.tracks[map[old] as usize];
-                    t.next = nexts[old];
-                    t.newest = newest[old];
-                }
-            }
-        }
-        Ok(nexts[0])
+        Ok(match role {
+            Role::Meta => meta.next,
+            Role::Data => self.tracks[0].next,
+        })
     }
 
     /// Open this boot's session: a new session number, the meta records, the data segment with the session

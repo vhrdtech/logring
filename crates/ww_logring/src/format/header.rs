@@ -1,5 +1,10 @@
 //! Segment heads (seq, session, the track table with each track's released position) and flush heads (device time,
-//! each track's next position): what makes a segment self-describing and a flush decodable on its own.
+//! track positions): what makes a segment self-describing and a flush decodable with the segment's first flush head.
+//!
+//! A *full* flush head lists every track's next position: the segment's first one, and others now and then (the
+//! writer decides when, see `docs/format.md`). The heads in between are *sparse*: they list only the tracks that
+//! got records since the last full head (track number gaps), and say how many blocks back that full head is. A
+//! track a sparse head leaves out is where the full head put it, so any flush decodes with two heads.
 
 use super::{Dec, Enc, MAX_TIME, fnv1a};
 use wire_weaver::shrink_wrap::{DeserializeShrinkWrap, RefVec, SerializeShrinkWrap, UNib32};
@@ -12,11 +17,17 @@ pub const MAX_PATH: usize = 16;
 pub const MAX_PATH_BYTES: usize = MAX_PATH * 6 + 6;
 /// Longest body of an encoded [TrackEntry]: the fixed fields, the signature and global id, `released`, the path,
 /// the stream session and its first segment.
-const MAX_TRACK_BODY: usize = 4 + 8 + 1 + 8 + 5 + 4 + 10 + 2 + MAX_PATH_BYTES + 5 + 10;
+const MAX_TRACK_BODY: usize = 5 + 3 + 8 + 1 + 8 + 5 + 4 + 10 + 2 + MAX_PATH_BYTES + 5 + 10;
 /// Longest encoded [TrackEntry] (its length prefix included).
 pub const MAX_TRACK_ENTRY: usize = 2 + MAX_TRACK_BODY;
-/// Bytes of the fixed part of a segment head (after the kind byte).
-pub const SEG_FIXED: usize = 8 + 4 + 4 + 1;
+/// Most tracks of a session, the system track included: track numbers are below it.
+pub const MAX_TRACKS: usize = 1 << 16;
+/// Longest segment head (kind byte included), without its track table.
+pub const MAX_SEG_HEAD: usize = 1 + 8 + 4 + 4 + 3;
+/// Longest fixed part of a flush head: kind, time, the full head's distance, entry count.
+pub const MAX_FLUSH_HEAD: usize = 1 + 1 + MAX_TIME + 5 + 3;
+/// Longest entry of a flush head: a track number delta and a position.
+pub const MAX_FLUSH_ENTRY: usize = 3 + 10;
 /// A flush that starts a segment: a segment head, then the flush head.
 pub const KIND_SEGMENT: u8 = 2;
 /// A plain flush.
@@ -108,7 +119,10 @@ impl<'a> TrackEntry<'a> {
     pub fn encode(&self, enc: &mut Enc) -> Option<()> {
         let mut tmp = [0u8; MAX_TRACK_BODY];
         let mut e = Enc::new(&mut tmp);
-        e.u8(self.number.try_into().ok()?)?;
+        if self.number == 0 || self.number as usize >= MAX_TRACKS {
+            return None;
+        }
+        e.uvar(self.number as u64)?;
         e.u8(self.source)?;
         e.u8(self.desc.durability as u8)?;
         e.u8(0)?; // compression, none
@@ -139,7 +153,7 @@ impl<'a> TrackEntry<'a> {
     pub fn decode(dec: &mut Dec<'a>) -> Option<Self> {
         let body = dec.blob()?;
         let mut d = Dec::new(body);
-        let number = d.u8()? as u32;
+        let number = u32::try_from(d.uvar()?).ok()?;
         let source = d.u8()?;
         let durability = match d.u8()? {
             0 => Durability::Normal,
@@ -171,7 +185,7 @@ impl<'a> TrackEntry<'a> {
             durability,
             rate: (rate != 0).then_some(rate),
         };
-        if number == 0 || !desc.is_valid() {
+        if number == 0 || number as usize >= MAX_TRACKS || !desc.is_valid() {
             return None;
         }
         Some(TrackEntry {
@@ -191,18 +205,21 @@ impl<'a> TrackEntry<'a> {
 pub struct SegHead {
     pub seq: u64,
     pub session: u32,
-    /// Data tracks in the table (numbers 1..=tracks).
-    pub tracks: u8,
+    /// Data tracks in the table (numbers 1..=tracks), below [MAX_TRACKS].
+    pub tracks: u32,
 }
 
 impl SegHead {
     /// The kind byte and the fixed part; the track entries follow, then the flush head.
     pub fn encode(&self, enc: &mut Enc) -> Option<()> {
+        if self.tracks as usize >= MAX_TRACKS {
+            return None;
+        }
         enc.u8(KIND_SEGMENT)?;
         enc.u64le(self.seq)?;
         enc.u32le(self.session)?;
         enc.u32le(0)?;
-        enc.u8(self.tracks)
+        enc.uvar(self.tracks as u64)
     }
 
     /// Decode the kind byte and the fixed part, `None` when it isn't a segment head.
@@ -213,7 +230,10 @@ impl SegHead {
         let seq = dec.u64le()?;
         let session = dec.u32le()?;
         let _flags = dec.u32le()?;
-        let tracks = dec.u8()?;
+        let tracks = u32::try_from(dec.uvar()?).ok()?;
+        if tracks as usize >= MAX_TRACKS {
+            return None;
+        }
         Some(SegHead {
             seq,
             session,
@@ -222,41 +242,97 @@ impl SegHead {
     }
 }
 
-/// The head of a flush, after the segment head when the flush starts a segment: the device time last seen and every
-/// track's next position (track 0 first), the base the flush's records are delta-coded against.
+/// The head of a flush, after the segment head when the flush starts a segment: the device time last seen, where
+/// the last full head is and how many [FlushEntry]s follow, the positions the flush's records are delta-coded
+/// against.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct FlushHead {
     pub t: Option<Second>,
+    /// 0: this head is full (it lists every track). Otherwise the full head is that many blocks before this
+    /// flush's first block, in the same segment (block 0: the segment's first flush).
+    pub full_back: u32,
+    /// Entries that follow: every track in a full head, the tracks written since the full head in a sparse one.
+    pub entries: u32,
 }
 
 impl FlushHead {
-    /// Encode `t` and `next` for tracks `0..next.len()`. Writes the kind byte only when `plain` (a flush that
-    /// doesn't start a segment).
-    pub fn encode(&self, enc: &mut Enc, plain: bool, next: &[u64]) -> Option<()> {
+    /// Encode the fixed part. Writes the kind byte only when `plain` (a flush that doesn't start a segment).
+    pub fn encode(&self, enc: &mut Enc, plain: bool) -> Option<()> {
+        if self.entries as usize > MAX_TRACKS {
+            return None;
+        }
         if plain {
             enc.u8(KIND_FLUSH)?;
         }
         encode_time(enc, self.t)?;
-        enc.uvar(next.len() as u64)?;
-        for &n in next {
-            enc.uvar(n)?;
-        }
-        Some(())
+        enc.uvar(self.full_back as u64)?;
+        enc.uvar(self.entries as u64)
     }
 
-    /// Decode after the kind byte (and the segment head): `t`, then the positions through `next`
-    /// (called with the track number and its position).
-    pub fn decode(dec: &mut Dec, mut next: impl FnMut(u32, u64) -> Option<()>) -> Option<Self> {
+    /// Decode the fixed part after the kind byte (and the segment head); the entries follow in `dec`.
+    pub fn decode(dec: &mut Dec) -> Option<Self> {
         let t = decode_time(dec)?;
-        let n = dec.uvar()?;
-        if n > u32::MAX as u64 {
+        let full_back = u32::try_from(dec.uvar()?).ok()?;
+        let entries = u32::try_from(dec.uvar()?).ok()?;
+        if entries as usize > MAX_TRACKS {
             return None;
         }
-        for track in 0..n as u32 {
-            let p = dec.uvar()?;
-            next(track, p)?;
+        Some(FlushHead {
+            t,
+            full_back,
+            entries,
+        })
+    }
+
+    /// Decode the fixed part and every entry from one buffer, giving each track and position to `next`.
+    pub fn decode_all(dec: &mut Dec, mut next: impl FnMut(u32, u64) -> Option<()>) -> Option<Self> {
+        let fh = Self::decode(dec)?;
+        let mut prev = None;
+        for _ in 0..fh.entries {
+            let e = FlushEntry::decode(dec, prev)?;
+            prev = Some(e.track);
+            next(e.track, e.next)?;
         }
-        Some(FlushHead { t })
+        Some(fh)
+    }
+}
+
+/// One track's next position in a [FlushHead]. Entries are in increasing track order, each stored as the gap to
+/// the one before (`track - prev - 1`, the first one as its number) and the position.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct FlushEntry {
+    pub track: u32,
+    pub next: u64,
+}
+
+impl FlushEntry {
+    /// Encode after the entry of track `prev`; `None` unless `track` comes after it.
+    pub fn encode(&self, enc: &mut Enc, prev: Option<u32>) -> Option<()> {
+        let gap = match prev {
+            None => self.track,
+            Some(p) => self.track.checked_sub(p)?.checked_sub(1)?,
+        };
+        if self.track as usize >= MAX_TRACKS {
+            return None;
+        }
+        enc.uvar(gap as u64)?;
+        enc.uvar(self.next)
+    }
+
+    /// Decode the entry after the one of track `prev`.
+    pub fn decode(dec: &mut Dec, prev: Option<u32>) -> Option<Self> {
+        let gap = u32::try_from(dec.uvar()?).ok()?;
+        let track = match prev {
+            None => gap,
+            Some(p) => p.checked_add(1)?.checked_add(gap)?,
+        };
+        if track as usize >= MAX_TRACKS {
+            return None;
+        }
+        Some(FlushEntry {
+            track,
+            next: dec.uvar()?,
+        })
     }
 }
 
@@ -412,29 +488,53 @@ mod tests {
         SegHead {
             seq: 9,
             session: 2,
-            tracks: 0,
+            tracks: 1000,
         }
         .encode(&mut enc)
         .unwrap();
-        FlushHead { t: Some(t) }
-            .encode(&mut enc, false, &[5, 1 << 40])
+        FlushHead {
+            t: Some(t),
+            full_back: 0,
+            entries: 2,
+        }
+        .encode(&mut enc, false)
+        .unwrap();
+        FlushEntry { track: 0, next: 5 }
+            .encode(&mut enc, None)
             .unwrap();
-        FlushHead { t: None }.encode(&mut enc, true, &[]).unwrap();
+        FlushEntry {
+            track: 999,
+            next: 1 << 40,
+        }
+        .encode(&mut enc, Some(0))
+        .unwrap();
+        FlushHead {
+            t: None,
+            full_back: 7,
+            entries: 0,
+        }
+        .encode(&mut enc, true)
+        .unwrap();
+        // entries go up
+        assert_eq!(
+            FlushEntry { track: 3, next: 0 }.encode(&mut Enc::new(&mut [0u8; 16]), Some(3)),
+            None
+        );
         let n = enc.len();
         let mut dec = Dec::new(&buf[..n]);
         let sh = SegHead::decode(&mut dec).unwrap();
-        assert_eq!(sh.seq, 9);
-        let mut got = [0u64; 2];
-        let fh = FlushHead::decode(&mut dec, |i, p| {
-            got[i as usize] = p;
+        assert_eq!((sh.seq, sh.tracks), (9, 1000));
+        let mut got = Vec::new();
+        let fh = FlushHead::decode_all(&mut dec, |i, p| {
+            got.push((i, p));
             Some(())
         })
         .unwrap();
         assert_eq!(fh.t, Some(t));
-        assert_eq!(got, [5, 1 << 40]);
+        assert_eq!(got, [(0, 5), (999, 1 << 40)]);
         assert_eq!(dec.u8(), Some(KIND_FLUSH));
-        let fh = FlushHead::decode(&mut dec, |_, _| None).unwrap();
-        assert_eq!(fh.t, None);
+        let fh = FlushHead::decode_all(&mut dec, |_, _| None).unwrap();
+        assert_eq!((fh.t, fh.full_back), (None, 7));
         assert_eq!(dec.left(), 0);
     }
 }

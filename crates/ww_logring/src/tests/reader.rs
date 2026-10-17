@@ -8,7 +8,10 @@ use crate::image::ImageFile;
 use crate::reader::{AllTracks, Reader, TrackSummary, Walker, time_ps};
 use crate::scan::Scan;
 use crate::system::SystemEvent;
-use crate::writer::{MAX_ITEM, MAX_TRACKS};
+use crate::writer::MAX_ITEM;
+
+/// Tracks the reader tests decode (the logs they read have fewer).
+const N: usize = 8;
 use crate::{Logring, StreamHead};
 use ww_stream::store::LogMedium;
 use ww_stream::store::log::SimSd;
@@ -48,7 +51,7 @@ where
     M::Error: core::fmt::Debug,
 {
     let oldest = rd.range(Role::Data).oldest;
-    let mut w = Walker::at_segment(AllTracks::default(), Role::Data, oldest);
+    let mut w = Walker::at_segment(AllTracks::<N>::default(), Role::Data, oldest);
     let mut item = vec![0u8; MAX_ITEM];
     let mut out = Vec::new();
     while let Some(f) = block_on(w.next(rd, m, &mut item)).unwrap() {
@@ -146,9 +149,9 @@ fn summaries_match_the_scan() {
     let mut m = three_sessions();
     let s = scan(&mut m);
     let mut rd = block_on(Reader::open(&mut m, None)).unwrap();
-    let mut tracks = [TrackSummary::default(); MAX_TRACKS];
+    let mut tracks = [TrackSummary::default(); N];
     for seg in &s.data {
-        let sum = block_on(rd.summary(&mut m, seg.seq, &mut tracks))
+        let sum = block_on(rd.summary::<N, _>(&mut m, seg.seq, &mut tracks))
             .unwrap()
             .unwrap();
         assert_eq!(sum.session, seg.session);
@@ -209,7 +212,7 @@ fn recordings_and_their_records() {
         };
         let a = want.iter().position(|x| is(x, true)).unwrap();
         let b = want.iter().position(|x| is(x, false)).unwrap();
-        let mut w = rd.recording(r);
+        let mut w = rd.recording::<N>(r);
         let mut got = Vec::new();
         while let Some(f) = block_on(w.next(&mut rd, &mut m, &mut item)).unwrap() {
             got.push((f.head, item[..f.item_len].to_vec()));
@@ -256,7 +259,7 @@ fn seek_time_starts_at_or_before() {
         let hi = time_ps(&in_session.last().unwrap().head.t.unwrap()).unwrap() / 1_000_000;
         for _ in 0..30 {
             let target = rng.range(lo as u64, hi as u64) as u32;
-            let mut w = block_on(rd.seek_time(&mut m, session, &us(target)))
+            let mut w = block_on(rd.seek_time::<N, _>(&mut m, session, &us(target)))
                 .unwrap()
                 .unwrap();
             let mut skipped = 0;
@@ -281,7 +284,11 @@ fn seek_time_starts_at_or_before() {
             assert!(skipped < 200, "{skipped} records before the target");
         }
     }
-    assert!(block_on(rd.seek_time(&mut m, 9, &us(0))).unwrap().is_none());
+    assert!(
+        block_on(rd.seek_time::<N, _>(&mut m, 9, &us(0)))
+            .unwrap()
+            .is_none()
+    );
 }
 
 #[test]
