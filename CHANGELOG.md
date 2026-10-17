@@ -112,3 +112,4 @@
   (`OneTrack::in_stream`, `Decode::ended`) stops there. Before, a seek for an older stream's position after a
   `reset_track` could find a later stream's record (positions restart in every stream) and a walk ran on into it.
   `just size` M33 opt s: `reader` 38.7 → 37.7 KB, `full` 88.0 → 87.4 (LOG-2, P2628#17oct-1711).
+
