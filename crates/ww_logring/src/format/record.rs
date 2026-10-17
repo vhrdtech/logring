@@ -244,6 +244,57 @@ pub fn decode_record(dec: &mut Dec, codecs: &mut [TrackCodec]) -> Option<Decoded
     })
 }
 
+/// What [skip_record] found at a record's place.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Skipped {
+    /// A record of `track`, its header `header` bytes long, the item `item_len` bytes after it.
+    Record {
+        track: u32,
+        header: usize,
+        item_len: usize,
+    },
+    /// The padding byte: nothing more in this block.
+    Padding,
+}
+
+/// The track and the lengths of the record at `dec`'s place, without its head's values: what a reader of one
+/// track needs to step over the records of the others (it keeps no delta state for them). `None` on malformed
+/// bytes or a stream that ends inside the header.
+pub fn skip_record(dec: &mut Dec) -> Option<Skipped> {
+    let start = dec.pos();
+    let b0 = dec.u8()?;
+    if b0 == PAD {
+        return Some(Skipped::Padding);
+    }
+    let mut track = (b0 >> 5) as u32;
+    let flags = b0 & 0x1f;
+    if track == TRACK_EXT as u32 {
+        track = track.checked_add(u32::try_from(dec.uvar()?).ok()?)?;
+    }
+    if flags & FULL != 0 {
+        if flags != FULL {
+            return None;
+        }
+        let n = dec.u8()? as usize;
+        if n == 0 || n > MAX_HEAD {
+            return None;
+        }
+        dec.bytes(n)?;
+    } else {
+        for bit in [POS, UNITS, LOST, T] {
+            if flags & bit != 0 {
+                dec.uvar()?;
+            }
+        }
+    }
+    let item_len = usize::try_from(dec.uvar()?).ok()?;
+    Some(Skipped::Record {
+        track,
+        header: dec.pos() - start,
+        item_len,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -285,6 +336,20 @@ mod tests {
             assert_eq!(dec.bytes(3), Some(&[1u8, 2, 3][..]));
         }
         assert_eq!(decode_record(&mut dec, &mut codecs), Some(Decoded::Padding));
+        // stepping over them without the delta state finds the same tracks and lengths
+        let mut dec = Dec::new(&buf[..n]);
+        for ((track, _), len) in heads.iter().zip(lens.iter()) {
+            assert_eq!(
+                skip_record(&mut dec),
+                Some(Skipped::Record {
+                    track: *track,
+                    header: *len,
+                    item_len: 3
+                })
+            );
+            dec.bytes(3).unwrap();
+        }
+        assert_eq!(skip_record(&mut dec), Some(Skipped::Padding));
         lens
     }
 

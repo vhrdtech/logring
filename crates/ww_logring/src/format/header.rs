@@ -7,8 +7,11 @@ use ww_stream::Second;
 
 /// Longest string a [TrackDesc] field may have.
 pub const MAX_STR: usize = 48;
-/// Longest encoded [TrackDesc] (its length prefix included).
-pub const MAX_TRACK_ENTRY: usize = 2 + 4 + 8 + 8 + 4 + 4 + 5 * (1 + MAX_STR);
+/// Longest body of an encoded [TrackEntry]: the fixed fields, `released`, the strings, the stream session and its
+/// first segment.
+const MAX_TRACK_BODY: usize = 4 + 8 + 8 + 4 + 4 + 10 + 5 * (1 + MAX_STR) + 5 + 10;
+/// Longest encoded [TrackEntry] (its length prefix included).
+pub const MAX_TRACK_ENTRY: usize = 2 + MAX_TRACK_BODY;
 /// Bytes of the fixed part of a segment head (after the kind byte).
 pub const SEG_FIXED: usize = 8 + 4 + 4 + 1;
 /// A flush that starts a segment: a segment head, then the flush head.
@@ -96,12 +99,18 @@ pub struct TrackEntry<'a> {
     pub desc: TrackDesc<'a>,
     /// Position released by the host (acknowledged) when the segment was opened.
     pub released: u64,
+    /// The track's stream session (`ww_stream`'s, set by [StreamStore::reset](ww_stream::store::StreamStore::reset)
+    /// through `TrackStore`), 0 before the first.
+    pub stream_session: u32,
+    /// Data seq of the segment the stream session started in: positions count from 0 there and grow in every
+    /// segment after it.
+    pub stream_start: u64,
 }
 
 impl<'a> TrackEntry<'a> {
     /// Encode as one length-prefixed entry.
     pub fn encode(&self, enc: &mut Enc) -> Option<()> {
-        let mut tmp = [0u8; MAX_TRACK_ENTRY];
+        let mut tmp = [0u8; MAX_TRACK_BODY];
         let mut e = Enc::new(&mut tmp);
         e.u8(self.number.try_into().ok()?)?;
         e.u8(self.source)?;
@@ -124,6 +133,8 @@ impl<'a> TrackEntry<'a> {
             }
             e.blob(s.as_bytes())?;
         }
+        e.uvar(self.stream_session as u64)?;
+        e.uvar(self.stream_start)?;
         let n = e.len();
         enc.blob(&tmp[..n])
     }
@@ -150,6 +161,13 @@ impl<'a> TrackEntry<'a> {
         let crate_version = d.str()?;
         let type_path = d.str()?;
         let units = d.str()?;
+        // appended fields: a reader of an entry without them takes the defaults
+        let stream_session = if d.left() > 0 {
+            u32::try_from(d.uvar()?).ok()?
+        } else {
+            0
+        };
+        let stream_start = if d.left() > 0 { d.uvar()? } else { 0 };
         let desc = TrackDesc {
             path,
             crate_name,
@@ -170,6 +188,8 @@ impl<'a> TrackEntry<'a> {
             key,
             desc,
             released,
+            stream_session,
+            stream_start,
         })
     }
 }
@@ -304,6 +324,8 @@ mod tests {
             key: desc().key("usb_io_fw", 2),
             desc: desc(),
             released: 1234,
+            stream_session: 7,
+            stream_start: 1 << 40,
         };
         let mut buf = [0u8; MAX_TRACK_ENTRY];
         let mut enc = Enc::new(&mut buf);
@@ -321,6 +343,8 @@ mod tests {
             key: 0,
             desc: TrackDesc::new("x"),
             released: 0,
+            stream_session: 0,
+            stream_start: 0,
         };
         let mut enc = Enc::new(&mut buf);
         e.encode(&mut enc).unwrap();

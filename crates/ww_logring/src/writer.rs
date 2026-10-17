@@ -147,34 +147,46 @@ pub struct TrackState {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-struct Track {
-    key: u64,
-    next: u64,
-    released: u64,
+pub(crate) struct Track {
+    pub(crate) key: u64,
+    pub(crate) next: u64,
+    pub(crate) released: u64,
     records: u64,
     bytes: u64,
     immediate: bool,
     codec: TrackCodec,
+    /// Position of the newest record pushed
+    newest: Option<u64>,
+    /// The stream session and the data seq it started in (positions from 0 there)
+    pub(crate) stream_session: u32,
+    pub(crate) stream_start: u64,
+    /// Found in the tail segment's track table at the mount: positions continue
+    known: bool,
 }
 
-#[derive(Debug, Clone, Copy)]
-struct Geo {
-    log_id: u32,
-    seg: u64,
-    blocks: u32,
-    meta_n: u64,
-    data_n: u64,
+/// Where a ring's segments are: its id, segment size and counts, as the superblock gives them.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Geo {
+    pub log_id: u32,
+    /// Bytes per segment.
+    pub seg: u64,
+    /// Blocks per segment.
+    pub blocks: u32,
+    pub meta_n: u64,
+    pub data_n: u64,
 }
 
 impl Geo {
-    fn base(&self, role: Role, seq: u64) -> u64 {
+    /// Byte offset on the medium of segment `seq` of `role`.
+    pub fn base(&self, role: Role, seq: u64) -> u64 {
         match role {
             Role::Meta => self.seg * (1 + seq % self.meta_n),
             Role::Data => self.seg * (1 + self.meta_n + seq % self.data_n),
         }
     }
 
-    fn count(&self, role: Role) -> u64 {
+    /// Segments in the ring of `role`.
+    pub fn count(&self, role: Role) -> u64 {
         match role {
             Role::Meta => self.meta_n,
             Role::Data => self.data_n,
@@ -234,6 +246,9 @@ pub struct Logring<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> {
     /// Every track's `next` as of the last sealed block, and as of the last block written
     sealed_next: [u64; TRACKS],
     durable_next: [u64; TRACKS],
+    /// Every track's newest record as of the last sealed block, and as of the last block written
+    sealed_newest: [Option<u64>; TRACKS],
+    durable_newest: [Option<u64>; TRACKS],
     sb: Superblock,
     sb_every: u64,
     recovery: Recovery,
@@ -409,6 +424,8 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             flush_started_ms: None,
             sealed_next: [0; TRACKS],
             durable_next: [0; TRACKS],
+            sealed_newest: [None; TRACKS],
+            durable_newest: [None; TRACKS],
             sb: Superblock {
                 write_seq: 0,
                 log_id: 0,
@@ -511,6 +528,89 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         self.data.seq
     }
 
+    /// Where the ring's segments are.
+    pub fn geo(&self) -> Geo {
+        self.geo
+    }
+
+    /// The oldest data seq the medium still holds (`data_seq() - data_segments() + 1`, or 0 before the ring went
+    /// round once).
+    pub fn oldest_data_seq(&self) -> u64 {
+        (self.data.seq + 1).saturating_sub(self.geo.data_n)
+    }
+
+    /// Position of track `track`'s newest record on the medium (see [durable](Self::durable)); `None` when it has
+    /// none there or the mount didn't see it (it wasn't in the last flush before the reboot).
+    pub fn durable_newest(&self, track: u32) -> Option<u64> {
+        self.durable_newest.get(track as usize).copied().flatten()
+    }
+
+    /// The track's stream session and the data seq it started in: positions count from 0 there.
+    pub fn stream_session(&self, track: u32) -> Option<(u32, u64)> {
+        ((track as usize) < self.n_tracks).then(|| {
+            let t = &self.tracks[track as usize];
+            (t.stream_session, t.stream_start)
+        })
+    }
+
+    /// The stable key of track `track` (0 for the system track).
+    pub fn track_key(&self, track: u32) -> Option<u64> {
+        ((track as usize) < self.n_tracks).then(|| self.tracks[track as usize].key)
+    }
+
+    /// The host acknowledged track `track` up to `pos`: kept in every segment head from the next one on, so it
+    /// survives a reboot (up to the last segment opened). Never moves back, never past the track's next position.
+    /// It frees no room: the ring keeps everything until it goes round.
+    pub fn release(&mut self, track: u32, pos: u64) -> Result<(), Error<M::Error>> {
+        self.track(track)?;
+        let t = &mut self.tracks[track as usize];
+        t.released = t.released.max(pos.min(t.next));
+        Ok(())
+    }
+
+    /// A new stream session `session` on track `track`: positions from 0, nothing released, and a new data segment
+    /// whose head carries it, written before this returns (the records of the session before stay in the ring).
+    pub async fn reset_track(&mut self, track: u32, session: u32) -> Result<(), Error<M::Error>> {
+        self.track(track)?;
+        if track == 0 {
+            return Err(Error::Track);
+        }
+        self.close_segment(Role::Data).await?;
+        let i = track as usize;
+        let t = &mut self.tracks[i];
+        t.stream_session = session;
+        t.stream_start = self.data.next_seq;
+        t.next = 0;
+        t.released = 0;
+        t.newest = None;
+        self.sealed_next[i] = 0;
+        self.durable_next[i] = 0;
+        self.sealed_newest[i] = None;
+        self.durable_newest[i] = None;
+        self.ensure_flush(Role::Data).await?;
+        self.end_flush().await
+    }
+
+    /// The medium, for a reader on the same ring (between writes).
+    pub(crate) fn medium_mut(&mut self) -> &mut M {
+        &mut self.medium
+    }
+
+    /// The newest record of track `track` on the medium, found by a reader after the mount.
+    pub(crate) fn note_durable_newest(&mut self, track: u32, pos: u64) {
+        if let Some(n) = self.durable_newest.get_mut(track as usize)
+            && n.is_none()
+        {
+            *n = Some(pos);
+            if self.tracks[track as usize].newest.is_none() {
+                self.tracks[track as usize].newest = Some(pos);
+            }
+            if self.sealed_newest[track as usize].is_none() {
+                self.sealed_newest[track as usize] = Some(pos);
+            }
+        }
+    }
+
     // -----------------------------------------------------------------------------------------------------------
     // Pushing
 
@@ -546,6 +646,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         self.write_record(Role::Data, track, head, &[item]).await?;
         let tr = &mut self.tracks[track as usize];
         tr.next = head.end();
+        tr.newest = Some(head.pos);
         tr.records += 1;
         tr.bytes += item.len() as u64;
         if head.t.is_some() {
@@ -786,6 +887,8 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                         key: t.key,
                         desc: self.info.tracks[i - 1],
                         released: t.released,
+                        stream_session: t.stream_session,
+                        stream_start: t.stream_start,
                     }
                     .encode(&mut enc)
                     .ok_or(Error::Session)?;
@@ -848,8 +951,14 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         self.st.blocks += 1;
         self.st.cur = 0;
         if self.st.role == Role::Data {
-            for (s, t) in self.sealed_next.iter_mut().zip(self.tracks.iter()) {
+            for ((s, n), t) in self
+                .sealed_next
+                .iter_mut()
+                .zip(self.sealed_newest.iter_mut())
+                .zip(self.tracks.iter())
+            {
                 *s = t.next;
+                *n = t.newest;
             }
         }
         if self.st.blocks * BLOCK == BUF {
@@ -877,6 +986,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         self.sb.bytes_written += len as u64;
         if self.st.role == Role::Data {
             self.durable_next = self.sealed_next;
+            self.durable_newest = self.sealed_newest;
         }
         self.st.first += self.st.blocks as u32;
         self.st.blocks = 0;
@@ -1041,6 +1151,8 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             key: t.key,
             desc: self.info.tracks[i - 1],
             released: 0,
+            stream_session: t.stream_session,
+            stream_start: t.stream_start,
         }
     }
 
@@ -1143,6 +1255,8 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         for (i, t) in self.tracks.iter().enumerate() {
             self.sealed_next[i] = t.next;
             self.durable_next[i] = t.next;
+            self.sealed_newest[i] = t.newest;
+            self.durable_newest[i] = t.newest;
         }
         self.start_session().await
     }
@@ -1265,6 +1379,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         let mut map = [NONE_MAP; MAX_TRACKS];
         map[0] = 0;
         let mut nexts = [0u64; MAX_TRACKS];
+        let mut newest = [None; MAX_TRACKS];
         let mut codecs = [TrackCodec::default(); MAX_TRACKS];
         let mut old_n = 1usize;
         let mut torn = false;
@@ -1305,7 +1420,11 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                             .position(|t| t.key == e.key)
                     {
                         map[e.number as usize] = (i + 1) as u8;
-                        self.tracks[i + 1].released = e.released;
+                        let t = &mut self.tracks[i + 1];
+                        t.released = e.released;
+                        t.stream_session = e.stream_session;
+                        t.stream_start = e.stream_start;
+                        t.known = true;
                     }
                     stream.skip(d.pos()).await.map_err(Error::Medium)?;
                 }
@@ -1382,6 +1501,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                             break;
                         }
                         nexts[track as usize] = head.end();
+                        newest[track as usize] = Some(head.pos);
                     }
                     None => {
                         torn = true;
@@ -1396,9 +1516,12 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         }
         if role == Role::Data {
             self.tracks[0].next = nexts[0];
+            self.tracks[0].newest = newest[0];
             for old in 1..old_n {
                 if map[old] != NONE_MAP {
-                    self.tracks[map[old] as usize].next = nexts[old];
+                    let t = &mut self.tracks[map[old] as usize];
+                    t.next = nexts[old];
+                    t.newest = newest[old];
                 }
             }
         }
@@ -1411,9 +1534,14 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         self.session = self.sb.next_session;
         self.sb.next_session += 1;
         self.recovery.session = self.session;
+        // a track the tail segment didn't name starts its positions at 0 in this session's segment
+        let first_seq = self.data.next_seq;
         for t in self.tracks.iter_mut() {
             t.records = 0;
             t.bytes = 0;
+            if !t.known {
+                t.stream_start = first_seq;
+            }
         }
         // the bundle, once per hash while its meta record is still in the meta ring
         let hash = self.info.bundle.map(|b| fnv1a(&[b])).unwrap_or(0);

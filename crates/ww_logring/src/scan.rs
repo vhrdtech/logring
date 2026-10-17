@@ -18,6 +18,8 @@ pub struct TrackInfo {
     pub number: u32,
     pub key: u64,
     pub released: u64,
+    pub stream_session: u32,
+    pub stream_start: u64,
     pub path: String,
     pub durability: Durability,
 }
@@ -223,6 +225,8 @@ async fn scan_segment<M: LogMedium>(
                     number: e.number,
                     key: e.key,
                     released: e.released,
+                    stream_session: e.stream_session,
+                    stream_start: e.stream_start,
                     path: e.desc.path.to_string(),
                     durability: e.desc.durability,
                 });

@@ -22,7 +22,7 @@ pub mod tests_support;
 pub mod writer;
 
 pub use format::header::{Durability, TrackDesc};
-pub use writer::{Config, Error, Logring, Recovery, SessionInfo, TrackState};
+pub use writer::{Config, Error, Geo, Logring, Recovery, SessionInfo, TrackState};
 pub use ww_stream::store::FullPolicy;
 pub use ww_stream::store::LogMedium;
 pub use ww_stream::{Second, StreamHead};
