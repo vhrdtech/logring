@@ -1,6 +1,6 @@
 [package]
 name = "logring_cli"
-description = "The logring command line tool: info, ls, export, cat, check, make-image"
+description = "The logring command line tool: info, export, cat, check, make-image"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -17,4 +17,15 @@ anyhow.workspace = true
 clap.workspace = true
 clap_complete.workspace = true
 indicatif.workspace = true
+logring = { workspace = true, features = ["std"] }
 logring_export = { path = "../logring_export", version = "0.1.0" }
+serde_json.workspace = true
+wire_weaver = { workspace = true, features = ["std"] }
+ww_numeric = { workspace = true, features = ["std"] }
+ww_self = { workspace = true, features = ["std"] }
+ww_stream = { workspace = true, features = ["std"] }
+
+[dev-dependencies]
+assert_cmd = "2"
+predicates = "3"
+tempfile.workspace = true

@@ -88,6 +88,10 @@
   `wire_weaver_snapshots` for stdlib traits and types), and exports CSV, MCAP (JSON + jsonschema) and MF4
   (numeric channels, or ASAM `CAN_DataFrame` bus logging via `mdf4-rs` for CAN-shaped tracks). The `logring` CLI
   and `logring_py` bindings are next (PC-1, P2628#16oct-1001h).
+- `logring` CLI: `info`, `export`, `cat`, `check` and `make-image` now do their real job (`info`/`check` were
+  scaffolds, `export`/`cat` stubs); dynamic shell completions (live file paths, `--format` values) and
+  `indicatif` progress bars. `make-image` builds a demo image with a genuine small bundle, for tests and demos
+  without a device. `ls` stays out until the USB view (VIEW-1) lands (PC-1, P2628#16oct-1001h).
 
 ### Changed
 

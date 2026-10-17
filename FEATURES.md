@@ -119,9 +119,17 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   a bundle leaves out under `Skipped*` (not a device's own, from a published crate) are only resolved through
   `wire_weaver_snapshots`/the definition cache, not yet through a second bundle of the same session; a track
   whose type can't be resolved is counted (`Track::decode_errors`) and left out of export rather than falling
-  back to raw bytes. The `logring` CLI (`info`/`export`/`cat`/`check`/`make-image`, `--version`, completions,
-  progress bars; `ls` stays out, VIEW-1) and `logring_py` (PyO3 + maturin, via uv) are next. After LOG-2
-  (VIEW-1 for `ls`). P2628#16oct-1001h. Plan R10.
+  back to raw bytes. The `logring` CLI: `info` (sessions, bundles, tracks, system-track counters), `export`
+  (one track, or every resolved one for MCAP), `cat` (decoded JSON lines of one track), `check` (torn
+  blocks/records, unresolved bundles/tracks, non-zero exit on trouble, like fsck) and `make-image` (a fresh
+  image from a simulated multi-track device, for demos and tests, with a genuine small bundle); `--version`
+  with git SHA and commit time (`build.rs`); dynamic shell completions (clap_complete `unstable-dynamic`, a
+  `wire_weaver_cli`-style bash adapter for quoting) give live file paths and `--format` values; colour off
+  without a TTY or with `NO_COLOR`; `indicatif` progress bars on `make-image`'s writes and on exporting many
+  tracks. CLI tests (`assert_cmd`) drive the real binary through `make-image` → `info`/`export`/`cat`/`check`;
+  `export --format mf4`'s output opens in `asammdf` (`uv run`, done by hand this round, not yet a repo test).
+  `ls` stays out (VIEW-1); `logring_py` (PyO3 + maturin, via uv) is next. After LOG-2 (VIEW-1 for `ls`).
+  P2628#16oct-1001h. Plan R10.
 - 💡 **PC-2 fuse-mount**: `logring mount` (FUSE), so a card or image shows as a normal read-only filesystem
   without the `logring` CLI's own subcommands.
 
