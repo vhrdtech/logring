@@ -129,9 +129,16 @@ system track and is never in the table). One entry per data track, a `uvar` leng
 | path | string | resource path with indices: `can[1].rx` |
 | crate_name, crate_version, type_path | string | the item type |
 | units | string | what the position counts (`bytes`, `frames`, `samples`), may be empty |
+| stream_session | uvar | the track's stream session (`ww_stream`, set by `TrackStore::reset`), 0 before the first; an entry without it reads as 0 |
+| stream_start | uvar | data seq of the segment the stream session started in: the track's positions count from 0 there and grow in every segment after it; an entry without it reads as 0 |
 
 Strings are a `uvar` length and UTF-8 bytes, at most 48 bytes each. Fields a later version appends inside the entry
 are ignored by this reader.
+
+A track's positions are monotonic from its `stream_start` segment on, across sessions: a mount continues them by
+key from the tail segment's table, and a track the tail segment doesn't name starts at 0 in the new session's
+segment (its `stream_start`). A stream reset (`Logring::reset_track`) closes the data segment and opens the next
+one at once, its head carrying the new `stream_session` and `stream_start`.
 
 FNV-1a, 64 bit: `h = 0xcbf29ce484222325; for each byte: h ^= byte; h *= 0x100000001b3`.
 
@@ -261,9 +268,29 @@ MBR | gap to the first boundary unit | exFAT boot regions | FAT | cluster heap:
   becomes `flush_bytes` (rounded to 16 KB), stored in the superblock's `flush_bytes`; 64 KB when nothing was
   measured. Sizes larger than the scratch buffer the device gives are not measured.
 
-## 11. Not in this version
+## 11. Reading
+
+`ww_logring::reader` (no_std, no alloc) reads a ring without a scan, from what the format above already carries:
+
+- **By track position**: a binary search over the data segments of the track's stream (`stream_start` and later)
+  by the track's `next` in each segment's first flush head, then over the segment's blocks: a block's `flush_off`
+  gives the start of its flush, the flush head the track's `next` there. The last flush starting at or before the
+  position is scanned (about 2 log₂ n + 2 log₂ blocks reads for the seek). Other tracks' records are stepped over
+  by their lengths, without their delta state.
+- **By time**: the same over a session's consecutive segments and its flushes, by the device time in the flush
+  heads (the time last seen before the flush, so the flush found starts at or before the time). Times are
+  compared as numbers: a clock that wraps inside a session breaks the order.
+- **By recording**: the `Recording` meta records give its data segment; its records are those between its
+  `RecordingStart` and `RecordingStop` in track 0.
+- **Segment summaries** (per track count, bytes, first and last position and time; markers; flushes) are
+  computed from one segment's records; they are not written into the segment.
+
+`TrackStore` (one track as `ww_stream`'s `StreamStore`) reads back only what is on the medium: an event sent from
+the stage buffer would be lost by a power cut while a host already has it, and the positions after the reboot
+would go to other events.
+
+## 12. Not in this version
 
 Per-track compression (the `compression` byte is reserved), pinned recordings or a keep ring, several sources per
-card (`source` reserved), encryption, the indexed reader and
-`TrackStore` (LOG-2; the format carries what they need: segment heads with per-track `released`, flush heads with
-per-track `next`, `flush_off` in every trailer).
+card (`source` reserved), encryption, segment summaries written at a
+segment's end (they are computed by the reader).

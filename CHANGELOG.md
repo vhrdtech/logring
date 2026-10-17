@@ -4,6 +4,12 @@
 
 ### Added
 
+- `ww_logring::reader`: the indexed reader (no_std, no alloc): seeks by track position and by device time with
+  binary searches over segment and flush heads, recordings and their records, segment summaries; `ImageFile`
+  reads a ring image on a PC (LOG-2, P2628#16oct-1001c).
+- `TrackStore`: one track of a logring as `wire_weaver`'s `StreamStore`, so a reliable stream is kept on the
+  card and a host backfills from it after reboots; `Logring::release`, `reset_track`, `durable_newest`; track
+  entries carry the track's stream session and its first segment (LOG-2).
 - `ww_logring::exfat` (feature `exfat`, on `exfat_lite`): the ring as the file `logring.wlr` of an SD card's exFAT
   volume. `ExfatRing`, a `LogMedium` window over the file's sectors that refuses anything outside it; `open`, the
   mount check (volume, contiguous file of whole sectors, bitmap bits, header A/B and its binding to the volume

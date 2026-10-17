@@ -286,3 +286,37 @@ fn reset_starts_a_new_stream_session() {
     assert_eq!(e.item, &119u32.to_le_bytes()[..]);
     assert!(block_on(store.read(20, &mut buf)).unwrap().is_none());
 }
+
+/// After a reboot whose last flush held only other tracks, the store finds the track's newest record on the
+/// medium itself.
+#[test]
+fn finds_the_newest_record_after_a_mount() {
+    let c = cfg(4096, 1024);
+    let mut lr = mount(SimSd::new(size(&c, 32), 34), c);
+    for i in 0..300u32 {
+        block_on(lr.push(1, &i.to_le_bytes(), None)).unwrap();
+    }
+    block_on(lr.sync()).unwrap();
+    // a few segments of another track after it
+    for i in 0..400u32 {
+        block_on(lr.push(2, &[i as u8; 20], None)).unwrap();
+    }
+    block_on(lr.sync()).unwrap();
+    let lr = Mutex::<NoopRawMutex, _>::new(mount(lr.into_medium(), c));
+    assert_eq!(block_on(async { lr.lock().await.durable_newest(1) }), None);
+    let mut store = block_on(TrackStore::new(&lr, 1)).unwrap();
+    let st = store.state();
+    assert_eq!((st.next, st.newest, st.oldest), (300, Some(299), Some(0)));
+    let mut buf = [0u8; 8];
+    let e = block_on(store.read(299, &mut buf)).unwrap().unwrap();
+    assert_eq!(e.item, &299u32.to_le_bytes()[..]);
+    let e = block_on(store.read(17, &mut buf)).unwrap().unwrap();
+    assert_eq!(e.item, &17u32.to_le_bytes()[..]);
+    // a buffer too small is an error, and the next read still works
+    assert!(matches!(
+        block_on(store.read(18, &mut buf[..2])),
+        Err(crate::Error::BufferTooSmall { item_len: 4 })
+    ));
+    let e = block_on(store.read(18, &mut buf)).unwrap().unwrap();
+    assert_eq!(e.item, &18u32.to_le_bytes()[..]);
+}

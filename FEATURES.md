@@ -19,9 +19,24 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   cursors live in the segment heads (not the superblock, which stays one fixed block); the API bundle is hashed
   with FNV-1a (64 bit); a cut leaves what the stage buffer held since the last completed *write* (the stage
   buffer `BUF` may be smaller than `flush_bytes`).
-- 📋 **LOG-2 reader-trackstore**: reader by track/time/recording with binary search, segment summaries;
-  `TrackStore` implementing `wire_weaver` `ww_stream`'s `StreamStore` so a reliable stream backfills from the
-  logring. After LOG-1. P2628#16oct-1001c. Plan R5.
+- 🧪 **LOG-2 reader-trackstore**: `ww_logring::reader` (no_std, no alloc): a block-cached `Walker` over the
+  data or meta segments decoding one track by stable key (`OneTrack`, the other tracks stepped over) or all
+  (`AllTracks`); `seek_track` (binary search over segment and flush heads by a track's position), `seek_time`
+  (by device time in a session), `recordings` and the records of a recording, `summary` of a segment;
+  `ImageFile` (std) reads an image or ring file read-only. `TrackStore`: one track of a logring shared through
+  an `embassy-sync` mutex as `ww_stream`'s `StreamStore`, so `Reliable<TrackStore>` keeps a reliable stream on
+  the card: positions and the stream session continue across reboots, the first event after a mount carries the
+  clock epoch, `dropped_units` counts what the ring overwrote unacknowledged, `reset` opens a new segment for the
+  new stream session. Tests: the reader against the sequential scan on a wrapped three-session ring and from an
+  image file, the corruption harness and fuzz target run it on damaged images; `Reliable<TrackStore>` across five
+  boots with power cuts (every event that reached the medium, once); a generated `wire_weaver` server with the
+  real host event loop resuming across four reboots (`tests/stream_e2e`). Not on a real card yet (LOG-3,
+  TEST-22). P2628#16oct-1001c. Plan R5. Differences from the plan: `TrackStore` reads back only what is on the
+  medium, never from the stage buffer (a power cut would otherwise reuse positions a host already has), so a live
+  view follows the flushes; segment summaries are computed by the reader, not written at a segment's end (the
+  flush heads already make the binary searches work); a track's released position is kept in the segment heads,
+  so a reboot can forget acknowledgements since the last segment opened (the host's resume cursor covers them);
+  no `ww_stream` change was needed.
 - 🧪 **LOG-3 logring-on-exfat**: `ww_logring::exfat` (feature `exfat`, on `exfat_lite`): `ExfatRing`, the ring
   file `logring.wlr` as a `LogMedium` window that refuses any access outside it; `open`, the mount binding check
   (volume, contiguous file, whole sectors, bitmap, header A/B bound to volume serial, first cluster, cluster count

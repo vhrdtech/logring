@@ -47,11 +47,11 @@ Cargo workspace, edition 2024, one version for all crates (`[workspace.package]`
 instrument/tool repos (tpm CLAUDE.md "Code repos": tools are a library first):
 
 - `crates/ww_logring` — the engine: `no_std`, no `alloc`. Format (superblock, meta area, segments, blocks,
-  records), writer (stage buffers, `flush_bytes`/`flush_interval`, `sync`), recovery, reader/index, `TrackStore`
-  (implements `wire_weaver`'s `ww_stream::StreamStore` so a reliable stream backfills from the ring), sessions,
-  recordings, markers, the view model (`view` module: snapshot tree by recording/time/track, native split files,
-  fixed-width CSV), `ExfatRing` (an `exfat_lite`-backed `LogMedium` window, `exfat` feature), a
-  `block-device-driver` medium, a simulated card for `std` tests. The `std` feature is for host-side use
+  records), writer (stage buffers, `flush_bytes`/`flush_interval`, `sync`), recovery, the indexed reader
+  (`reader`), `TrackStore` (implements `wire_weaver`'s `ww_stream::StreamStore` so a reliable stream backfills from
+  the ring), sessions, recordings, markers, the view model (`view` module: snapshot tree by recording/time/track,
+  native split files, fixed-width CSV), `ExfatRing` (an `exfat_lite`-backed `LogMedium` window, `exfat` feature),
+  a `block-device-driver` medium, a simulated card for `std` tests. The `std` feature is for host-side use
   (`ww_logring_export`, the CLI, tests): no RAM/flash limits assumed.
 - `crates/ww_logring_export` — PC: opens a mounted card, an image, a ring file or a split `.wlr` (through
   `ww_logring`'s `std` feature, no raw device access, no root); decodes tracks dynamically from the stored API
@@ -62,6 +62,9 @@ instrument/tool repos (tpm CLAUDE.md "Code repos": tools are a library first):
   time (`build.rs`, no extra crates), shell completions, colour, progress bars (tpm CLAUDE.md "CLI quality").
 - `crates/ww_logring_py` (PyO3 + maturin, package `ww_logring`) — `open()`, tracks, recordings, markers,
   `track.to_pandas()`, built on `ww_logring_export`.
+
+`tests/stream_api` and `tests/stream_e2e` (not published): a reliable `wire_weaver` stream on a `TrackStore`
+end to end, a generated server and the real host event loop (`wire_weaver`'s `tests_common`) across reboots.
 
 [docs/format.md](docs/format.md) documents the on-medium format as it is (LOG-1); `fuzz/` holds the cargo-fuzz
 targets (`just fuzz`, nightly) with seed images; the `prj/P2628-logring` tpm folder has the design history and
