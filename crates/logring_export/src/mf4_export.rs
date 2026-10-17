@@ -261,3 +261,82 @@ fn write_numeric(track: &Track, path: impl AsRef<Path>) -> Result<()> {
     writer.finalize().map_err(|e| anyhow!("mdf4: {e}"))?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use logring::scan::TrackInfo;
+    use ww_numeric::NumericValue;
+    use ww_stream::StreamHead;
+
+    fn can_item(id: u32, data: [u8; 8]) -> Item {
+        let fields = FieldsValueOwned::Named(vec![
+            ("id".to_string(), ValueOwned::Numeric(NumericValue::U32(id))),
+            (
+                "data".to_string(),
+                ValueOwned::Array(
+                    data.iter()
+                        .map(|b| ValueOwned::Numeric(NumericValue::U8(*b)))
+                        .collect(),
+                ),
+            ),
+        ]);
+        Item {
+            head: StreamHead {
+                pos: 0,
+                units: 1,
+                lost: None,
+                t: None,
+                ext: None,
+            },
+            value: ValueOwned::Struct { fields },
+        }
+    }
+
+    fn dummy_track_info() -> TrackInfo {
+        TrackInfo {
+            number: 1,
+            key: 1,
+            released: 0,
+            stream_session: 0,
+            stream_start: 0,
+            path: vec![1],
+            signature: None,
+            global_id: None,
+            durability: logring::Durability::Normal,
+        }
+    }
+
+    #[test]
+    fn recognizes_a_can_frame_struct() {
+        let track = Track {
+            info: dummy_track_info(),
+            ty: None,
+            bundle: None,
+            name: "can.rx".to_string(),
+            items: vec![can_item(0x123, [1, 2, 3, 4, 5, 6, 7, 8])],
+            decode_errors: 0,
+        };
+        let frames = can_frames(&track).expect("a CAN track");
+        assert_eq!(frames.len(), 1);
+        assert_eq!(frames[0].1.id, 0x123);
+        assert!(!frames[0].1.extended);
+        assert_eq!(frames[0].1.data, vec![1, 2, 3, 4, 5, 6, 7, 8]);
+    }
+
+    #[test]
+    fn exports_a_can_track_to_mf4() {
+        let track = Track {
+            info: dummy_track_info(),
+            ty: None,
+            bundle: None,
+            name: "can.rx".to_string(),
+            items: vec![can_item(0x123, [1, 2, 3, 4, 5, 6, 7, 8])],
+            decode_errors: 0,
+        };
+        let file = tempfile::NamedTempFile::new().unwrap();
+        export_track(&track, file.path()).unwrap();
+        let mdf = mdf4_rs::MDF::from_file(file.path().to_str().unwrap()).unwrap();
+        assert!(!mdf.channel_groups().is_empty());
+    }
+}
