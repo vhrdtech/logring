@@ -93,7 +93,7 @@ fn sync(lr: &Shared) {
 }
 
 fn mount(m: SimSd, c: Config) -> Lr {
-    block_on(Lr::mount(m, c, info())).unwrap()
+    block_on(Lr::mount_leaked(m, c, info())).unwrap()
 }
 
 /// A device that boots, logs whether a host is there or not, and loses power with records in its stage buffer;

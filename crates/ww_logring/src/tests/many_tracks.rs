@@ -59,7 +59,7 @@ fn cfg() -> Config {
 }
 
 fn mount(m: SimSd) -> Box<Lr> {
-    Box::new(block_on(Lr::mount(m, cfg(), info())).unwrap())
+    Box::new(block_on(Lr::mount_leaked(m, cfg(), info())).unwrap())
 }
 
 const SIZE: usize = (1 + 2 + 6) << 20;
@@ -72,8 +72,14 @@ fn three_tracks_alone() -> u64 {
         [UNib32(2), UNib32(511)],
         [UNib32(2), UNib32(1023)],
     ];
-    let mut lr =
-        Box::new(block_on(Lr::mount(SimSd::new(SIZE, 1), cfg(), info_of(&THREE))).unwrap());
+    let mut lr = Box::new(
+        block_on(Lr::mount_leaked(
+            SimSd::new(SIZE, 1),
+            cfg(),
+            info_of(&THREE),
+        ))
+        .unwrap(),
+    );
     let mut next = vec![0u64; 4];
     let mut pushed = Vec::new();
     let before = lr.superblock().bytes_written;

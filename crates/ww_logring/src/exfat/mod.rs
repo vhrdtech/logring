@@ -5,9 +5,11 @@
 //! re-creates the ring file keeping the rw files ([recreate_ring]). Built on `exfat_lite`.
 //!
 //! ```text
-//! mount:  open(dev) -> Opened::Bound(b)          -> let (ring, cfg) = b.into_parts(cfg); Logring::mount(ring, cfg, info)
+//! mount:  open(dev) -> Opened::Bound(b)          -> let (ring, cfg) = b.into_parts(cfg);
+//!                                                     let mut lr = Logring::new(ring, bufs, cfg, info)?; lr.mount().await
 //!                   -> Opened::Unbound(why, dev) -> logging off; recreate_ring(dev, ..) or format_card(dev, ..)
-//! format: format_card(dev, card, opts, clock, scratch) -> f -> let (ring, cfg) = f.into_parts(cfg); Logring::format(ring, cfg, info)
+//! format: format_card(dev, card, opts, clock, bufs.stage()) -> f -> let (ring, cfg) = f.into_parts(cfg);
+//!                                                     let mut lr = Logring::new(ring, bufs, cfg, info)?; lr.format().await
 //! ```
 
 mod card;

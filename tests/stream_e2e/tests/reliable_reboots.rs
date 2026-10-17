@@ -129,7 +129,7 @@ fn mount(card: Card) -> &'static Shared {
         tracks: &TRACK_DESC,
         bundle: None,
     };
-    let lr = block_on(Lr::mount(card, config(), info)).unwrap();
+    let lr = block_on(Lr::mount_leaked(card, config(), info)).unwrap();
     Box::leak(Box::new(Mutex::new(lr)))
 }
 

@@ -152,7 +152,7 @@ fn logged_card(serial: u32) -> SimCard {
     ))
     .unwrap();
     let cfg = f.config(base());
-    let mut lr = block_on(Lr::format(f.ring, cfg, info())).unwrap();
+    let mut lr = block_on(Lr::format_leaked(f.ring, cfg, info())).unwrap();
     for i in 0..50u8 {
         block_on(lr.push(1, &[i; 13], None)).unwrap();
     }
@@ -219,7 +219,7 @@ fn format_log_and_mount_again() {
     assert_eq!(scan.records().filter(|(_, r)| r.track == 1).count(), 50);
     let cfg = b.config(base());
     assert_eq!(cfg.binding, b.ring.binding().encode());
-    let mut lr = block_on(Lr::mount(b.ring, cfg, info())).unwrap();
+    let mut lr = block_on(Lr::mount_leaked(b.ring, cfg, info())).unwrap();
     assert!(!lr.recovery().formatted);
     block_on(lr.push(1, &[7; 5], None)).unwrap();
     block_on(lr.sync()).unwrap();
@@ -445,7 +445,7 @@ fn logring_refuses_another_binding() {
     let mut cfg = b.config(base());
     cfg.binding[0] ^= 1;
     assert!(matches!(
-        block_on(Lr::mount(b.ring, cfg, info())),
+        block_on(Lr::mount_leaked(b.ring, cfg, info())),
         Err(Error::Unbound)
     ));
 }
@@ -466,7 +466,7 @@ fn recreate_keeps_rw_files() {
     assert_eq!(u, Unbound::Missing);
     let f = block_on(recreate_ring(card, None, &opts(), 0)).unwrap();
     let cfg = f.config(base());
-    let mut lr = block_on(Lr::format(f.ring, cfg, info())).unwrap();
+    let mut lr = block_on(Lr::format_leaked(f.ring, cfg, info())).unwrap();
     block_on(lr.push(1, b"after", None)).unwrap();
     block_on(lr.sync()).unwrap();
     let mut card = lr.into_medium().into_device();
@@ -494,7 +494,7 @@ fn recreate_replaces_a_replaced_ring_file() {
     let f = block_on(recreate_ring(card, None, &opts(), 128 << 10)).unwrap();
     let (ring, cfg) = f.into_parts(base());
     assert_eq!(cfg.flush_bytes, 128 << 10);
-    let lr = block_on(Lr::format(ring, cfg, info())).unwrap();
+    let lr = block_on(Lr::format_leaked(ring, cfg, info())).unwrap();
     let b = bound(lr.into_medium().into_device());
     assert_eq!(b.superblock.flush_bytes, 128 << 10);
 }
@@ -772,7 +772,7 @@ fn format_with_a_16_mb_au() {
     assert_eq!(f.segment_size, 16 << 20);
     assert_eq!(f.ring.start_lba() % (16 * MB / 512), 0);
     let (ring, cfg) = f.into_parts(base());
-    let lr = block_on(Lr::format(ring, cfg, info())).unwrap();
+    let lr = block_on(Lr::format_leaked(ring, cfg, info())).unwrap();
     let b = bound(lr.into_medium().into_device());
     assert_eq!(b.superblock.segment_size, 16 << 20);
 }
@@ -833,7 +833,7 @@ fn damaged_cards_never_panic() {
             Opened::Bound(b) => {
                 bound_n += 1;
                 let (ring, cfg) = b.into_parts(base());
-                let _ = block_on(Lr::mount(ring, cfg, info()));
+                let _ = block_on(Lr::mount_leaked(ring, cfg, info()));
             }
             Opened::Unbound(..) => unbound_n += 1,
         }

@@ -3,10 +3,11 @@
 #![no_std]
 #![no_main]
 
-use logring_size::{BUF, Card, Slot, TRACKS, block_on, log_loop, output, session};
+use logring_size::{BUF, Card, ConstSlot, Slot, TRACKS, block_on, log_loop, output, session};
 use ww_logring::exfat::{ExfatRing, Opened, open};
-use ww_logring::{Config, Logring};
+use ww_logring::{Buffers, Config, Logring};
 
+static BUFS: ConstSlot<Buffers<BUF, TRACKS>> = ConstSlot::new(Buffers::new());
 static LR: Slot<Logring<'static, ExfatRing<Card>, BUF, TRACKS>> = Slot::new();
 
 #[unsafe(no_mangle)]
@@ -24,12 +25,17 @@ pub extern "C" fn _start() -> ! {
                 output(0xdead);
             },
         };
-        let lr = match Logring::mount(ring, cfg, session()).await {
+        let lr = match Logring::new(ring, BUFS.take(), cfg, session()) {
             Ok(lr) => LR.put(lr),
             Err(_) => loop {
                 output(0xdead);
             },
         };
+        if lr.mount().await.is_err() {
+            loop {
+                output(0xdead);
+            }
+        }
         output(lr.recovery().torn_blocks);
         log_loop(lr).await
     })

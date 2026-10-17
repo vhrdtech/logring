@@ -38,6 +38,13 @@
 
 ### Changed
 
+- The writer no longer sits in RAM twice: the stage buffer and the per-track state are `Buffers<BUF, TRACKS>`
+  (`const fn new`, all zero, so a static of it is in `.bss`), lent by the firmware to `Logring::new(medium,
+  &mut buffers, cfg, info)`, which checks and writes nothing; then `mount().await` / `format().await` run in
+  place on `&mut self` (writing before is `Error::NotMounted`, twice `Error::Mounted`); `Buffers::stage` is
+  `format_card`'s scratch before that. `mount_leaked`/`format_leaked` (`std`) for tests and tools. `just size`,
+  M33 opt s, static + task RAM: raw writer 17.0 -> 9.4 KB, exFAT + `TrackStore` 19.6 -> 11.8 KB, `full` 24.5 ->
+  13.8 KB; flash 0.9-1.3 KB less (LOG-1, P2628#17oct-1623).
 - Track identity is numbers only: `TrackDesc::path` is the stream's path in the device API as wire_weaver ids
   (`RefVec<UNib32>`, up to `MAX_PATH`), the item type is its `ww_self` signature and `ww_global` id (both
   optional); crate name, version, type path and units are no longer stored with a track: the PC takes them from

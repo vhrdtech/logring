@@ -10,7 +10,7 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   segments, self-identifying 512-byte blocks with an 8-byte trailer written once per lap, flushes with a head per
   flush, compact delta-coded records of track + `StreamHead` + item at ~4 bytes of overhead, track tables in every
   segment head, system track 0, meta records for sessions, bundles and recordings), the writer (`Logring`:
-  mount/format, `push`/`push_head`, markers, recordings, stage buffer, `flush_bytes`/`flush_interval`/`sync`,
+  `new` on lent `Buffers` (stage buffer, per-track state) then `mount`/`format` in place, `push`/`push_head`, markers, recordings, stage buffer, `flush_bytes`/`flush_interval`/`sync`,
   `Immediate` tracks, drop oldest/newest) and recovery (bounded mount, torn blocks and records counted), on
   `ww_stream`'s `LogMedium` with `SimSd`/`SimNor`. Tests: random multi-track workloads round-trip, a power cut
   at every write unit on SD and NOR loses nothing written before it, mount reads under a computed bound, damaged

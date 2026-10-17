@@ -4,12 +4,13 @@
 
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::mutex::Mutex;
-use logring_size::{BUF, RawCard, Slot, TRACKS, block_on, input, now, output, session};
-use ww_logring::{Config, Logring, TrackStore};
+use logring_size::{BUF, ConstSlot, RawCard, Slot, TRACKS, block_on, input, now, output, session};
+use ww_logring::{Buffers, Config, Logring, TrackStore};
 use ww_stream::StreamHead;
 use ww_stream::store::StreamStore;
 
 type Lr = Logring<'static, RawCard, BUF, TRACKS>;
+static BUFS: ConstSlot<Buffers<BUF, TRACKS>> = ConstSlot::new(Buffers::new());
 static LR: Slot<Mutex<NoopRawMutex, Lr>> = Slot::new();
 
 #[unsafe(no_mangle)]
@@ -21,12 +22,17 @@ pub extern "C" fn _start() -> ! {
             ..Config::default()
         };
         let lr: &'static Mutex<NoopRawMutex, Lr> =
-            match Logring::mount(RawCard, cfg, session()).await {
+            match Logring::new(RawCard, BUFS.take(), cfg, session()) {
                 Ok(lr) => LR.put(Mutex::new(lr)),
                 Err(_) => loop {
                     output(0xdead);
                 },
             };
+        if lr.lock().await.mount().await.is_err() {
+            loop {
+                output(0xdead);
+            }
+        }
         let mut store = match TrackStore::new(lr, 1).await {
             Ok(s) => s,
             Err(_) => loop {

@@ -104,7 +104,7 @@ fn logring_on_a_block_device_driver() {
         ..Config::default()
     };
     let (ring, cfg) = f.into_parts(base);
-    let mut lr = block_on(Logring::<_, 8192, 6>::format(ring, cfg, info())).unwrap();
+    let mut lr = block_on(Logring::<_, 8192, 6>::format_leaked(ring, cfg, info())).unwrap();
     let before = lr.medium().sectors();
     assert!(before > 0);
     for i in 0..2000u32 {
@@ -120,6 +120,6 @@ fn logring_on_a_block_device_driver() {
         Opened::Unbound(u, _) => panic!("{u:?}"),
     };
     let (ring, cfg) = b.into_parts(base);
-    let lr = block_on(Logring::<_, 8192, 6>::mount(ring, cfg, info())).unwrap();
+    let lr = block_on(Logring::<_, 8192, 6>::mount_leaked(ring, cfg, info())).unwrap();
     assert_eq!(lr.track_state(1).unwrap().next, 2000);
 }

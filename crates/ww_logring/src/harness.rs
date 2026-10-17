@@ -5,7 +5,7 @@ use crate::format::Role;
 use crate::reader::{AllTracks, Reader, TrackSummary, Walker};
 use crate::scan::Scan;
 use crate::tests_support::block_on;
-use crate::{Config, Durability, FullPolicy, Logring, SessionInfo, TrackDesc};
+use crate::{Buffers, Config, Durability, FullPolicy, Logring, SessionInfo, TrackDesc};
 use crate::{FullVersion, UNib32};
 use wire_weaver::ww_version::Version;
 use ww_stream::store::log::SimSd;
@@ -66,9 +66,13 @@ pub fn mount_garbage(data: &[u8]) -> bool {
     let mut medium = SimSd::from_image(image, 1);
     read_everything(&mut medium);
     let cfg = config();
-    let Ok(mut lr) = block_on(Logring::<_, BUF, TRACKS>::mount(medium, cfg, info())) else {
+    let mut bufs = Box::new(Buffers::<BUF, TRACKS>::new());
+    let Ok(mut lr) = Logring::new(medium, &mut bufs, cfg, info()) else {
         return false;
     };
+    if block_on(lr.mount()).is_err() {
+        return false;
+    }
     let found = !lr.recovery().formatted;
     for i in 0..5u8 {
         let item = [i; 7];
@@ -78,11 +82,9 @@ pub fn mount_garbage(data: &[u8]) -> bool {
     let _ = block_on(lr.marker(1, "m", None));
     let _ = block_on(lr.sync());
     let image = lr.into_medium().image();
-    if let Ok(mut lr) = block_on(Logring::<_, BUF, TRACKS>::mount(
-        SimSd::from_image(image, 2),
-        cfg,
-        info(),
-    )) {
+    if let Ok(mut lr) = Logring::new(SimSd::from_image(image, 2), &mut bufs, cfg, info())
+        && block_on(lr.mount()).is_ok()
+    {
         let _ = block_on(lr.push(1, &[9; 20], None));
         let _ = block_on(lr.sync());
         let mut medium = lr.into_medium();

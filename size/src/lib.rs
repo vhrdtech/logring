@@ -164,6 +164,27 @@ impl<T> Slot<T> {
     }
 }
 
+/// A static holding a value from a const initialiser, handed out once, as `static_cell::ConstStaticCell` does: the
+/// value is never on the stack.
+pub struct ConstSlot<T>(UnsafeCell<T>, core::cell::Cell<bool>);
+
+// SAFETY: one thread (the bins have no interrupts), `take` hands the value out once
+unsafe impl<T> Sync for ConstSlot<T> {}
+
+impl<T> ConstSlot<T> {
+    pub const fn new(v: T) -> Self {
+        ConstSlot(UnsafeCell::new(v), core::cell::Cell::new(false))
+    }
+
+    /// The value; call once.
+    #[allow(clippy::mut_from_ref)]
+    pub fn take(&'static self) -> &'static mut T {
+        assert!(!self.1.replace(true), "taken twice");
+        // SAFETY: handed out once (checked above)
+        unsafe { &mut *self.0.get() }
+    }
+}
+
 impl<T> Default for Slot<T> {
     fn default() -> Self {
         Self::new()

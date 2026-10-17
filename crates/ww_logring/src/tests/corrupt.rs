@@ -47,7 +47,7 @@ fn corrupted_images_never_panic() {
     let mut image = vec![0u8; IMAGE];
     let mut rng = Rng::new(5);
     for _ in 0..3 {
-        let mut lr = block_on(Logring::<_, 1024, 6>::mount(
+        let mut lr = block_on(Logring::<_, 1024, 6>::mount_leaked(
             SimSd::from_image(image, rng.next()),
             cfg,
             info,
@@ -129,7 +129,7 @@ fn write_fuzz_seeds() {
     let mut rng = Rng::new(9);
     let mut image = vec![0u8; IMAGE];
     for seed in 0..3 {
-        let mut lr = block_on(Logring::<_, 1024, 6>::mount(
+        let mut lr = block_on(Logring::<_, 1024, 6>::mount_leaked(
             SimSd::from_image(image, rng.next()),
             cfg,
             info,

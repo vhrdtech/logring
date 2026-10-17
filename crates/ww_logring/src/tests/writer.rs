@@ -226,7 +226,7 @@ pub(super) fn mount<M: LogMedium>(medium: M, cfg: Config) -> Lr<'static, M>
 where
     M::Error: core::fmt::Debug,
 {
-    block_on(Lr::mount(medium, cfg, info())).unwrap()
+    block_on(Lr::mount_leaked(medium, cfg, info())).unwrap()
 }
 
 #[test]
@@ -351,26 +351,46 @@ fn drop_newest_refuses_when_full() {
 }
 
 #[test]
+fn nothing_is_written_before_the_mount() {
+    let c = cfg(4096, 1024);
+    let mut bufs = Box::new(crate::Buffers::new());
+    let mut lr = Lr::new(SimSd::new(size(&c, 8), 1), &mut bufs, c, info()).unwrap();
+    assert_eq!(block_on(lr.push(1, &[1], None)), Err(Error::NotMounted));
+    assert_eq!(block_on(lr.marker(1, "m", None)), Err(Error::NotMounted));
+    assert_eq!(block_on(lr.recording_start(1)), Err(Error::NotMounted));
+    assert_eq!(block_on(lr.sync()), Err(Error::NotMounted));
+    assert_eq!(lr.release(1, 0), Err(Error::NotMounted));
+    assert!(
+        lr.medium().image() == SimSd::new(size(&c, 8), 1).image(),
+        "a write before the mount"
+    );
+    block_on(lr.mount()).unwrap();
+    assert_eq!(block_on(lr.mount()), Err(Error::Mounted));
+    assert_eq!(block_on(lr.format()), Err(Error::Mounted));
+    block_on(lr.push(1, &[1], None)).unwrap();
+}
+
+#[test]
 fn geometry_is_checked() {
     let c = cfg(4096, 1024);
-    let r = block_on(Lr::mount(SimSd::new(4096 * 3, 1), c, info()));
+    let r = block_on(Lr::mount_leaked(SimSd::new(4096 * 3, 1), c, info()));
     assert!(matches!(r, Err(Error::Geometry)), "too small");
     let mut bad = c;
     bad.segment_size = 4096 + 256;
-    let r = block_on(Lr::mount(SimSd::new(size(&c, 8), 1), bad, info()));
+    let r = block_on(Lr::mount_leaked(SimSd::new(size(&c, 8), 1), bad, info()));
     assert!(matches!(r, Err(Error::Geometry)), "not whole blocks");
     // a log laid out differently
     let lr = mount(SimSd::new(size(&c, 8), 1), c);
     let image = lr.into_medium().image();
     let mut other = c;
     other.meta_segments = 1;
-    let r = block_on(Lr::mount(SimSd::from_image(image, 1), other, info()));
+    let r = block_on(Lr::mount_leaked(SimSd::from_image(image, 1), other, info()));
     assert!(matches!(r, Err(Error::Geometry)));
     // too many tracks for the writer
     let many = [TrackDesc::new(&[UNib32(1)]); TRACKS];
     let mut i = info();
     i.tracks = &many;
-    let r = block_on(Lr::mount(SimSd::new(size(&c, 8), 1), c, i));
+    let r = block_on(Lr::mount_leaked(SimSd::new(size(&c, 8), 1), c, i));
     assert!(matches!(r, Err(Error::Session)));
     // a record that can't fit a segment
     let mut lr = mount(SimSd::new(size(&c, 8), 1), c);
@@ -483,7 +503,7 @@ fn power_cut_everywhere<const W: usize, const E: usize, const NOR: bool>(
         let mut g = Gen::new(seed, 1200);
         let mut pushed = Vec::new();
         let mut durable = [0u64; 4];
-        let image = match block_on(Lr::mount(medium, cfg, info())) {
+        let image = match block_on(Lr::mount_leaked(medium, cfg, info())) {
             Ok(mut lr) => {
                 let res = workload(&mut lr, &mut g, n, &mut pushed);
                 match res {

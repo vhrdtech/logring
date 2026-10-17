@@ -35,7 +35,24 @@ pub const MAX_REC_HEADER: usize = 1 + 10 + 1 + MAX_HEAD + 10;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct TrackCodec {
     prev_end: u64,
-    prev_t: Option<TimeBase>,
+    /// The last time, when [TimeBase::known]: not an `Option`, whose `None` would sit in a niche of the prefix, so a
+    /// fresh codec is all zero bytes and a static of writer buffers stays in `.bss`
+    prev_t: TimeBase,
+}
+
+impl TrackCodec {
+    pub const EMPTY: TrackCodec = TrackCodec {
+        prev_end: 0,
+        prev_t: TimeBase::ZERO,
+    };
+
+    fn prev_t(&self) -> Option<TimeBase> {
+        self.prev_t.known.then_some(self.prev_t)
+    }
+
+    fn set_prev_t(&mut self, t: Option<TimeBase>) {
+        self.prev_t = t.unwrap_or(TimeBase::ZERO);
+    }
 }
 
 /// A time a delta can be coded against: an integer `Second` of 32 or 64 bits.
@@ -44,6 +61,23 @@ struct TimeBase {
     prefix: ww_si::Prefix,
     wide: bool,
     value: u64,
+    /// A time is there (false only in [TimeBase::ZERO])
+    known: bool,
+}
+
+impl TimeBase {
+    const ZERO: TimeBase = TimeBase {
+        prefix: ww_si::Prefix::Unit,
+        wide: false,
+        value: 0,
+        known: false,
+    };
+}
+
+impl Default for TimeBase {
+    fn default() -> Self {
+        TimeBase::ZERO
+    }
 }
 
 fn base_of(t: Option<Second>) -> Option<TimeBase> {
@@ -57,6 +91,7 @@ fn base_of(t: Option<Second>) -> Option<TimeBase> {
         prefix: t.prefix,
         wide,
         value,
+        known: true,
     })
 }
 
@@ -64,12 +99,12 @@ impl TrackCodec {
     /// At a flush start: the track's next position is `next`, no time known.
     pub fn reset(&mut self, next: u64) {
         self.prev_end = next;
-        self.prev_t = None;
+        self.set_prev_t(None);
     }
 
     fn after(&mut self, head: &StreamHead) {
         self.prev_end = head.end();
-        self.prev_t = base_of(head.t);
+        self.set_prev_t(base_of(head.t));
     }
 }
 
@@ -107,7 +142,7 @@ pub fn encode_record(
     head: &StreamHead,
     item_len: usize,
 ) -> Option<()> {
-    let delta = time_delta(codec.prev_t, head.t);
+    let delta = time_delta(codec.prev_t(), head.t);
     let full = head.ext.is_some() || (head.t.is_some() && delta.is_none());
     let mut flags = 0u8;
     if full {
@@ -222,7 +257,7 @@ pub fn decode_record_with<'c>(
         };
         let t = if flags & T != 0 {
             let delta = d.ivar()?;
-            Some(time_from_delta(codec.prev_t?, delta)?)
+            Some(time_from_delta(codec.prev_t()?, delta)?)
         } else {
             None
         };
