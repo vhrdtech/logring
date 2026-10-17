@@ -6,11 +6,19 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
 
 ## Engine (`LOG`)
 
-- 📋 **LOG-1 format-writer**: superblock A/B, meta area, AU-sized segments (from the card's SD Status), blocks
-  with trailers written once per lap, compact records (track + `StreamHead` + item), track tables, system track
-  0, sessions/recordings/markers; writer with stage buffers, `flush_bytes`/`flush_interval` settings and `sync`,
-  recovery, on `ww_stream` `LogMedium` + `SimSd`; `docs/format.md`. P2628#16oct-1000. Plan:
-  `prj/P2628-logring/design/plan.md` R1.
+- 🧪 **LOG-1 format-writer**: the format ([docs/format.md](docs/format.md): superblock A/B, meta area, AU-sized
+  segments, self-identifying 512-byte blocks with an 8-byte trailer written once per lap, flushes with a head per
+  flush, compact delta-coded records of track + `StreamHead` + item at ~4 bytes of overhead, track tables in every
+  segment head, system track 0, meta records for sessions, bundles and recordings), the writer (`Logring`:
+  mount/format, `push`/`push_head`, markers, recordings, stage buffer, `flush_bytes`/`flush_interval`/`sync`,
+  `Immediate` tracks, drop oldest/newest) and recovery (bounded mount, torn blocks and records counted), on
+  `ww_stream`'s `LogMedium` with `SimSd`/`SimNor`. Tests: random multi-track workloads round-trip, a power cut
+  at every write unit on SD and NOR loses nothing written before it, mount reads under a computed bound, damaged
+  images never panic; `fuzz/` mount target with seed images. Not yet checked on a real card (LOG-3, TEST-22).
+  P2628#16oct-1000. Plan: `prj/P2628-logring/design/plan.md` R1. Differences from the plan: per-track release
+  cursors live in the segment heads (not the superblock, which stays one fixed block); the API bundle is hashed
+  with FNV-1a (64 bit); a cut leaves what the stage buffer held since the last completed *write* (the stage
+  buffer `BUF` may be smaller than `flush_bytes`).
 - 📋 **LOG-2 reader-trackstore**: reader by track/time/recording with binary search, segment summaries;
   `TrackStore` implementing `wire_weaver` `ww_stream`'s `StreamStore` so a reliable stream backfills from the
   logring. After LOG-1. P2628#16oct-1001c. Plan R5.

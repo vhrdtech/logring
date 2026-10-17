@@ -22,6 +22,11 @@ lint:
     typos
     cargo clippy --workspace --all-targets -- -D warnings
 
+# Fuzz the mount on garbage and damaged rings (nightly, cargo install cargo-fuzz); seeds: fuzz/seeds
+[working-directory('fuzz')]
+fuzz:
+    cargo +nightly fuzz run mount corpus/mount seeds
+
 # Build and install logring on this PC; completion: source <(COMPLETE=bash logring)
 install:
     cargo install --quiet --path crates/ww_logring_cli --locked
