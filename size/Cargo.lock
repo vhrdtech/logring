@@ -322,6 +322,7 @@ version = "0.1.0"
 dependencies = [
  "embassy-sync",
  "exfat_lite",
+ "wire_weaver",
  "ww_logring",
  "ww_si",
  "ww_stream",

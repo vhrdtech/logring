@@ -9,7 +9,8 @@ use core::future::Future;
 use core::mem::MaybeUninit;
 use core::pin::pin;
 use core::task::{Context, Poll, Waker};
-use ww_logring::{Durability, SessionInfo, TrackDesc};
+use wire_weaver::ww_version::Version;
+use ww_logring::{Durability, FullVersion, SessionInfo, TrackDesc, UNib32};
 use ww_si::ww_numeric::NumericValue;
 use ww_stream::Second;
 
@@ -171,38 +172,31 @@ impl<T> Default for Slot<T> {
 
 /// Data tracks of the session, like a sensor logger's.
 pub static TRACK_DESCS: [TrackDesc<'static>; TRACKS - 1] = {
-    const fn t(path: &'static str, units: &'static str, rate: u32) -> TrackDesc<'static> {
+    const fn t(path: &'static [UNib32], rate: u32) -> TrackDesc<'static> {
         TrackDesc {
-            path,
-            crate_name: "board_api",
-            crate_version: "0.3.1",
-            type_path: "board_api::Sample",
-            signature: [1, 2, 3, 4, 5, 6, 7, 8],
-            global_id: None,
-            units,
-            durability: Durability::Normal,
+            signature: Some([1, 2, 3, 4, 5, 6, 7, 8]),
             rate: Some(rate),
+            ..TrackDesc::new(path)
         }
     }
     [
-        t("adc[0].samples", "samples", 1000),
-        t("adc[1].samples", "samples", 1000),
-        t("imu.accel", "samples", 400),
-        t("imu.gyro", "samples", 400),
-        t("temp", "samples", 1),
+        t(&[UNib32(3), UNib32(0), UNib32(1)], 1000),
+        t(&[UNib32(3), UNib32(1), UNib32(1)], 1000),
+        t(&[UNib32(4), UNib32(1)], 400),
+        t(&[UNib32(4), UNib32(2)], 400),
+        t(&[UNib32(5)], 1),
         TrackDesc {
             durability: Durability::Immediate,
-            ..t("events", "events", 0)
+            ..t(&[UNib32(6)], 0)
         },
-        t("log", "bytes", 0),
+        t(&[UNib32(7)], 0),
     ]
 };
 
 /// The session the bins mount with.
 pub fn session() -> SessionInfo<'static> {
     SessionInfo {
-        api_crate: "board_api",
-        api_major: 0,
+        api: FullVersion::new("board_api", Version::new(0, 3, 1)),
         device_id: "dev-0001",
         fw: "fw 1.2.3",
         hw: "rev B",

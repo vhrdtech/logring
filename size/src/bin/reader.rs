@@ -17,7 +17,10 @@ pub extern "C" fn _start() -> ! {
         };
         let _ = rd.recordings(&mut m, |r| output(r.id)).await;
         let mut tracks = [TrackSummary::default(); 8];
-        if let Ok(Some(s)) = rd.summary(&mut m, input() as u64, &mut tracks).await {
+        if let Ok(Some(s)) = rd
+            .summary::<8, _>(&mut m, input() as u64, &mut tracks)
+            .await
+        {
             output(s.records as u32);
         }
         let mut buf = [0u8; 256];
@@ -30,7 +33,7 @@ pub extern "C" fn _start() -> ! {
             }
         }
         if let Some(t) = now()
-            && let Ok(Some(mut w)) = rd.seek_time(&mut m, input(), &t).await
+            && let Ok(Some(mut w)) = rd.seek_time::<8, _>(&mut m, input(), &t).await
         {
             while let Ok(Some(f)) = w.next(&mut rd, &mut m, &mut buf).await {
                 output(f.track);
