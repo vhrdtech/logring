@@ -101,10 +101,27 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
 
 ## PC (`PC`)
 
-- 📋 **PC-1 pc-tool**: `logring_export` (dynamic decode from the stored bundle, CSV, MCAP JSON + jsonschema,
-  MF4 incl. CAN bus logging), the `logring` CLI (`info`/`ls`/`export`/`cat`/`check`/`make-image`, `--version`,
-  completions, progress bars), `logring_py` (PyO3 + maturin, via uv). After LOG-2 (VIEW-1 for `ls`).
-  P2628#16oct-1001h. Plan R10.
+- 🧪 **PC-1 pc-tool**: `logring_export`: opens a ring file, raw image or split `.wlr` (a mounted card's volume
+  too, through the OS filesystem, no root: a directory holding `logring.wlr`) via `logring::scan::Scan` (`std`),
+  splits its meta records into sessions and API bundles (`logring::system::MetaEvent`), and resolves a track's
+  item type by walking its `path` from the bundle's API root (`schema::resolve_track_type`, `wire_weaver`
+  `docs/api/addressing.md`), filling in traits and types a device left out with `wire_weaver_snapshots`'
+  embedded stdlib snapshots and the local `~/.wire_weaver/definitions` cache. Decodes items dynamically
+  (`ww_self::value::ValueOwned::des_shrink_wrap_dyn`, no generated code) and exports CSV (dotted flattened
+  columns), MCAP (one JSON channel per track with a JSON Schema built from the resolved type) and MF4 (plain
+  `f64` channels, or ASAM `CAN_DataFrame` bus logging via `mdf4-rs`'s `RawCanLogger` when a track's items look
+  like CAN frames: an id field and a byte payload). `mdf4-rs` over `mf4-rs`: pure Rust, MIT/Apache-2.0, already
+  implements ASAM bus logging for CAN instead of it being hand-rolled here; DBC stays out of what's stored
+  (`AGENTS.md`), applied only by whatever tool opens the MF4 next to a DBC file. Tests: a real ring written by
+  `Logring` with a genuine bundle, decoded and exported to all three formats, the MCAP bytes parsed back by
+  `mcap::MessageStream` and the MF4 bytes reloaded by `mdf4_rs::MDF` (crate-level round trips; an `asammdf`
+  check and CLI-driven end-to-end tests are the CLI's own work, below). Differences from the plan: traits/types
+  a bundle leaves out under `Skipped*` (not a device's own, from a published crate) are only resolved through
+  `wire_weaver_snapshots`/the definition cache, not yet through a second bundle of the same session; a track
+  whose type can't be resolved is counted (`Track::decode_errors`) and left out of export rather than falling
+  back to raw bytes. The `logring` CLI (`info`/`export`/`cat`/`check`/`make-image`, `--version`, completions,
+  progress bars; `ls` stays out, VIEW-1) and `logring_py` (PyO3 + maturin, via uv) are next. After LOG-2
+  (VIEW-1 for `ls`). P2628#16oct-1001h. Plan R10.
 - 💡 **PC-2 fuse-mount**: `logring mount` (FUSE), so a card or image shows as a normal read-only filesystem
   without the `logring` CLI's own subcommands.
 

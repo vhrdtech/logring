@@ -9,5 +9,20 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+anyhow.workspace = true
+csv.workspace = true
 logring = { workspace = true, features = ["std"] }
+mcap.workspace = true
+mdf4-rs = { version = "0.3", features = ["can", "alloc", "std"] }
+serde_json.workspace = true
 thiserror.workspace = true
+wire_weaver = { workspace = true, features = ["std"] }
+wire_weaver_snapshots.workspace = true
+ww_global.workspace = true
+ww_numeric = { workspace = true, features = ["std"] }
+ww_self = { workspace = true, features = ["std"] }
+ww_stream = { workspace = true, features = ["std"] }
+ww_version = { workspace = true, features = ["std"] }
+
+[dev-dependencies]
+tempfile.workspace = true

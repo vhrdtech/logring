@@ -27,10 +27,14 @@ block-device-driver = "0.2"
 clap = { version = "4.6", features = ["derive", "env"] }
 clap_complete = { version = "4.6", features = ["unstable-dynamic"] }
 crc = "3.4"
+csv = "1.4"
 embassy-sync = "0.8"
 indicatif = "0.18"
+mcap = "0.25"
 pyo3 = { version = "0.29", features = ["abi3-py39"] }
+serde = "1"
 serde_json = "1"
+tempfile = "3"
 thiserror = { version = "2", default-features = false }
 
 # not on crates.io yet: the checkout next to this repo (AGENTS.md "Dependencies")
@@ -38,5 +42,10 @@ exfat_lite = { path = "../exfat_lite", default-features = false }
 # wire_weaver 0.5 is unreleased: its master, checked out next to this repo (AGENTS.md "Dependencies")
 wire_weaver = { path = "../wire_weaver/wire_weaver", default-features = false }
 ww_client_server = { path = "../wire_weaver/ww_stdlib/ww_client_server", default-features = false }
+ww_global = { path = "../wire_weaver/ww_global" }
+ww_numeric = { path = "../wire_weaver/ww_stdlib/ww_numeric", default-features = false }
+ww_self = { path = "../wire_weaver/ww_self", default-features = false }
 ww_si = { path = "../wire_weaver/ww_stdlib/ww_si", default-features = false, features = ["time", "u32", "u64"] }
 ww_stream = { path = "../wire_weaver/ww_stream", default-features = false, features = ["log-store"] }
+ww_version = { path = "../wire_weaver/ww_stdlib/ww_version", default-features = false }
+wire_weaver_snapshots = { path = "../wire_weaver/wire_weaver_snapshots" }
