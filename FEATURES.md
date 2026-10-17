@@ -136,8 +136,11 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   carry the bundle's borrow into a `#[pyclass]`. `markers`/`recordings` (`logring_export::events`) pair
   `RecordingStart`/`RecordingStop` by id and give every marker's position, time and value: used by `logring_py`
   and `logring info`'s counters alike. Tested with `pytest` (`just test-py`) against an image `make-image`
-  built, through `to_numpy`/`to_pandas` and the numpy/pandas it produced. After LOG-2 (VIEW-1 for `ls`).
-  P2628#16oct-1001h. Plan R10.
+  built, through `to_numpy`/`to_pandas` and the numpy/pandas it produced. `fuzz/fuzz_targets/bundle_decode.rs`
+  (`just fuzz-bundle`) fuzzes an untrusted bundle's parse, path resolution and dynamic value decode together: it
+  found a real panic in `wire_weaver`'s `shrink_wrap` within seconds (`UN`'s owned decode is unimplemented,
+  P2401#17oct-2112, not this repo's to fix) and nothing in `logring_export` itself so far. After LOG-2 (VIEW-1
+  for `ls`). P2628#16oct-1001h. Plan R10.
 - 💡 **PC-2 fuse-mount**: `logring mount` (FUSE), so a card or image shows as a normal read-only filesystem
   without the `logring` CLI's own subcommands.
 

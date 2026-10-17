@@ -46,6 +46,11 @@ size *args="all":
 fuzz:
     cargo +nightly fuzz run mount corpus/mount seeds
 
+# Fuzz the PC tool's dynamic decode on an untrusted bundle (nightly, cargo install cargo-fuzz)
+[working-directory('fuzz')]
+fuzz-bundle:
+    cargo +nightly fuzz run bundle_decode corpus/bundle_decode
+
 # Build and install logring on this PC; completion: source <(COMPLETE=bash logring)
 install:
     cargo install --quiet --path crates/logring_cli --locked

@@ -10,11 +10,20 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 logring = { path = "../crates/logring", features = ["std"] }
+logring_export = { path = "../crates/logring_export" }
+ww_self = { path = "../../wire_weaver/ww_self", features = ["std"] }
 ww_stream = { path = "../../wire_weaver/ww_stream", default-features = false, features = ["log-store", "std"] }
 
 [[bin]]
 name = "mount"
 path = "fuzz_targets/mount.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "bundle_decode"
+path = "fuzz_targets/bundle_decode.rs"
 test = false
 doc = false
 bench = false

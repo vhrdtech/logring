@@ -94,6 +94,9 @@
   without a device. `ls` stays out until the USB view (VIEW-1) lands (PC-1, P2628#16oct-1001h).
 - `logring_py` (PyO3 + maturin, via uv): `open()`, tracks, sessions, markers, recordings,
   `Track.rows()`/`to_numpy()`/`to_pandas()` (PC-1, P2628#16oct-1001h).
+- `fuzz/fuzz_targets/bundle_decode.rs` (`just fuzz-bundle`): fuzzes `logring_export`'s dynamic decode of an
+  untrusted bundle (parse, path resolution, value decode); found a panic in `wire_weaver`'s `shrink_wrap`
+  (P2401#17oct-2112), none in this repo so far (PC-1, P2628#16oct-1001h).
 
 ### Changed
 
