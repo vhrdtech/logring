@@ -50,7 +50,6 @@
   sparse heads since would add up to one, at the latest after 32 times its size of data), a sparse one only the
   tracks written since its full head and how many blocks back that one is; so many quiet tracks don't cost in every
   flush. docs/format.md says what a track costs in RAM and on the card (LOG-1, P2628#17oct-1507).
-
 - wire_weaver crates by path (`../wire_weaver`, its master) instead of a pinned git rev; `just deps-pull`, `deploy`
   pulls it first, CI checks wire_weaver out next to the repo.
 
