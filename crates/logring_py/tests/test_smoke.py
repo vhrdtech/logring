@@ -91,3 +91,35 @@ def test_markers_and_recordings_are_empty_without_any(demo_image):
     log = logring.open(str(demo_image))
     assert log.markers() == []
     assert log.recordings() == []
+
+
+def test_mf4_export_opens_in_asammdf(demo_image, tmp_path):
+    """R10's "done when": `logring export --format mf4`'s output opens in `asammdf`, not just by hand."""
+    asammdf = pytest.importorskip("asammdf")
+    mf4 = tmp_path / "sensor_0.mf4"
+    subprocess.run(
+        [
+            "cargo",
+            "run",
+            "--quiet",
+            "-p",
+            "logring_cli",
+            "--",
+            "export",
+            str(demo_image),
+            "--track",
+            "sensor_0",
+            "--format",
+            "mf4",
+            "-o",
+            str(mf4),
+        ],
+        cwd=REPO_ROOT,
+        check=True,
+    )
+    mdf = asammdf.MDF(str(mf4))
+    try:
+        signal = mdf.get("value")
+        assert len(signal.samples) == 30
+    finally:
+        mdf.close()

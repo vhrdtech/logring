@@ -17,7 +17,12 @@ dynamic = ["version"]
 Repository = "https://github.com/vhrdtech/logring"
 
 [dependency-groups]
-dev = ["pytest>=8", "numpy>=1.26", "pandas>=2"]
+dev = [
+    "pytest>=8",
+    "numpy>=1.26",
+    "pandas>=2",
+    "asammdf>=8.1.2",
+]
 
 [tool.maturin]
 module-name = "logring"

@@ -97,6 +97,9 @@
 - `fuzz/fuzz_targets/bundle_decode.rs` (`just fuzz-bundle`): fuzzes `logring_export`'s dynamic decode of an
   untrusted bundle (parse, path resolution, value decode); found a panic in `wire_weaver`'s `shrink_wrap`
   (P2401#17oct-2112), none in this repo so far (PC-1, P2628#16oct-1001h).
+- `crates/logring_py/tests/test_smoke.py::test_mf4_export_opens_in_asammdf` (`just test-py`): `logring export
+  --format mf4`'s output opens in `asammdf` (`uv run`, a repo test now, not just done by hand) (PC-1,
+  P2628#16oct-1001h).
 
 ### Changed
 

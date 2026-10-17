@@ -127,7 +127,8 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   `wire_weaver_cli`-style bash adapter for quoting) give live file paths and `--format` values; colour off
   without a TTY or with `NO_COLOR`; `indicatif` progress bars on `make-image`'s writes and on exporting many
   tracks. CLI tests (`assert_cmd`) drive the real binary through `make-image` → `info`/`export`/`cat`/`check`;
-  `export --format mf4`'s output opens in `asammdf` (`uv run`, done by hand this round, not yet a repo test).
+  `export --format mf4`'s output opens in `asammdf` (`crates/logring_py/tests/test_smoke.py`, `just test-py`,
+  `uv run`).
   `ls` stays out (VIEW-1). `logring_py` (PyO3 + maturin, via uv): `logring.open(path)`, `LogFile.tracks()` /
   `.track(name)` / `.sessions()` / `.markers()` / `.recordings()`, `Track.rows()` (decoded JSON per record),
   `Track.to_numpy()` (one `numpy.ndarray` per numeric leaf field) and `Track.to_pandas()` (the same, as a
