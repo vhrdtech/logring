@@ -28,6 +28,8 @@ pyo3 = { version = "0.29", features = ["abi3-py39"] }
 serde_json = "1"
 thiserror = { version = "2", default-features = false }
 
+# not on crates.io yet: the checkout next to this repo (AGENTS.md "Dependencies")
+exfat_lite = { path = "../exfat_lite", default-features = false }
 # wire_weaver 0.5 is unreleased: its master, checked out next to this repo (AGENTS.md "Dependencies")
 wire_weaver = { path = "../wire_weaver/wire_weaver", default-features = false }
 ww_si = { path = "../wire_weaver/ww_stdlib/ww_si", default-features = false, features = ["time", "u32", "u64"] }

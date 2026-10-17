@@ -58,6 +58,7 @@ pub fn config() -> Config {
         flush_interval_ms: 1000,
         full: FullPolicy::DropOldest,
         seed: 3,
+        ..Config::default()
     }
 }
 

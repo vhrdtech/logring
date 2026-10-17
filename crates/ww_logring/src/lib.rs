@@ -6,6 +6,8 @@
 //! is implemented.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "exfat")]
+pub mod exfat;
 pub mod format;
 #[cfg(feature = "std")]
 pub mod harness;

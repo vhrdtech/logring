@@ -47,6 +47,12 @@ pub struct Config {
     pub full: FullPolicy,
     /// Mixed into a new log's id at format: a per-device or random value.
     pub seed: u32,
+    /// Where the ring sits on its card (`ExfatRing`'s binding, LOG-3), zero on a raw medium: written into the
+    /// superblock at format, and a mount refuses a log whose superblock holds another one ([Error::Unbound]).
+    pub binding: [u8; 16],
+    /// The `flush_bytes` the card check measured at format (0: not measured), kept in the superblock for later
+    /// mounts to start from.
+    pub card_flush_bytes: u32,
 }
 
 impl Default for Config {
@@ -58,6 +64,8 @@ impl Default for Config {
             flush_interval_ms: 1000,
             full: FullPolicy::DropOldest,
             seed: 0,
+            binding: [0; 16],
+            card_flush_bytes: 0,
         }
     }
 }
@@ -102,6 +110,9 @@ pub enum Error<E> {
     /// A head couldn't be encoded (a position of 2⁵⁷ or more, a time that doesn't fit).
     #[error("head not encodable")]
     Head,
+    /// The log on the medium is bound to another place ([Config::binding]): nothing was written.
+    #[error("log bound elsewhere")]
+    Unbound,
 }
 
 /// What [Logring::mount] found.
@@ -214,7 +225,7 @@ pub struct Logring<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> {
     data: Ring,
     meta: Ring,
     meta_next: u64,
-    stage: [u8; BUF],
+    stage: StageBuf<BUF>,
     st: Stage,
     scratch: [u8; BLOCK],
     peek: [u8; PEEK],
@@ -227,6 +238,24 @@ pub struct Logring<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> {
     sb_every: u64,
     recovery: Recovery,
     reads: u32,
+}
+
+/// The stage buffer, aligned so a block device driver can hand it to DMA as it is: a flush goes to the medium
+/// as one multi-block write without a copy.
+#[repr(C, align(32))]
+struct StageBuf<const N: usize>([u8; N]);
+
+impl<const N: usize> core::ops::Deref for StageBuf<N> {
+    type Target = [u8; N];
+    fn deref(&self) -> &[u8; N] {
+        &self.0
+    }
+}
+
+impl<const N: usize> core::ops::DerefMut for StageBuf<N> {
+    fn deref_mut(&mut self) -> &mut [u8; N] {
+        &mut self.0
+    }
 }
 
 const fn round_up(x: u64, to: u64) -> u64 {
@@ -266,6 +295,9 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                     || sb.data_segments as u64 != lr.geo.data_n
                 {
                     return Err(Error::Geometry);
+                }
+                if sb.binding != lr.cfg.binding {
+                    return Err(Error::Unbound);
                 }
                 lr.recover(sb).await?;
             }
@@ -360,7 +392,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             data: Ring::default(),
             meta: Ring::default(),
             meta_next: 0,
-            stage: [0xff; BUF],
+            stage: StageBuf([0xff; BUF]),
             st: Stage {
                 role: Role::Data,
                 seq: 0,
@@ -383,7 +415,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                 segment_size: cfg.segment_size,
                 meta_segments: cfg.meta_segments,
                 data_segments: geo.data_n as u32,
-                binding: [0; 16],
+                binding: cfg.binding,
                 next_session: 1,
                 next_recording: 1,
                 data_tail_seq: NONE,
@@ -395,7 +427,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                 bytes_written: 0,
                 segments_reused: 0,
                 meta_reused: 0,
-                flush_bytes: 0,
+                flush_bytes: cfg.card_flush_bytes,
             },
             sb_every: (geo.data_n / 4).clamp(1, 16),
             recovery: Recovery::default(),

@@ -81,6 +81,7 @@ fn cfg(segment_size: u32, flush_bytes: u32) -> Config {
         flush_interval_ms: 1000,
         full: FullPolicy::DropOldest,
         seed: 7,
+        ..Config::default()
     }
 }
 

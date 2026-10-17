@@ -49,6 +49,7 @@ fn corrupted_images_never_panic() {
         flush_interval_ms: 1000,
         full: FullPolicy::DropOldest,
         seed: 3,
+        ..Config::default()
     };
     let mut image = vec![0u8; IMAGE];
     let mut rng = Rng::new(5);

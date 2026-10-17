@@ -300,6 +300,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00d174d5400e5e8fd687ad1049e2f578285fa914201b1af7e8b112a4546bd826"
 
 [[package]]
+name = "exfat_lite"
+version = "0.1.0"
+
+[[package]]
 name = "find-msvc-tools"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1136,6 +1140,7 @@ name = "ww_logring"
 version = "0.1.0"
 dependencies = [
  "crc",
+ "exfat_lite",
  "thiserror",
  "wire_weaver",
  "ww_si",
@@ -1179,7 +1184,7 @@ dependencies = [
 
 [[package]]
 name = "ww_self"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "anyhow",
  "serde",

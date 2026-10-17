@@ -11,10 +11,13 @@ rust-version.workspace = true
 [features]
 default = []
 # Host-side use (ww_logring_export, ww_logring_cli, tests): file-backed media, no RAM/flash limits assumed.
-std = ["ww_stream/std", "wire_weaver/std", "ww_si/std"]
+std = ["ww_stream/std", "wire_weaver/std", "ww_si/std", "exfat_lite?/std"]
+# The ring as the file logring.wlr of an exFAT volume (LOG-3): ExfatRing, the mount check, format and card check.
+exfat = ["dep:exfat_lite"]
 
 [dependencies]
 crc.workspace = true
+exfat_lite = { workspace = true, optional = true }
 thiserror.workspace = true
 wire_weaver.workspace = true
 ww_si.workspace = true

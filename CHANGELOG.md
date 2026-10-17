@@ -4,6 +4,18 @@
 
 ### Added
 
+- `ww_logring::exfat` (feature `exfat`, on `exfat_lite`): the ring as the file `logring.wlr` of an SD card's exFAT
+  volume. `ExfatRing`, a `LogMedium` window over the file's sectors that refuses anything outside it; `open`, the
+  mount check (volume, contiguous file of whole sectors, bitmap bits, header A/B and its binding to the volume
+  serial, first cluster, cluster count and start LBA) giving a `Bound` ring or `Unbound` with the reason
+  (missing, not contiguous, size, not allocated, no header, other card, moved, resized), attribute changes as a
+  warning with `restore_attributes`; `format_card` with the card check (aliasing test for fake cards, a write-size
+  sweep 16 KB..1 MB that picks the card's `flush_bytes`) and the geometry from `CardInfo` (SD Status: AU, UHS/VSC
+  AU, erase, speed classes; 4 MB / 64 KB fallbacks); `recreate_ring`, keeping the rw files (LOG-3,
+  P2628#16oct-1001d).
+- `Config::binding` (written into the superblock at format; a mount of a log bound elsewhere fails with
+  `Error::Unbound`) and `Config::card_flush_bytes` (the measured flush size, kept in the superblock) (LOG-3).
+
 - `ww_logring`: the ring format, the writer and power-cut recovery (`Logring::mount`/`format`, `push`,
   `push_head`, `marker`, `recording_start`/`stop`, `sync`, `flush_if_due`, `durable`), with sessions, track
   tables, the system track and the meta area; `docs/format.md` describes the layout; a `std` sequential `scan`

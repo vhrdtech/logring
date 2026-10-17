@@ -2,6 +2,8 @@
 //! reads, geometry checks.
 
 mod corrupt;
+#[cfg(feature = "exfat")]
+mod exfat;
 mod writer;
 
 pub(crate) use crate::tests_support::block_on;
