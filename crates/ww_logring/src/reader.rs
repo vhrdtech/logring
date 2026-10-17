@@ -22,7 +22,7 @@
 
 use crate::format::header::{
     FlushEntry, FlushHead, KIND_FLUSH, MAX_FLUSH_ENTRY, MAX_FLUSH_HEAD, MAX_SEG_HEAD,
-    MAX_TRACK_ENTRY, SegHead, TrackEntry,
+    MAX_TRACK_ENTRY, SEG_FRESH, SegHead, TrackEntry,
 };
 use crate::format::record::{Decoded, MAX_REC_HEADER, Skipped, TrackCodec, decode_record_with};
 use crate::format::{BLOCK, BlockCheck, Dec, NONE, PAYLOAD, Role, Superblock, check_block};
@@ -103,6 +103,8 @@ pub struct Reader {
 pub struct SegInfo {
     pub seq: u64,
     pub session: u32,
+    /// The segment head's flag bits ([SEG_FRESH]).
+    pub flags: u32,
     /// Data tracks in its table; track numbers `0..=tracks`.
     pub tracks: u32,
     first_flush: Place,
@@ -141,7 +143,7 @@ pub struct OneTrack {
     /// Records before this position are stepped over.
     pub min_pos: u64,
     /// Follow the stream current at this data seq only: a segment whose entry for the key has a later
-    /// `stream_start` ends it. `u64::MAX`: every stream.
+    /// `stream_start` ends it, for the system track a later [SEG_FRESH] segment. `u64::MAX`: every stream.
     stream: u64,
     /// A segment of a later stream was seen
     ended: bool,
@@ -209,9 +211,14 @@ impl OneTrack {
 }
 
 impl Decode for OneTrack {
-    fn begin_segment(&mut self, _seg: &SegInfo) {
+    fn begin_segment(&mut self, seg: &SegInfo) {
         self.number = (self.key == 0).then_some(0);
         self.entry = None;
+        // the system track's positions restart in a FRESH segment
+        if self.key == 0 && seg.flags & SEG_FRESH != 0 && seg.seq > self.stream {
+            self.ended = true;
+            self.number = None;
+        }
     }
 
     fn entry(&mut self, e: &TrackEntry<'_>) {
@@ -1019,6 +1026,7 @@ impl Reader {
         let mut info = SegInfo {
             seq,
             session: sh.session,
+            flags: sh.flags,
             tracks: sh.tracks,
             first_flush: place,
         };
@@ -1213,9 +1221,23 @@ impl Reader {
         let range = self.data;
         let decode = OneTrack::in_stream(key, pos, from_seq);
         let lo = from_seq.max(range.oldest);
-        let Some(hi) = range.tail.filter(|&t| t >= lo) else {
+        let Some(mut hi) = range.tail.filter(|&t| t >= lo) else {
             return Ok(Walker::at_segment(decode, Role::Data, lo));
         };
+        if key == 0 {
+            // the system track has no stream_start: its stream ends before the next FRESH segment, which only
+            // that segment's own head says
+            for seq in lo + 1..=hi {
+                if self
+                    .segment(m, Role::Data, seq, &mut NoDecode)
+                    .await?
+                    .is_some_and(|s| s.flags & SEG_FRESH != 0)
+                {
+                    hi = seq - 1;
+                    break;
+                }
+            }
+        }
         // the last segment whose start position of the track is at or before `pos`; a segment without the track
         // (or not readable) counts as after it, which only makes the scan start earlier; a segment of a later
         // stream is after it

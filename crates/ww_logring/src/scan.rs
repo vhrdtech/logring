@@ -43,6 +43,8 @@ pub struct Rec {
 pub struct SegmentScan {
     pub seq: u64,
     pub session: u32,
+    /// The segment head's flag bits (`SEG_FRESH`).
+    pub flags: u32,
     pub tracks: Vec<TrackInfo>,
     pub records: Vec<Rec>,
     /// Valid blocks from the start.
@@ -189,6 +191,7 @@ async fn scan_segment<M: LogMedium>(
     let mut out = SegmentScan {
         seq,
         session: 0,
+        flags: 0,
         tracks: Vec::new(),
         records: Vec::new(),
         blocks: 0,
@@ -213,6 +216,7 @@ async fn scan_segment<M: LogMedium>(
     match SegHead::decode(&mut d) {
         Some(sh) => {
             out.session = sh.session;
+            out.flags = sh.flags;
             n_tracks = sh.tracks as usize + 1;
             stream.skip(d.pos()).await.map_err(ScanError::Medium)?;
             for _ in 0..sh.tracks {

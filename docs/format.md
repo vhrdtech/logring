@@ -79,8 +79,10 @@ most `META_SLACK` = 4 meta records between two superblock writes (today at most 
 mount, one record per recording start or stop). The newest valid slot was written at some point W; at most
 `META_SLACK` meta records came after W before the next superblock write, and a torn next write leaves W's slot
 intact. So the meta ring's real next position is in `[meta_next, meta_next + META_SLACK]`, and a mount that doesn't
-parse the meta tail can go on at `meta_next + META_SLACK` without ever reusing a position. A mount that parses it
-takes the larger of what it found and `meta_next`.
+parse the meta tail can go on at `meta_next + META_SLACK` without ever reusing a position; it writes the superblock
+with that `meta_next` before its first meta record (else a cut after that record and before the next superblock
+write would leave a record past the bound, and the next such mount would reuse its position). A mount that parses
+it takes the larger of what it found and `meta_next`.
 
 Slot B is found through the segment size; a reader without one (slot A torn, no config) tries the powers of two
 from 2 KB to 64 MB.
@@ -98,10 +100,17 @@ The first flush of a segment starts with the **segment head**:
 u8    kind = 2 (a segment starts here)
 u64   seq
 u32   session
-u32   flags (0)
+u32   flags: bit 0 FRESH (below), other bits 0
 uvar  tracks: data tracks in the table (numbers 1..=tracks), at most 65535
        tracks × track entry (§5)
 ```
+
+**`FRESH`** (flag bit 0) marks a session's first data segment when its mount didn't recover positions (a small
+build that doesn't parse the tail): every track counts its positions from 0 here, the system track included,
+and every data track's stream starts here (`stream_start` = this seq, a stream session with bit 31, §5); its
+`SessionStart` has flag bit 1 (§7). The system track has no track table entry: `FRESH` is where its positions
+restart (they continue for the log's life otherwise). Never set on meta segments. A reader ignores flag bits it
+doesn't know, so a flag bit may only add information, never change how the rest of the segment reads.
 
 Every flush then has a **flush head**: the positions the flush's records are delta-coded against.
 
@@ -337,6 +346,8 @@ MBR | gap to the first boundary unit | exFAT boot regions | FAT | cluster heap:
   track's `next` there. The last flush starting at or before the
   position is scanned (about 2 log₂ n + 2 log₂ blocks reads for the seek). Other tracks' records are stepped over
   by their lengths, without their delta state.
+- **The system track by position**: the same, from the segment asked for up to the next `FRESH` segment (found
+  by reading the segment heads after it, one block each), where its positions restart.
 - **By time**: the same over a session's consecutive segments and its flushes, by the device time in the flush
   heads (the time last seen before the flush, so the flush found starts at or before the time). Times are
   compared as numbers: a clock that wraps inside a session breaks the order.

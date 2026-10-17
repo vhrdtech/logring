@@ -1,5 +1,6 @@
 //! The mount-on-garbage harness (`std`): what the fuzz target `fuzz/fuzz_targets/mount.rs` and the corruption
-//! test run. Takes any bytes as a ring image, mounts, logs, remounts and scans; nothing may panic.
+//! test run. Takes any bytes as a ring image, mounts (as a full build and as a small one), logs, remounts and
+//! scans; nothing may panic.
 
 use crate::format::Role;
 use crate::reader::{AllTracks, Reader, TrackSummary, Walker};
@@ -63,6 +64,7 @@ pub fn mount_garbage(data: &[u8]) -> bool {
     let mut image = vec![0u8; IMAGE];
     let n = data.len().min(IMAGE);
     image[..n].copy_from_slice(&data[..n]);
+    mount_small_garbage(image.clone());
     let mut medium = SimSd::from_image(image, 1);
     read_everything(&mut medium);
     let cfg = config();
@@ -93,6 +95,31 @@ pub fn mount_garbage(data: &[u8]) -> bool {
         read_everything(&mut medium);
     }
     found
+}
+
+/// The same input under the mount a small build makes (no positions from the tail), then a full mount after it.
+fn mount_small_garbage(image: Vec<u8>) {
+    let cfg = config();
+    let mut bufs = Box::new(Buffers::<BUF, TRACKS>::new());
+    let Ok(mut lr) = Logring::new(SimSd::from_image(image, 3), &mut bufs, cfg, info()) else {
+        return;
+    };
+    if block_on(lr.mount_small()).is_err() {
+        return;
+    }
+    let _ = block_on(lr.push(1, &[1; 9], None));
+    let _ = block_on(lr.marker(1, "s", None));
+    let _ = block_on(lr.sync());
+    let image = lr.into_medium().image();
+    if let Ok(mut lr) = Logring::new(SimSd::from_image(image, 4), &mut bufs, cfg, info())
+        && block_on(lr.mount()).is_ok()
+    {
+        let _ = block_on(lr.push(2, &[2; 5], None));
+        let _ = block_on(lr.sync());
+        let mut medium = lr.into_medium();
+        let _ = block_on(Scan::open(&mut medium, None));
+        read_everything(&mut medium);
+    }
 }
 
 /// Open `medium` with the indexed reader and use all of it: a walk over everything, seeks by track position and

@@ -4,6 +4,19 @@
 
 ### Added
 
+- Segment head flag `SEG_FRESH` (bit 0 of the head's `flags`, written 0 before): a session's first data segment
+  after a mount that didn't recover positions; every track counts from 0 there, the system track included, every
+  data track a new stream in session `STORE_SESSION | session`. A full build honours it: `Reader::seek_track` on
+  the system track stops before the next `FRESH` segment, its walker too (`SegInfo::flags`,
+  `SegmentScan::flags`). `Logring::mount_small` (`std`) mounts as a small build will (S3): no positions from the
+  tail, `FRESH`, bit-31 stream sessions, `SessionStart` flag bit 1, meta positions on at the superblock's
+  `meta_next` + `META_SLACK`, with that `meta_next` written to the superblock before its first meta record.
+  Tests: a power cut at every write of a full or small boot after full and small ones, then a boot of either
+  kind, on SD and NOR (nothing on the medium before the cut is lost, positions grow within every stream, `FRESH`
+  exactly where `SessionStart` says, meta positions within `META_SLACK`); the reader against the scan across six
+  alternating boots; the fuzz harness runs both mounts on every input, seed `fuzz/seeds/session4.wlr` has a small
+  session. `just size` M33 opt s: `raw_writer` 34.1 → 34.0 KB, `reader` 37.7 → 38.8, `full` 87.4 → 88.5 (LOG-1,
+  P2628#17oct-1711b).
 - Stream sessions with bit 31 (`STORE_SESSION`) are reserved for streams the logring starts by itself (a small
   build's boot, in `0x8000_0000 | session`); `Logring::reset_track` (and so `TrackStore::reset`) refuses them
   with `Error::StoreSession` and writes nothing, as `ww_stream`'s docs now ask of hosts. `just size` M33 opt s: no

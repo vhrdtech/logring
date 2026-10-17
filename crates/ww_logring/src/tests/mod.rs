@@ -9,6 +9,7 @@ mod exfat;
 #[cfg(feature = "std")]
 mod many_tracks;
 mod reader;
+mod small;
 mod track_store;
 mod writer;
 

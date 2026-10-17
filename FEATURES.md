@@ -29,7 +29,10 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   about 150 bytes per `TRACKS` slot and nothing else is sized by the maximum (1024-track test on `SimSd`).
   Format pieces for small builds (S3, P2628#17oct-1711b, design `s3-tail-positions.md`): the superblock's
   `meta_next` with `META_SLACK` = 4; `SessionStart` flag bits (formatted, positions not recovered);
-  stream sessions with bit 31 reserved for the logring's own (`reset_track` refuses them).
+  stream sessions with bit 31 reserved for the logring's own (`reset_track` refuses them); segment head flag
+  `SEG_FRESH`, honoured by the reader on the system track. `Logring::mount_small` (`std`) writes them all as a
+  small build will; power-cut tests alternate full and small boots on SD and NOR. The small build itself
+  (feature `tail-positions`) is P2628#17oct-1623f.
 - 🧪 **LOG-2 reader-trackstore**: `ww_logring::reader` (no_std, no alloc): a block-cached `Walker` over the
   data or meta segments decoding one track by stable key (`OneTrack`, the other tracks stepped over) or all
   (`AllTracks`); `seek_track` (binary search over segment and flush heads by a track's position), `seek_time`

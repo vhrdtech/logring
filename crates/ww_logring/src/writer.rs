@@ -6,15 +6,15 @@ use crate::api_root_id;
 pub use crate::format::header::MAX_TRACKS;
 use crate::format::header::{
     Durability, FlushEntry, FlushHead, KIND_FLUSH, MAX_FLUSH_ENTRY, MAX_FLUSH_HEAD, MAX_SEG_HEAD,
-    MAX_TRACK_ENTRY, STORE_SESSION, SegHead, TrackDesc, TrackEntry,
+    MAX_TRACK_ENTRY, SEG_FRESH, STORE_SESSION, SegHead, TrackDesc, TrackEntry,
 };
 use crate::format::record::{
     Decoded, MAX_REC_HEADER, PAD, Skipped, TrackCodec, decode_record_with, encode_record,
     skip_record,
 };
 use crate::format::{
-    BLOCK, BlockCheck, Dec, Enc, NONE, PAYLOAD, Role, SB_LEN, Superblock, check_block, fnv1a,
-    seal_block,
+    BLOCK, BlockCheck, Dec, Enc, META_SLACK, NONE, PAYLOAD, Role, SB_LEN, Superblock, check_block,
+    fnv1a, seal_block,
 };
 use crate::stream::BlockStream;
 use crate::system::{MetaEvent, SystemEvent};
@@ -296,9 +296,11 @@ pub struct Logring<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> {
     data: Ring,
     meta: Ring,
     meta_next: u64,
-    /// Meta records written since the last superblock write: never more than [META_SLACK](crate::format::META_SLACK)
+    /// Meta records written since the last superblock write: never more than [META_SLACK]
     #[cfg(debug_assertions)]
     meta_since_sb: u64,
+    /// The data segment the mount opens carries [SEG_FRESH]: the mount didn't recover positions
+    fresh_segment: bool,
     st: Stage,
     scratch: [u8; BLOCK],
     peek: [u8; PEEK],
@@ -394,6 +396,20 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
     /// in place: its future holds only the mount's own state, not a second writer. After an error, start again
     /// from [Logring::new].
     pub async fn mount(&mut self) -> Result<(), Error<M::Error>> {
+        self.mount_with::<true>().await
+    }
+
+    /// [Logring::mount] without recovering positions from the tail, as a small build will mount (S3, feature
+    /// `tail-positions` off): every track starts at 0 in a [SEG_FRESH] segment, data tracks in a stream session
+    /// with bit 31, meta positions go on at the superblock's `meta_next` + [META_SLACK]. Host side (`std`), for
+    /// the tests and the fuzz harness until that build exists.
+    #[cfg(feature = "std")]
+    pub async fn mount_small(&mut self) -> Result<(), Error<M::Error>> {
+        self.mount_with::<false>().await
+    }
+
+    /// The mount; `POSITIONS`: recover the tracks' positions from the tail's last flush.
+    async fn mount_with<const POSITIONS: bool>(&mut self) -> Result<(), Error<M::Error>> {
         if self.mounted {
             return Err(Error::Mounted);
         }
@@ -420,7 +436,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         self.mounted = true;
         let r = match found {
             None => self.start_log(None).await,
-            Some(sb) => self.recover(sb).await,
+            Some(sb) => self.recover::<POSITIONS>(sb).await,
         };
         self.mounted = r.is_ok();
         r
@@ -560,6 +576,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             meta_next: 0,
             #[cfg(debug_assertions)]
             meta_since_sb: 0,
+            fresh_segment: false,
             st: Stage {
                 role: Role::Data,
                 seq: 0,
@@ -1043,6 +1060,11 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             SegHead {
                 seq: r.seq,
                 session: self.session,
+                flags: if role == Role::Data && self.fresh_segment {
+                    SEG_FRESH
+                } else {
+                    0
+                },
                 tracks: if role == Role::Data {
                     (n - 1) as u32
                 } else {
@@ -1323,7 +1345,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         {
             self.meta_since_sb += 1;
             debug_assert!(
-                self.meta_since_sb <= crate::format::META_SLACK,
+                self.meta_since_sb <= META_SLACK,
                 "more than META_SLACK meta records between two superblock writes"
             );
         }
@@ -1465,14 +1487,27 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         self.start_session().await
     }
 
-    async fn recover(&mut self, sb: Superblock) -> Result<(), Error<M::Error>> {
+    /// Recover the log from `sb` and open a new session. `POSITIONS`: every track's position from the tail's last
+    /// flush (torn records counted); without, every track starts at 0 in a [SEG_FRESH] segment.
+    async fn recover<const POSITIONS: bool>(
+        &mut self,
+        sb: Superblock,
+    ) -> Result<(), Error<M::Error>> {
         self.geo.log_id = sb.log_id;
         self.sb = sb;
         self.sb.write_seq += 1;
-        let mut rec = Recovery::default();
+        let mut rec = Recovery {
+            positions_restarted: !POSITIONS,
+            ..Recovery::default()
+        };
         // where meta positions go on, also when the meta ring holds no record yet; the scan below finds it, never
-        // behind what the superblock says (a mount that didn't parse the tail may have skipped ahead)
-        self.meta_next = sb.meta_next;
+        // behind what the superblock says (a mount that didn't parse the tail may have skipped ahead); without
+        // the scan, past every position written since the superblock (META_SLACK)
+        self.meta_next = if POSITIONS {
+            sb.meta_next
+        } else {
+            sb.meta_next + META_SLACK
+        };
 
         // the meta tail: the last segment with a block 0, and the end of what it holds; appended to
         if sb.meta_tail_seq != NONE {
@@ -1490,8 +1525,10 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                     block: end,
                 };
                 // positions: the last flush of the meta tail
-                let scanned = self.scan_last_flush(Role::Meta, seq, end, &mut rec).await?;
-                self.meta_next = scanned.max(sb.meta_next);
+                if POSITIONS {
+                    let scanned = self.scan_last_flush(Role::Meta, seq, end, &mut rec).await?;
+                    self.meta_next = scanned.max(sb.meta_next);
+                }
             } else {
                 self.meta.next_seq = sb.meta_tail_seq;
             }
@@ -1506,11 +1543,23 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                 rec.torn_blocks += torn;
                 self.data.next_seq = seq + 1;
                 self.data.seq = seq;
-                self.scan_last_flush(Role::Data, seq, end, &mut rec).await?;
+                if POSITIONS {
+                    self.scan_last_flush(Role::Data, seq, end, &mut rec).await?;
+                }
             } else {
                 // opened, never written (a cut before the mount's sync): its slot is used again
                 self.data.next_seq = sb.data_tail_seq;
             }
+        }
+        if !POSITIONS {
+            // every data track a new stream from 0 in this session's first segment, in a session no host holds
+            let session = STORE_SESSION | sb.next_session;
+            for t in self.b.tracks[1..self.n_tracks].iter_mut() {
+                t.stream_session = session;
+            }
+            // the skipped-to meta_next goes on the medium before a meta record does: a record written past the
+            // newest superblock's meta_next + META_SLACK would let the next such mount reuse its position
+            self.write_superblock().await?;
         }
         rec.reads += self.reads;
         self.recovery = rec;
@@ -1922,6 +1971,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         self.write_superblock().await?;
         // the data segment of this session
         self.close_segment(Role::Data).await?;
+        self.fresh_segment = self.recovery.positions_restarted;
         let rec = self.recovery;
         self.push_system(SystemEvent::SessionStart {
             session: self.session,
@@ -1935,6 +1985,8 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             bundle_hash: hash,
         })
         .await?;
-        self.sync().await
+        self.sync().await?;
+        self.fresh_segment = false;
+        Ok(())
     }
 }

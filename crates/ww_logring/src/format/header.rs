@@ -205,11 +205,17 @@ impl<'a> TrackEntry<'a> {
     }
 }
 
+/// Segment head flag bit 0: this segment opens a session whose mount didn't recover positions; every track
+/// counts its positions from 0 here, the system track included (`docs/format.md` §4).
+pub const SEG_FRESH: u32 = 1;
+
 /// The fixed part of a segment head: what a binary search over segments reads.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SegHead {
     pub seq: u64,
     pub session: u32,
+    /// Flag bits: [SEG_FRESH]; bits a reader doesn't know only add information and are ignored.
+    pub flags: u32,
     /// Data tracks in the table (numbers 1..=tracks), below [MAX_TRACKS].
     pub tracks: u32,
 }
@@ -223,7 +229,7 @@ impl SegHead {
         enc.u8(KIND_SEGMENT)?;
         enc.u64le(self.seq)?;
         enc.u32le(self.session)?;
-        enc.u32le(0)?;
+        enc.u32le(self.flags)?;
         enc.uvar(self.tracks as u64)
     }
 
@@ -234,7 +240,7 @@ impl SegHead {
         }
         let seq = dec.u64le()?;
         let session = dec.u32le()?;
-        let _flags = dec.u32le()?;
+        let flags = dec.u32le()?;
         let tracks = u32::try_from(dec.uvar()?).ok()?;
         if tracks as usize >= MAX_TRACKS {
             return None;
@@ -242,6 +248,7 @@ impl SegHead {
         Some(SegHead {
             seq,
             session,
+            flags,
             tracks,
         })
     }
@@ -490,6 +497,7 @@ mod tests {
         SegHead {
             seq: 9,
             session: 2,
+            flags: SEG_FRESH | 6,
             tracks: 1000,
         }
         .encode(&mut enc)
@@ -525,7 +533,7 @@ mod tests {
         let n = enc.len();
         let mut dec = Dec::new(&buf[..n]);
         let sh = SegHead::decode(&mut dec).unwrap();
-        assert_eq!((sh.seq, sh.tracks), (9, 1000));
+        assert_eq!((sh.seq, sh.flags, sh.tracks), (9, SEG_FRESH | 6, 1000));
         let mut got = Vec::new();
         let fh = FlushHead::decode_all(&mut dec, |i, p| {
             got.push((i, p));

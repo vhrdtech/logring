@@ -128,13 +128,17 @@ fn write_fuzz_seeds() {
     let info = crate::harness::info();
     let mut rng = Rng::new(9);
     let mut image = vec![0u8; IMAGE];
-    for seed in 0..3 {
-        let mut lr = block_on(Logring::<_, 1024, 6>::mount_leaked(
-            SimSd::from_image(image, rng.next()),
-            cfg,
-            info,
-        ))
-        .unwrap();
+    let mut bufs = Box::new(crate::Buffers::<1024, 6>::new());
+    for seed in 0..4 {
+        let mut lr =
+            Logring::<_, 1024, 6>::new(SimSd::from_image(image, rng.next()), &mut bufs, cfg, info)
+                .unwrap();
+        // the fourth session as a small build mounts: a FRESH segment, positions from 0
+        if seed == 3 {
+            block_on(lr.mount_small()).unwrap();
+        } else {
+            block_on(lr.mount()).unwrap();
+        }
         for i in 0..(40 * (seed + 1)) {
             let len = rng.range(1, 200) as usize;
             let item: Vec<u8> = (0..len).map(|j| (i * 5 + j as u64) as u8).collect();
