@@ -21,10 +21,9 @@ mod ring;
 pub use card::{
     CardGeometry, CardInfo, FALLBACK_FLUSH, FALLBACK_SEGMENT, MAX_AU, RU_BYTES, SdStatus,
 };
-pub use check::{
-    Aliased, CheckOptions, Clock, SWEEP_PICK_PERMILLE, SWEEP_SIZES, SizeResult, Sweep, alias_test,
-    sweep,
-};
+pub use check::{Aliased, Clock, SWEEP_PICK_PERMILLE, SWEEP_SIZES, SizeResult, Sweep};
+#[cfg(feature = "card-check")]
+pub use check::{CheckOptions, alias_test, sweep};
 pub use format::{
     CardReport, FormatError, FormatOptions, Formatted, README, format_card, recreate_ring,
 };

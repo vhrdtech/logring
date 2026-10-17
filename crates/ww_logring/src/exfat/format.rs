@@ -2,7 +2,9 @@
 //! files ([recreate_ring]).
 
 use super::card::{CardGeometry, CardInfo};
-use super::check::{Aliased, CheckOptions, Clock, Sweep, alias_test, sweep};
+use super::check::{Aliased, Clock, Sweep};
+#[cfg(feature = "card-check")]
+use super::check::{CheckOptions, alias_test, sweep};
 use super::ring::{Binding, ExfatRing};
 use super::{RING_ATTRIBUTES, RING_NAME};
 use crate::Config;
@@ -35,7 +37,8 @@ pub struct FormatOptions<'a> {
     pub readme: &'a [u8],
     /// The files' timestamps.
     pub time: Timestamp,
-    /// The card check before the format.
+    /// The card check before the format (feature `card-check`).
+    #[cfg(feature = "card-check")]
     pub check: CheckOptions,
 }
 
@@ -48,6 +51,7 @@ impl<'a> FormatOptions<'a> {
             meta_segments: 4,
             readme: README,
             time: Timestamp::DEFAULT,
+            #[cfg(feature = "card-check")]
             check: CheckOptions::default(),
         }
     }
@@ -131,7 +135,8 @@ fn fs<E>(e: FsError<E>) -> FormatError<E> {
     }
 }
 
-/// Format a card for the logring: the card check (aliasing test, write-size sweep; [CheckOptions]), then MBR +
+/// Format a card for the logring: the card check (feature `card-check`: aliasing test, write-size sweep, as
+/// `CheckOptions` says; without the feature nothing is checked and `clock` is unused), then MBR +
 /// exFAT with the card's allocation unit as boundary unit where it is a power of two, `README.txt`, and the ring
 /// file `logring.wlr` (read-only + system + hidden, contiguous, starting on an AU boundary, whole segments) at the
 /// end of the free space, `rw_bytes` left free before it. Erases the card. The ring header isn't written yet:
@@ -149,9 +154,13 @@ pub async fn format_card<D: BlockDevice, C: Clock>(
     if scratch.len() < SECTOR_SIZE {
         return Err(FormatError::Scratch);
     }
+    #[cfg(not(feature = "card-check"))]
+    let _ = clock;
     let sectors = dev.sector_count();
     let geo = CardGeometry::from_card(card);
+    #[cfg_attr(not(feature = "card-check"), allow(unused_mut))]
     let mut alias_checked = false;
+    #[cfg(feature = "card-check")]
     if opts.check.aliasing {
         if let Some(a) = alias_test(&mut dev, opts.check.alias_points, opts.serial)
             .await
@@ -161,7 +170,9 @@ pub async fn format_card<D: BlockDevice, C: Clock>(
         }
         alias_checked = true;
     }
+    #[cfg_attr(not(feature = "card-check"), allow(unused_mut))]
     let mut sw = Sweep::default();
+    #[cfg(feature = "card-check")]
     if opts.check.sweep {
         // in the second half of the card: the ring goes there, the rw region before it stays as written
         sw = sweep(

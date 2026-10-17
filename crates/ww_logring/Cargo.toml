@@ -9,11 +9,14 @@ repository.workspace = true
 rust-version.workspace = true
 
 [features]
-default = []
+default = ["card-check"]
 # Host-side use (ww_logring_export, ww_logring_cli, tests): file-backed media, no RAM/flash limits assumed.
 std = ["ww_stream/std", "wire_weaver/std", "ww_si/std", "exfat_lite?/std"]
 # The ring as the file logring.wlr of an exFAT volume (LOG-3): ExfatRing, the mount check, format and card check.
 exfat = ["dep:exfat_lite"]
+# The card check of exfat::format_card (fake-card aliasing test, write-size sweep), 3.6-5 KB of flash; without
+# it a format checks nothing and stores no measured flush size (LOG-3).
+card-check = []
 # BddDevice: an SD driver implementing block-device-driver's BlockDevice<512> under exfat (multi-block writes).
 block-device-driver = ["exfat", "dep:block-device-driver", "dep:aligned"]
 

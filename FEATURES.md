@@ -48,7 +48,7 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   file `logring.wlr` as a `LogMedium` window that refuses any access outside it; `open`, the mount binding check
   (volume, contiguous file, whole sectors, bitmap, header A/B bound to volume serial, first cluster, cluster count
   and start LBA) giving `Bound` or `Unbound(reason)`, lost attributes a warning with `restore_attributes`;
-  `format_card` with the card check (aliasing test for fake cards, a write-size sweep 16 KB..1 MB that stores the
+  `format_card` with the card check (feature `card-check`, default on: aliasing test for fake cards, a write-size sweep 16 KB..1 MB that stores the
   best `flush_bytes` in the superblock) and geometry from `CardInfo` (SD Status `AU_SIZE`/`UHS_AU_SIZE`/`VSC_AU_SIZE`,
   erase fields, speed classes; 4 MB segments / 64 KB flushes as fallbacks); `recreate_ring` keeping the rw files;
   `bdd::BddDevice` (feature `block-device-driver`): a `block-device-driver` SD driver under it, multi-block writes

@@ -4,6 +4,11 @@
 
 ### Added
 
+- Feature `card-check` (default on): `format_card`'s card check (aliasing test, write-size sweep, `CheckOptions`,
+  `alias_test`, `sweep`); a small build without it formats unchecked, its `CardReport` says so
+  (`alias_checked: false`, an all-zero `Sweep`, `card_flush_bytes` 0: the fallback or the setting). `just size
+  cuts`, M33: `full` 5.0 KB (opt s) / 3.6 KB (opt z) less flash without it (LOG-3, P2628#17oct-1623b).
+- `just size cuts`: the flash each feature of the size crate costs, every bin built with it off (LOG-9).
 - `just size`: flash and RAM of the device side per MCU target (Cortex-M0+, M4/M7, M33, RISC-V imac/imc) at
   opt-level s and z, per crate, source file, function and type, from size examples in `size/` (LOG-9).
 - `ww_logring::reader`: the indexed reader (no_std, no alloc): seeks by track position and by device time with

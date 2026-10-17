@@ -1,7 +1,9 @@
 //! The card check before a format: an aliasing test that catches fake cards (they report more than they hold and
 //! wrap writes around), and a sweep of write sizes that measures speed and stalls and picks the card's best
-//! `flush_bytes`. Both write to the card: run them only once the user said yes to formatting it.
+//! `flush_bytes`. Both write to the card: run them only once the user said yes to formatting it. Feature
+//! `card-check` (default on); without it a format checks nothing and its [Sweep] is all zero.
 
+#[cfg(feature = "card-check")]
 use exfat_lite::{BlockDevice, SECTOR_SIZE};
 
 /// Microseconds from some fixed point, for the sweep. A closure `FnMut() -> u64` is one.
@@ -31,6 +33,7 @@ pub const SWEEP_SIZES: [u32; 7] = [
 pub const SWEEP_PICK_PERMILLE: u64 = 900;
 
 /// What the card check runs.
+#[cfg(feature = "card-check")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CheckOptions {
     /// Run the aliasing test.
@@ -43,6 +46,7 @@ pub struct CheckOptions {
     pub alias_points: u32,
 }
 
+#[cfg(feature = "card-check")]
 impl Default for CheckOptions {
     fn default() -> Self {
         CheckOptions {
@@ -102,6 +106,7 @@ pub struct Sweep {
 }
 
 /// A tag sector of the aliasing test.
+#[cfg(feature = "card-check")]
 fn tag(buf: &mut [u8; SECTOR_SIZE], lba: u64, nonce: u32) {
     buf.fill(0);
     buf[0..8].copy_from_slice(b"WLRALIAS");
@@ -114,6 +119,7 @@ fn tag(buf: &mut [u8; SECTOR_SIZE], lba: u64, nonce: u32) {
 
 /// The points of the aliasing test in ascending order, each once: every power of two below `n`, `points` spread
 /// points (off the powers of two by a few sectors) and the last sector. Sector 0 is not one (it is the witness).
+#[cfg(feature = "card-check")]
 struct Points {
     n: u64,
     points: u32,
@@ -123,6 +129,7 @@ struct Points {
     prev: u64,
 }
 
+#[cfg(feature = "card-check")]
 impl Points {
     fn new(n: u64, points: u32) -> Self {
         Points {
@@ -136,6 +143,7 @@ impl Points {
     }
 }
 
+#[cfg(feature = "card-check")]
 impl Iterator for Points {
     type Item = u64;
 
@@ -171,6 +179,7 @@ impl Iterator for Points {
 /// sector 0 back (a fake card wraps the write onto it). At the end every point is read once more, for cards that
 /// map points onto each other some other way. `Ok(None)`: passed. About four sector accesses per point;
 /// overwrites those sectors.
+#[cfg(feature = "card-check")]
 pub async fn alias_test<D: BlockDevice>(
     dev: &mut D,
     points: u32,
@@ -224,6 +233,7 @@ pub async fn alias_test<D: BlockDevice>(
 /// writes of that size, each size from its own allocation unit boundary, from `start_lba` on (an AU-aligned
 /// place that is free to overwrite, inside `end_lba`). Timed with `clock`; picks `best_flush_bytes` (the
 /// smallest size within [SWEEP_PICK_PERMILLE] of the fastest).
+#[cfg(feature = "card-check")]
 pub async fn sweep<D: BlockDevice, C: Clock>(
     dev: &mut D,
     clock: &mut C,

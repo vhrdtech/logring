@@ -60,6 +60,13 @@ const BINS: &[(&str, &str)] = &[
     ),
 ];
 
+/// Features of the size crate, each forwarding to `ww_logring`'s feature of the same name (default on), with what
+/// turning it off takes out.
+const FEATURES: &[(&str, &str)] = &[(
+    "card-check",
+    "the card check of `format_card` (aliasing test, sweep)",
+)];
+
 /// The target and profile the per-crate and per-type tables are made for.
 const DETAIL_TARGET: &str = "thumbv8m.main-none-eabihf";
 
@@ -80,6 +87,8 @@ enum Cmd {
     },
     /// Build every bin for every target and profile; flash and static RAM.
     Matrix,
+    /// Flash each feature of the size crate costs: every bin built with that one feature off, thumbv8m.main.
+    Cuts,
     /// Flash of one built bin per crate, source file and function.
     Attribute {
         #[arg(long, default_value = DETAIL_TARGET, value_parser = target_names())]
@@ -142,6 +151,7 @@ fn main() -> Result<()> {
     match Cli::parse().cmd {
         Cmd::All { top } => {
             print!("{}", matrix()?);
+            print!("\n{}", cuts()?);
             for (bin, _) in BINS.iter().filter(|(b, _)| *b != "baseline") {
                 println!(
                     "\n## {bin}: flash by crate, file and function ({DETAIL_TARGET}, opt s)\n"
@@ -152,6 +162,12 @@ fn main() -> Result<()> {
             }
         }
         Cmd::Matrix => print!("{}", matrix()?),
+        Cmd::Cuts => {
+            for (p, _) in PROFILES {
+                build(DETAIL_TARGET, p)?;
+            }
+            print!("{}", cuts()?)
+        }
         Cmd::Attribute {
             target,
             profile,
@@ -190,6 +206,11 @@ fn elf(target: &str, profile: &str, bin: &str) -> PathBuf {
 
 /// Build all bins of `size/` for `target` with `profile`.
 fn build(target: &str, profile: &str) -> Result<()> {
+    build_with(target, profile, &[])
+}
+
+/// [build] with `extra` cargo arguments (features, a target dir).
+fn build_with(target: &str, profile: &str, extra: &[String]) -> Result<()> {
     let out = Command::new("cargo")
         .args([
             "build",
@@ -200,6 +221,7 @@ fn build(target: &str, profile: &str) -> Result<()> {
             "--target",
             target,
         ])
+        .args(extra)
         .current_dir(size_dir())
         .output()
         .context("running cargo")?;
@@ -321,6 +343,56 @@ fn matrix() -> Result<String> {
     s.push_str("\nBins:\n\n");
     for (b, h) in BINS {
         writeln!(s, "- `{b}`: {h}").unwrap();
+    }
+    Ok(s)
+}
+
+/// What each of [FEATURES] costs: every bin with that feature off (its own target dir), against the default
+/// build of the same profile (built before).
+fn cuts() -> Result<String> {
+    let mut s = String::new();
+    writeln!(
+        s,
+        "## Feature cuts, {DETAIL_TARGET}: flash saved with one feature off, bytes\n"
+    )
+    .unwrap();
+    s.push_str("| feature off | bin | opt s | opt z |\n|---|---|---:|---:|\n");
+    for (f, what) in FEATURES {
+        let others: Vec<&str> = FEATURES.iter().map(|x| x.0).filter(|x| x != f).collect();
+        let dir = size_dir().join("target").join(format!("cut-{f}"));
+        let mut args = vec![
+            "--no-default-features".to_string(),
+            "--target-dir".into(),
+            dir.display().to_string(),
+        ];
+        if !others.is_empty() {
+            args.push("--features".into());
+            args.push(others.join(","));
+        }
+        let mut rows = Vec::new();
+        for (b, _) in BINS {
+            let mut saved = Vec::new();
+            for (p, _) in PROFILES {
+                build_with(DETAIL_TARGET, p, &args)?;
+                let full = sections(&elf(DETAIL_TARGET, p, b))?.flash();
+                let cut = sections(&dir.join(DETAIL_TARGET).join(p).join(b))?.flash();
+                saved.push(full as i64 - cut as i64);
+            }
+            if saved.iter().any(|&x| x != 0) {
+                rows.push(format!("| `{f}` | {b} | {} | {} |", saved[0], saved[1]));
+            }
+        }
+        if rows.is_empty() {
+            writeln!(s, "| `{f}` | (no bin changes) | 0 | 0 |").unwrap();
+        }
+        for r in rows {
+            writeln!(s, "{r}").unwrap();
+        }
+        let _ = what;
+    }
+    s.push_str("\nFeatures:\n\n");
+    for (f, what) in FEATURES {
+        writeln!(s, "- `{f}`: {what}").unwrap();
     }
     Ok(s)
 }
