@@ -1,0 +1,20 @@
+[package]
+name = "ww_logring_fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+ww_logring = { path = "../crates/ww_logring", features = ["std"] }
+ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", rev = "fcd8984d793704f903984e829b7b33263d223918", default-features = false, features = ["log-store", "std"] }
+
+[[bin]]
+name = "mount"
+path = "fuzz_targets/mount.rs"
+test = false
+doc = false
+bench = false

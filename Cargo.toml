@@ -1,5 +1,6 @@
 [workspace]
 resolver = "3"
+exclude = ["fuzz"]
 members = [
     "crates/ww_logring",
     "crates/ww_logring_cli",
@@ -21,7 +22,13 @@ ww_logring = { path = "crates/ww_logring", version = "0.1.0", default-features =
 anyhow = "1"
 clap = { version = "4.6", features = ["derive", "env"] }
 clap_complete = { version = "4.6", features = ["unstable-dynamic"] }
+crc = "3.4"
 indicatif = "0.18"
 pyo3 = { version = "0.29", features = ["abi3-py39"] }
 serde_json = "1"
-thiserror = "2"
+thiserror = { version = "2", default-features = false }
+
+# wire_weaver 0.5 is unreleased: git with a pinned rev, bumped on purpose in its own commit (AGENTS.md "Dependencies")
+wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver", rev = "fcd8984d793704f903984e829b7b33263d223918", default-features = false }
+ww_si = { git = "https://github.com/vhrdtech/wire_weaver", rev = "fcd8984d793704f903984e829b7b33263d223918", default-features = false, features = ["time", "u32", "u64"] }
+ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", rev = "fcd8984d793704f903984e829b7b33263d223918", default-features = false, features = ["log-store"] }

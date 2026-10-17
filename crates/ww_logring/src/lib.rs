@@ -2,6 +2,26 @@
 //!
 //! Many tracks of any [shrink_wrap](https://github.com/vhrdtech/wire_weaver) type are written at once into one
 //! preallocated ring file, with sessions, recordings and markers, read back over `wire_weaver`, as a USB disk or
-//! with the `logring` PC tool. See `AGENTS.md` and `FEATURES.md` for the design and what is implemented; the
-//! format itself lands in R1 (P2628#16oct-1000).
+//! with the `logring` PC tool. The on-medium format is in `docs/format.md`; `AGENTS.md` and `FEATURES.md` say what
+//! is implemented.
 #![cfg_attr(not(feature = "std"), no_std)]
+
+pub mod format;
+#[cfg(feature = "std")]
+pub mod harness;
+#[cfg(feature = "std")]
+pub mod scan;
+pub mod stream;
+pub mod system;
+#[cfg(feature = "std")]
+pub mod tests_support;
+pub mod writer;
+
+pub use format::header::{Durability, TrackDesc};
+pub use writer::{Config, Error, Logring, Recovery, SessionInfo, TrackState};
+pub use ww_stream::store::FullPolicy;
+pub use ww_stream::store::LogMedium;
+pub use ww_stream::{Second, StreamHead};
+
+#[cfg(test)]
+mod tests;

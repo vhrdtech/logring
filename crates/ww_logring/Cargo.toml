@@ -11,8 +11,13 @@ rust-version.workspace = true
 [features]
 default = []
 # Host-side use (ww_logring_export, ww_logring_cli, tests): file-backed media, no RAM/flash limits assumed.
-std = []
+std = ["ww_stream/std", "wire_weaver/std", "ww_si/std"]
 
 [dependencies]
+crc.workspace = true
+thiserror.workspace = true
+wire_weaver.workspace = true
+ww_si.workspace = true
+ww_stream.workspace = true
 
 [dev-dependencies]
