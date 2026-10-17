@@ -17,7 +17,6 @@
   `BlockDevice<512>` under `ExfatRing` and the format, each multi-sector write one driver call (LOG-3).
 - `Config::binding` (written into the superblock at format; a mount of a log bound elsewhere fails with
   `Error::Unbound`) and `Config::card_flush_bytes` (the measured flush size, kept in the superblock) (LOG-3).
-
 - `ww_logring`: the ring format, the writer and power-cut recovery (`Logring::mount`/`format`, `push`,
   `push_head`, `marker`, `recording_start`/`stop`, `sync`, `flush_if_due`, `durable`), with sessions, track
   tables, the system track and the meta area; `docs/format.md` describes the layout; a `std` sequential `scan`
