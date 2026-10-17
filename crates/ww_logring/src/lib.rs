@@ -11,8 +11,11 @@ pub mod bdd;
 #[cfg(feature = "exfat")]
 pub mod exfat;
 pub mod format;
+pub mod reader;
 #[cfg(feature = "std")]
 pub mod harness;
+#[cfg(feature = "std")]
+pub mod image;
 #[cfg(feature = "std")]
 pub mod scan;
 pub mod stream;

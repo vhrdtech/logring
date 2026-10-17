@@ -180,6 +180,14 @@ pub enum Decoded {
 /// Decode a record's header from `dec` (the item's bytes are left in it), with `codecs` indexed by track number.
 /// `None` on malformed bytes, a track outside `codecs`, or a stream that ends inside the header.
 pub fn decode_record(dec: &mut Dec, codecs: &mut [TrackCodec]) -> Option<Decoded> {
+    decode_record_with(dec, |track| codecs.get_mut(track as usize))
+}
+
+/// [decode_record] with the codec of the record's track from `codec_of` (`None`: malformed, not decoded).
+pub fn decode_record_with<'c>(
+    dec: &mut Dec,
+    codec_of: impl FnOnce(u32) -> Option<&'c mut TrackCodec>,
+) -> Option<Decoded> {
     let b0 = dec.u8()?;
     if b0 == PAD {
         return Some(Decoded::Padding);
@@ -189,7 +197,7 @@ pub fn decode_record(dec: &mut Dec, codecs: &mut [TrackCodec]) -> Option<Decoded
     if track == TRACK_EXT as u32 {
         track = track.checked_add(u32::try_from(dec.uvar()?).ok()?)?;
     }
-    let codec = codecs.get_mut(track as usize)?;
+    let codec = codec_of(track)?;
     let head = if flags & FULL != 0 {
         if flags != FULL {
             return None;

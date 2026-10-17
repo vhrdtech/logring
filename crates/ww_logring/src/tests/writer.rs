@@ -11,9 +11,9 @@ use ww_stream::Second;
 use ww_stream::store::LogMedium;
 use ww_stream::store::log::{SimError, SimMedium, SimNor, SimSd};
 
-const BUF: usize = 1024;
-const TRACKS: usize = 8;
-type Lr<'a, M> = Logring<'a, M, BUF, TRACKS>;
+pub(super) const BUF: usize = 1024;
+pub(super) const TRACKS: usize = 8;
+pub(super) type Lr<'a, M> = Logring<'a, M, BUF, TRACKS>;
 
 static BUNDLE: [u8; 3000] = {
     let mut b = [0u8; 3000];
@@ -61,7 +61,7 @@ static TRACKS_DESC: [TrackDesc<'static>; 3] = [
     },
 ];
 
-fn info() -> SessionInfo<'static> {
+pub(super) fn info() -> SessionInfo<'static> {
     SessionInfo {
         api_crate: "usb_io_fw",
         api_major: 1,
@@ -73,7 +73,7 @@ fn info() -> SessionInfo<'static> {
     }
 }
 
-fn cfg(segment_size: u32, flush_bytes: u32) -> Config {
+pub(super) fn cfg(segment_size: u32, flush_bytes: u32) -> Config {
     Config {
         segment_size,
         meta_segments: 2,
@@ -85,11 +85,11 @@ fn cfg(segment_size: u32, flush_bytes: u32) -> Config {
     }
 }
 
-fn size(cfg: &Config, data_segments: u64) -> usize {
+pub(super) fn size(cfg: &Config, data_segments: u64) -> usize {
     (cfg.segment_size as u64 * (1 + cfg.meta_segments as u64 + data_segments)) as usize
 }
 
-fn us(v: u32) -> Second {
+pub(super) fn us(v: u32) -> Second {
     Second {
         prefix: Prefix::Micro,
         value: NumericValue::U32(v),
@@ -97,24 +97,24 @@ fn us(v: u32) -> Second {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-struct Ev {
-    track: u32,
-    head: StreamHead,
-    item: Vec<u8>,
+pub(super) struct Ev {
+    pub(super) track: u32,
+    pub(super) head: StreamHead,
+    pub(super) item: Vec<u8>,
 }
 
 /// A random multi-track workload: varied sizes (some records span blocks, some are bigger than a stage buffer),
 /// positions like a sender's, times mostly as deltas, an occasional `lost`, markers, recordings, syncs.
-struct Gen {
-    rng: Rng,
+pub(super) struct Gen {
+    pub(super) rng: Rng,
     i: u64,
     next: [u64; 4],
-    now_ms: u64,
+    pub(super) now_ms: u64,
     max_item: usize,
 }
 
 impl Gen {
-    fn new(seed: u64, max_item: usize) -> Self {
+    pub(super) fn new(seed: u64, max_item: usize) -> Self {
         Gen {
             rng: Rng::new(seed),
             i: 0,
@@ -124,7 +124,7 @@ impl Gen {
         }
     }
 
-    fn event(&mut self) -> Ev {
+    pub(super) fn event(&mut self) -> Ev {
         let i = self.i;
         self.i += 1;
         let track = self.rng.range(1, 3) as u32;
@@ -165,7 +165,7 @@ impl Gen {
 
 /// Push `n` events (and markers, recordings, syncs along the way); returns the events stored, and the event a
 /// power cut interrupted, if one did.
-fn workload<M: LogMedium>(
+pub(super) fn workload<M: LogMedium>(
     lr: &mut Lr<M>,
     g: &mut Gen,
     n: usize,
@@ -199,7 +199,7 @@ fn workload<M: LogMedium>(
 
 /// Compare two event lists, reporting the first difference briefly.
 #[track_caller]
-fn assert_same(got: &[Ev], want: &[Ev], what: &str) {
+pub(super) fn assert_same(got: &[Ev], want: &[Ev], what: &str) {
     for (i, (g, w)) in got.iter().zip(want.iter()).enumerate() {
         assert!(
             g == w,
@@ -215,7 +215,7 @@ fn assert_same(got: &[Ev], want: &[Ev], what: &str) {
     assert_eq!(got.len(), want.len(), "{what}: lengths");
 }
 
-fn scanned(scan: &Scan) -> Vec<Ev> {
+pub(super) fn scanned(scan: &Scan) -> Vec<Ev> {
     scan.records()
         .filter(|(_, r)| r.track != 0)
         .map(|(_, r)| Ev {
@@ -226,14 +226,14 @@ fn scanned(scan: &Scan) -> Vec<Ev> {
         .collect()
 }
 
-fn scan<M: LogMedium>(medium: &mut M) -> Scan
+pub(super) fn scan<M: LogMedium>(medium: &mut M) -> Scan
 where
     M::Error: core::fmt::Debug,
 {
     block_on(Scan::open(medium, None)).unwrap()
 }
 
-fn mount<M: LogMedium>(medium: M, cfg: Config) -> Lr<'static, M>
+pub(super) fn mount<M: LogMedium>(medium: M, cfg: Config) -> Lr<'static, M>
 where
     M::Error: core::fmt::Debug,
 {
@@ -416,7 +416,7 @@ fn nor_round_trip_and_remount() {
 /// hint and the one before it, a walk of at most `sb_every + 1` segments, a binary search over the segment's
 /// blocks plus the probes past its end, the last block's flush offset, and the last flush's blocks (plus a few
 /// for headers straddling blocks).
-fn mount_read_bound(cfg: &Config, data_segments: u64) -> u64 {
+pub(super) fn mount_read_bound(cfg: &Config, data_segments: u64) -> u64 {
     let blocks = (cfg.segment_size / BLOCK as u32) as u64;
     let sb_every = (data_segments / 4).clamp(1, 16);
     let log2 = 64 - blocks.leading_zeros() as u64;
@@ -428,7 +428,7 @@ fn mount_read_bound(cfg: &Config, data_segments: u64) -> u64 {
 /// Mount reads are bounded whatever the workload before: the superblocks, the hint and a short walk, a binary
 /// search in the last segment and its last flush, for the data and the meta ring each.
 #[test]
-fn mount_reads_are_bounded() {
+pub(super) fn mount_reads_are_bounded() {
     let cfg = cfg(16384, 4096);
     let segments = 64;
     let bound = mount_read_bound(&cfg, segments);

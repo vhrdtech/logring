@@ -1,7 +1,10 @@
 //! The mount-on-garbage harness (`std`): what the fuzz target `fuzz/fuzz_targets/mount.rs` and the corruption
 //! test run. Takes any bytes as a ring image, mounts, logs, remounts and scans; nothing may panic.
 
+use crate::format::Role;
+use crate::reader::{AllTracks, Reader, TrackSummary, Walker};
 use crate::scan::Scan;
+use crate::writer::MAX_TRACKS;
 use crate::tests_support::block_on;
 use crate::{Config, Durability, FullPolicy, Logring, SessionInfo, TrackDesc};
 use ww_stream::store::log::SimSd;
@@ -68,7 +71,8 @@ pub fn mount_garbage(data: &[u8]) -> bool {
     let mut image = vec![0u8; IMAGE];
     let n = data.len().min(IMAGE);
     image[..n].copy_from_slice(&data[..n]);
-    let medium = SimSd::from_image(image, 1);
+    let mut medium = SimSd::from_image(image, 1);
+    read_everything(&mut medium);
     let cfg = config();
     let Ok(mut lr) = block_on(Logring::<_, BUF, TRACKS>::mount(medium, cfg, info())) else {
         return false;
@@ -92,6 +96,56 @@ pub fn mount_garbage(data: &[u8]) -> bool {
         let mut medium = lr.into_medium();
         let _ = block_on(Scan::open(&mut medium, None));
         let _ = block_on(Scan::open(&mut medium, Some(4096)));
+        read_everything(&mut medium);
     }
     found
+}
+
+/// Open `medium` with the indexed reader and use all of it: a walk over everything, seeks by track position and
+/// by time, summaries, recordings. Results are ignored; nothing may panic or loop.
+pub fn read_everything<M: ww_stream::store::LogMedium>(medium: &mut M) {
+    let Ok(mut rd) = block_on(Reader::open(medium, None)) else {
+        return;
+    };
+    let range = rd.range(Role::Data);
+    let mut item = vec![0u8; 4096];
+    let mut w = Walker::at_segment(AllTracks::default(), Role::Data, range.oldest);
+    w.truncate = true;
+    let mut keys = vec![0u64];
+    let mut sessions = vec![];
+    while let Ok(Some(f)) = block_on(w.next(&mut rd, medium, &mut item)) {
+        keys.extend(w.decode.key(f.track));
+        sessions.push(f.session);
+    }
+    keys.sort();
+    keys.dedup();
+    for key in keys.iter().take(8) {
+        for pos in [0, 1, 5, 1 << 20, u64::MAX] {
+            if let Ok(mut w) = block_on(rd.seek_track(medium, *key, 0, pos)) {
+                w.truncate = true;
+                let _ = block_on(w.next(&mut rd, medium, &mut item));
+            }
+        }
+    }
+    sessions.dedup();
+    for s in sessions.iter().take(4) {
+        let t = ww_stream::Second {
+            prefix: ww_si::Prefix::Micro,
+            value: ww_si::ww_numeric::NumericValue::U32(1000),
+        };
+        let _ = block_on(rd.seek_time(medium, *s, &t));
+    }
+    if let Some(tail) = range.tail {
+        let mut sums = [TrackSummary::default(); MAX_TRACKS];
+        for seq in range.oldest..=tail.min(range.oldest + 64) {
+            let _ = block_on(rd.summary(medium, seq, &mut sums));
+        }
+    }
+    let mut recs = vec![];
+    let _ = block_on(rd.recordings(medium, |r| recs.push(r)));
+    for r in recs.iter().take(4) {
+        let mut w = rd.recording(r);
+        w.walker.truncate = true;
+        while let Ok(Some(_)) = block_on(w.next(&mut rd, medium, &mut item)) {}
+    }
 }
