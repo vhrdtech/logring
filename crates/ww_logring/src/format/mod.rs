@@ -383,13 +383,23 @@ pub(crate) fn u64_at(b: &[u8], i: usize) -> u64 {
 
 /// FNV-1a, 64 bit: the stable key of a track and the hash of a bundle. Documented in `docs/format.md` so PC tools
 /// compute the same.
-pub fn fnv1a(parts: &[&[u8]]) -> u64 {
+pub const fn fnv1a(parts: &[&[u8]]) -> u64 {
     let mut h = 0xcbf2_9ce4_8422_2325u64;
-    for p in parts {
-        for &b in *p {
-            h ^= b as u64;
-            h = h.wrapping_mul(0x0100_0000_01b3);
-        }
+    let mut i = 0;
+    while i < parts.len() {
+        h = fnv1a_from(h, parts[i]);
+        i += 1;
+    }
+    h
+}
+
+/// FNV-1a, 64 bit, going on from `h` (what [fnv1a] returned for the parts before).
+pub const fn fnv1a_from(mut h: u64, bytes: &[u8]) -> u64 {
+    let mut i = 0;
+    while i < bytes.len() {
+        h ^= bytes[i] as u64;
+        h = h.wrapping_mul(0x0100_0000_01b3);
+        i += 1;
     }
     h
 }

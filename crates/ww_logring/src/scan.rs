@@ -20,7 +20,10 @@ pub struct TrackInfo {
     pub released: u64,
     pub stream_session: u32,
     pub stream_start: u64,
-    pub path: String,
+    /// The stream's path in the device API, wire_weaver ids.
+    pub path: Vec<u32>,
+    pub signature: Option<[u8; 8]>,
+    pub global_id: Option<u32>,
     pub durability: Durability,
 }
 
@@ -227,7 +230,9 @@ async fn scan_segment<M: LogMedium>(
                     released: e.released,
                     stream_session: e.stream_session,
                     stream_start: e.stream_start,
-                    path: e.desc.path.to_string(),
+                    path: e.desc.path.iter().flatten().map(|id| id.0).collect(),
+                    signature: e.desc.signature,
+                    global_id: e.desc.global_id,
                     durability: e.desc.durability,
                 });
                 stream.skip(d.pos()).await.map_err(ScanError::Medium)?;

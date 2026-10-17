@@ -5,6 +5,8 @@ use crate::format::BLOCK;
 use crate::scan::Scan;
 use crate::system::SystemEvent;
 use crate::{Config, Durability, Error, FullPolicy, Logring, SessionInfo, StreamHead, TrackDesc};
+use crate::{FullVersion, UNib32};
+use wire_weaver::ww_version::Version;
 use ww_si::Prefix;
 use ww_si::ww_numeric::NumericValue;
 use ww_stream::Second;
@@ -27,44 +29,31 @@ static BUNDLE: [u8; 3000] = {
 
 static TRACKS_DESC: [TrackDesc<'static>; 3] = [
     TrackDesc {
-        path: "can[0].rx",
-        crate_name: "ww_can_bus",
-        crate_version: "0.3.0",
-        type_path: "Frame",
-        signature: [1; 8],
+        signature: Some([1; 8]),
         global_id: Some(5),
-        units: "frames",
         durability: Durability::Normal,
         rate: Some(1000),
+        ..TrackDesc::new(&[UNib32(3), UNib32(0), UNib32(1)])
     },
     TrackDesc {
-        path: "adc[0].samples",
-        crate_name: "usb_io_fw",
-        crate_version: "1.0.0",
-        type_path: "Samples",
-        signature: [2; 8],
+        signature: Some([2; 8]),
         global_id: None,
-        units: "sets",
         durability: Durability::Normal,
         rate: None,
+        ..TrackDesc::new(&[UNib32(4), UNib32(0), UNib32(0)])
     },
     TrackDesc {
-        path: "events",
-        crate_name: "usb_io_fw",
-        crate_version: "1.0.0",
-        type_path: "Event",
-        signature: [3; 8],
+        signature: Some([3; 8]),
         global_id: None,
-        units: "",
         durability: Durability::Immediate,
         rate: None,
+        ..TrackDesc::new(&[UNib32(5)])
     },
 ];
 
 pub(super) fn info() -> SessionInfo<'static> {
     SessionInfo {
-        api_crate: "usb_io_fw",
-        api_major: 1,
+        api: FullVersion::new("usb_io_fw", Version::new(1, 0, 0)),
         device_id: "rePort-0001",
         fw: "usb_io_fw 1.0.0",
         hw: "rev A",
@@ -257,7 +246,7 @@ fn round_trip_without_wrap() {
     for s in &scan.data {
         assert_eq!(s.session, 1);
         assert_eq!(s.tracks.len(), 3);
-        assert_eq!(s.tracks[0].path, "can[0].rx");
+        assert_eq!(s.tracks[0].path, [3, 0, 1]);
         assert_eq!(s.tracks[2].durability, Durability::Immediate);
         assert!(!s.torn_block && !s.torn_record, "{s:?}");
     }
@@ -378,7 +367,7 @@ fn geometry_is_checked() {
     let r = block_on(Lr::mount(SimSd::from_image(image, 1), other, info()));
     assert!(matches!(r, Err(Error::Geometry)));
     // too many tracks for the writer
-    let many = [TrackDesc::new("x"); TRACKS];
+    let many = [TrackDesc::new(&[UNib32(1)]); TRACKS];
     let mut i = info();
     i.tracks = &many;
     let r = block_on(Lr::mount(SimSd::new(size(&c, 8), 1), c, i));

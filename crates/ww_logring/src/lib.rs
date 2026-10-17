@@ -25,8 +25,10 @@ pub mod tests_support;
 pub mod track_store;
 pub mod writer;
 
-pub use format::header::{Durability, TrackDesc};
+pub use format::header::{Durability, MAX_PATH, TrackDesc, api_root_id};
 pub use track_store::TrackStore;
+pub use wire_weaver::shrink_wrap::{RefVec, UNib32};
+pub use wire_weaver::ww_version::FullVersion;
 pub use writer::{Config, Error, Geo, Logring, Recovery, SessionInfo, TrackState};
 pub use ww_stream::store::FullPolicy;
 pub use ww_stream::store::LogMedium;

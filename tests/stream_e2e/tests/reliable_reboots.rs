@@ -14,9 +14,12 @@ use embassy_sync::mutex::Mutex;
 use logring_stream_api::Sample;
 use tests_common::TestDevice;
 use wire_weaver::prelude::*;
+use wire_weaver::ww_version::Version;
 use wire_weaver_client::StreamEvent;
 use ww_logring::tests_support::block_on;
-use ww_logring::{Config, FullPolicy, Logring, SessionInfo, TrackDesc, TrackStore};
+use ww_logring::{
+    Config, FullPolicy, FullVersion, Logring, SessionInfo, TrackDesc, TrackStore, UNib32,
+};
 use ww_stream::StreamCursor;
 use ww_stream::store::LogMedium;
 use ww_stream::store::log::{SimError, SimSd};
@@ -103,10 +106,7 @@ impl LogMedium for Card {
     }
 }
 
-static TRACK_DESC: [TrackDesc<'static>; 1] = [TrackDesc {
-    units: "samples",
-    ..TrackDesc::new("samples")
-}];
+static TRACK_DESC: [TrackDesc<'static>; 1] = [TrackDesc::new(&[UNib32(0)])];
 
 fn config() -> Config {
     Config {
@@ -122,8 +122,7 @@ fn config() -> Config {
 
 fn mount(card: Card) -> &'static Shared {
     let info = SessionInfo {
-        api_crate: "logring_stream_api",
-        api_major: 0,
+        api: FullVersion::new("logring_stream_api", Version::new(0, 0, 0)),
         device_id: "e2e",
         fw: "test",
         hw: "sim",

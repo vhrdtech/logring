@@ -36,6 +36,14 @@
 
 ### Changed
 
+- Track identity is numbers only: `TrackDesc::path` is the stream's path in the device API as wire_weaver ids
+  (`RefVec<UNib32>`, up to `MAX_PATH`), the item type is its `ww_self` signature and `ww_global` id (both
+  optional); crate name, version, type path and units are no longer stored with a track: the PC takes them from
+  the bundle. `SessionInfo::api` takes the API root's `FullVersion` (`<ROOT_TRAIT>_FULL_GID`) instead of
+  `api_crate`/`api_major`; the stable key is FNV-1a of `api_root_id` (a `const fn`) and the path ids. The meta
+  session record carries the API root id and its `FullVersion`, a fallback for a host without the bundle. The
+  format changed, no old image reads (LOG-1, P2628#17oct-1507).
+
 - wire_weaver crates by path (`../wire_weaver`, its master) instead of a pinned git rev; `just deps-pull`, `deploy`
   pulls it first, CI checks wire_weaver out next to the repo.
 

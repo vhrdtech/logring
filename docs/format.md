@@ -121,19 +121,30 @@ system track and is never in the table). One entry per data track, a `uvar` leng
 | source | u8 | 0: this device (reserved for several devices logging into one card) |
 | durability | u8 | 0 normal, 1 immediate |
 | compression | u8 | 0 (reserved) |
-| key | u64 | stable key: FNV-1a of the API root crate's name, its major version (u32 LE) and the path |
-| signature | 8 bytes | the item type's `ww_self` signature |
-| global_id | u32 | its `ww_global` id, 0 when none |
+| key | u64 | stable key, see below |
+| flags | u8 | bit 0: a signature follows, bit 1: a global id follows |
+| signature | 8 bytes | only with flag bit 0: the item type's `ww_self` signature (wire_weaver `docs/std_library/ww_self.md`) |
+| global_id | uvar | only with flag bit 1: the `ww_global` id of the item type's crate (0 is a real id: `ww_log`) |
 | rate | u32 | nominal items per second, 0 unknown |
 | released | uvar | position released by the host (acknowledged) when the segment was opened |
-| path | string | resource path with indices: `can[1].rx` |
-| crate_name, crate_version, type_path | string | the item type |
-| units | string | what the position counts (`bytes`, `frames`, `samples`), may be empty |
-| stream_session | uvar | the track's stream session (`ww_stream`, set by `TrackStore::reset`), 0 before the first; an entry without it reads as 0 |
-| stream_start | uvar | data seq of the segment the stream session started in: the track's positions count from 0 there and grow in every segment after it; an entry without it reads as 0 |
+| path | uvar length + bytes | the stream's resource path in the device API: a `RefVec<UNib32>` of wire_weaver ids in its ShrinkWrap encoding, the form requests use (wire_weaver `docs/api/addressing.md`), array indices included, at most 16 ids |
+| stream_session | uvar | the track's stream session (`ww_stream`, set by `TrackStore::reset`), 0 before the first |
+| stream_start | uvar | data seq of the segment the stream session started in: the track's positions count from 0 there and grow in every segment after it |
 
-Strings are a `uvar` length and UTF-8 bytes, at most 48 bytes each. Fields a later version appends inside the entry
-are ignored by this reader.
+Fields a later version appends inside the entry are ignored by this reader.
+
+**No strings in a track's identity.** The device has numbers at hand, not names: a track is its path of ids and its
+item type's signature and global id. Names (`can[1].rx`, `ww_can_bus::Frame` 0.3) are made on the PC from the API
+bundle stored with the session (§6, meta `Bundle`): the path leads to the stream in the bundle, the stream to its
+item type with crate, version and type path. Exporters recognise kinds of data (a CAN frame of `ww_can_bus`, a defmt
+frame of `ww_log`) by the signature and global id, never by the path. What a position counts (bytes, frames,
+samples) follows from the item type in the bundle.
+
+**Stable key**: the same track across sessions, firmware updates that keep its path, and split files. From numbers
+only: `h = FNV-1a(api_root as u64 LE)`, then FNV-1a goes on over every path id as u32 LE. `api_root` names the
+device API across firmware updates: FNV-1a of the API root crate's name and its major version (u32 LE), the
+`FullVersion` wire_weaver generates as `<ROOT_TRAIT>_FULL_GID`; `ww_logring::api_root_id` is a `const fn`, so firmware
+computes it at build time and the crate name never reaches the card through a track.
 
 A track's positions are monotonic from its `stream_start` segment on, across sessions: a mount continues them by
 key from the tail segment's table, and a track the tail segment doesn't name starts at 0 in the new session's
@@ -185,9 +196,13 @@ every meta record is its own flush, written at once). Its items:
 
 | kind | record | fields |
 |---|---|---|
-| 1 | Session | session u32, device_id, fw, hw, bundle_hash u64, tracks u8, then `tracks` track entries (§5, `released` 0) |
+| 1 | Session | session u32, api_root u64 (§5), api (uvar length + the API root's `FullVersion` in its ShrinkWrap encoding, at most 128 bytes), device_id, fw, hw, bundle_hash u64, tracks u8, then `tracks` track entries (§5, `released` 0) |
 | 2 | Bundle | hash u64, len u32, then the bundle's bytes (the `ww_self` ApiBundle); stored once per hash while its record is still in the meta ring |
 | 3 | Recording | id u32, stopped u8, why u8 (trigger at a start, reason at a stop), session u32, data seq u64, time (length byte + Second) |
+
+The session's `api` is the one place the API root's crate name and version are stored as text: what the firmware has
+as a constant anyway, kept as a fallback for a host that doesn't have the bundle with `bundle_hash` (it can still
+say which API and version wrote the session, and look its snapshot up). Tracks and records name nothing by string.
 
 A meta segment is reused when the ring goes round (`meta_reused` counts it); the data segments still carry their
 own track tables, so data stays decodable without the meta area (the bundle is the exception: it is stored again

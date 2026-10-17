@@ -18,7 +18,11 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   P2628#16oct-1000. Plan: `prj/P2628-logring/design/plan.md` R1. Differences from the plan: per-track release
   cursors live in the segment heads (not the superblock, which stays one fixed block); the API bundle is hashed
   with FNV-1a (64 bit); a cut leaves what the stage buffer held since the last completed *write* (the stage
-  buffer `BUF` may be smaller than `flush_bytes`).
+  buffer `BUF` may be smaller than `flush_bytes`). Track identity is numbers only
+  (17 Oct 2026, P2628#17oct-1507): the path as wire_weaver ids (`RefVec<UNib32>`), the item type as `ww_self`
+  signature and `ww_global` id, the key from `api_root_id` (a `const fn` of `<ROOT_TRAIT>_FULL_GID`) and the ids;
+  names come from the bundle on the PC. The session's meta record keeps the API root's `FullVersion` as a fallback
+  for a host without the bundle.
 - 🧪 **LOG-2 reader-trackstore**: `ww_logring::reader` (no_std, no alloc): a block-cached `Walker` over the
   data or meta segments decoding one track by stable key (`OneTrack`, the other tracks stepped over) or all
   (`AllTracks`); `seek_track` (binary search over segment and flush heads by a track's position), `seek_time`

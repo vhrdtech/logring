@@ -3,7 +3,12 @@
 
 use crate::format::header::{TrackEntry, decode_time, encode_time};
 use crate::format::{Dec, Enc};
+use wire_weaver::shrink_wrap::{DeserializeShrinkWrap, SerializeShrinkWrap};
+use wire_weaver::ww_version::FullVersion;
 use ww_stream::Second;
+
+/// Longest encoded [FullVersion] of the API root in a [MetaEvent::Session].
+pub const MAX_API: usize = 128;
 
 /// Longest string in a [SystemEvent] or [MetaEvent].
 pub const MAX_LABEL: usize = 64;
@@ -164,6 +169,11 @@ pub enum MetaEvent<'a> {
     /// A session and its track table (the entries follow the header, `tracks` of them, each a [TrackEntry]).
     Session {
         session: u32,
+        /// The API root's id ([api_root_id](crate::api_root_id)), part of every track's key.
+        api_root: u64,
+        /// The API root crate's name and version, as the firmware has them (`<ROOT_TRAIT>_FULL_GID`): a fallback
+        /// for a host that doesn't have the bundle with `bundle_hash`. Tracks and records name nothing by string.
+        api: FullVersion<'a>,
         device_id: &'a str,
         fw: &'a str,
         hw: &'a str,
@@ -189,6 +199,8 @@ impl<'a> MetaEvent<'a> {
         match *self {
             MetaEvent::Session {
                 session,
+                api_root,
+                api,
                 device_id,
                 fw,
                 hw,
@@ -197,6 +209,9 @@ impl<'a> MetaEvent<'a> {
             } => {
                 enc.u8(1)?;
                 enc.u32le(session)?;
+                enc.u64le(api_root)?;
+                let mut tmp = [0u8; MAX_API];
+                enc.blob(api.to_ww_bytes(&mut tmp).ok()?)?;
                 str_blob(enc, device_id)?;
                 str_blob(enc, fw)?;
                 str_blob(enc, hw)?;
@@ -232,6 +247,8 @@ impl<'a> MetaEvent<'a> {
         Some(match dec.u8()? {
             1 => MetaEvent::Session {
                 session: dec.u32le()?,
+                api_root: dec.u64le()?,
+                api: FullVersion::from_ww_bytes(dec.blob()?).ok()?,
                 device_id: dec.str()?,
                 fw: dec.str()?,
                 hw: dec.str()?,
@@ -321,6 +338,11 @@ mod tests {
         let evs = [
             MetaEvent::Session {
                 session: 1,
+                api_root: 0x1234_5678_9abc,
+                api: FullVersion::new(
+                    "usb_io_fw",
+                    wire_weaver::ww_version::Version::full(1, 2, 3, Some("rc.1"), None),
+                ),
                 device_id: "d",
                 fw: "f",
                 hw: "h",

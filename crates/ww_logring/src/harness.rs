@@ -7,6 +7,8 @@ use crate::scan::Scan;
 use crate::tests_support::block_on;
 use crate::writer::MAX_TRACKS;
 use crate::{Config, Durability, FullPolicy, Logring, SessionInfo, TrackDesc};
+use crate::{FullVersion, UNib32};
+use wire_weaver::ww_version::Version;
 use ww_stream::store::log::SimSd;
 
 const BUF: usize = 1024;
@@ -16,34 +18,25 @@ pub const IMAGE: usize = 4096 * 8;
 
 static TRACKS_DESC: [TrackDesc<'static>; 2] = [
     TrackDesc {
-        path: "can[0].rx",
-        crate_name: "ww_can_bus",
-        crate_version: "0.3.0",
-        type_path: "Frame",
-        signature: [1; 8],
+        signature: Some([1; 8]),
         global_id: None,
-        units: "frames",
         durability: Durability::Normal,
         rate: None,
+        ..TrackDesc::new(&[UNib32(3), UNib32(0), UNib32(1)])
     },
     TrackDesc {
-        path: "events",
-        crate_name: "fw",
-        crate_version: "1.0.0",
-        type_path: "Event",
-        signature: [2; 8],
+        signature: Some([2; 8]),
         global_id: None,
-        units: "",
         durability: Durability::Immediate,
         rate: None,
+        ..TrackDesc::new(&[UNib32(5)])
     },
 ];
 
 /// The session the harness logs with.
 pub fn info() -> SessionInfo<'static> {
     SessionInfo {
-        api_crate: "fw",
-        api_major: 1,
+        api: FullVersion::new("fw", Version::new(1, 0, 0)),
         device_id: "fuzz",
         fw: "fw 1.0.0",
         hw: "none",

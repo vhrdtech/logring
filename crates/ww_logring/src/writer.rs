@@ -2,6 +2,7 @@
 //! buffer, writes them in flushes of whole blocks, keeps the meta area and the superblock, and recovers after a
 //! power cut ([Recovery]). Layout: [format](crate::format), `docs/format.md`.
 
+use crate::api_root_id;
 use crate::format::header::{
     Durability, FlushHead, KIND_FLUSH, MAX_TRACK_ENTRY, SegHead, TrackDesc, TrackEntry,
 };
@@ -14,6 +15,8 @@ use crate::format::{
 };
 use crate::stream::BlockStream;
 use crate::system::{MetaEvent, SystemEvent};
+use wire_weaver::shrink_wrap::SerializeShrinkWrap;
+use wire_weaver::ww_version::FullVersion;
 use ww_stream::store::FullPolicy;
 use ww_stream::store::LogMedium;
 use ww_stream::{Second, StreamHead};
@@ -73,9 +76,10 @@ impl Default for Config {
 /// What a session (one mount) tells the ring about itself.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct SessionInfo<'a> {
-    /// The API root crate's name and major version: part of every track's stable key.
-    pub api_crate: &'a str,
-    pub api_major: u32,
+    /// The API root: `<ROOT_TRAIT>_FULL_GID` of the API crate. Its [api_root_id] is part of every track's stable
+    /// key; the name and version themselves are stored only in the session's meta record, as a fallback for a host
+    /// without the bundle.
+    pub api: FullVersion<'a>,
     /// Device id, firmware and hardware descriptions (up to 64 bytes each), stored with the session.
     pub device_id: &'a str,
     pub fw: &'a str,
@@ -394,8 +398,13 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             return Err(Error::TooBig);
         }
         let mut tracks = [Track::default(); TRACKS];
+        let mut api = [0u8; crate::system::MAX_API];
+        if info.api.to_ww_bytes(&mut api).is_err() {
+            return Err(Error::Session);
+        }
+        let api_root = api_root_id(&info.api);
         for (i, d) in info.tracks.iter().enumerate() {
-            tracks[i + 1].key = d.key(info.api_crate, info.api_major);
+            tracks[i + 1].key = d.key(api_root);
             tracks[i + 1].immediate = d.durability == Durability::Immediate;
         }
         tracks[0].immediate = true;
@@ -1085,10 +1094,12 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
     async fn write_meta_session(&mut self) -> Result<(), Error<M::Error>> {
         // entries go through the stage after the header: assemble the record in pieces
         let n = self.n_tracks;
-        let mut hdr = [0u8; 256];
+        let mut hdr = [0u8; 512];
         let mut enc = Enc::new(&mut hdr);
         MetaEvent::Session {
             session: self.session,
+            api_root: api_root_id(&self.info.api),
+            api: self.info.api,
             device_id: self.info.device_id,
             fw: self.info.fw,
             hw: self.info.hw,
