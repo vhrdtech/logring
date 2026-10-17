@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+### Changed
+
+- wire_weaver crates by path (`../wire_weaver`, its master) instead of a pinned git rev; `just deps-pull`, `deploy`
+  pulls it first, CI checks wire_weaver out next to the repo.
+
 ### Added
 
 - `ww_logring`: the ring format, the writer and power-cut recovery (`Logring::mount`/`format`, `push`,

@@ -10,7 +10,7 @@ cargo-fuzz = true
 [dependencies]
 libfuzzer-sys = "0.4"
 ww_logring = { path = "../crates/ww_logring", features = ["std"] }
-ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", rev = "fcd8984d793704f903984e829b7b33263d223918", default-features = false, features = ["log-store", "std"] }
+ww_stream = { path = "../../wire_weaver/ww_stream", default-features = false, features = ["log-store", "std"] }
 
 [[bin]]
 name = "mount"

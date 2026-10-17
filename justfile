@@ -31,7 +31,11 @@ fuzz:
 install:
     cargo install --quiet --path crates/ww_logring_cli --locked
 
+# Pull the sibling checkouts this repo builds against by path
+deps-pull:
+    git -C ../wire_weaver pull --ff-only
+
 # Bring this PC up to main
-deploy:
+deploy: deps-pull
     tpm repos pull logring
     just install

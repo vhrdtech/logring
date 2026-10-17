@@ -88,8 +88,10 @@ run against real hardware versus only against fixtures/images.
 ## Dependencies
 
 Pure Rust only. `wire_weaver` crates (`ww_stream`, `shrink_wrap`, `ww_self`, `wire_weaver_snapshots`) aren't on
-crates.io yet (wire_weaver 0.5 unreleased): depend on them by git with a pinned `rev`, bumped on purpose in its
-own commit; move to crates.io versions once wire_weaver 0.5 ships. Same for `exfat_lite` and `usb_msc_device`
+crates.io yet (wire_weaver 0.5 unreleased): depend on them by path, `../wire_weaver/...`, so logring always builds
+against wire_weaver's master checked out next to it (`just deps-pull` updates it; CI checks it out beside this repo);
+move to crates.io versions once wire_weaver 0.5 ships (crates.io takes no path or git deps, so logring publishes after
+it). Same for `exfat_lite` and `usb_msc_device`
 until they are published. Check new dependencies with `cargo tree` for `-sys` crates and `cc`/`bindgen` build
 deps (tpm CLAUDE.md "Pure-Rust crates, no C bindings").
 

@@ -12,8 +12,17 @@ concurrency:
 jobs:
   fmt:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: logring
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: logring
+      - uses: actions/checkout@v4
+        with:
+          repository: vhrdtech/wire_weaver
+          path: wire_weaver
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
@@ -21,8 +30,17 @@ jobs:
 
   clippy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: logring
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: logring
+      - uses: actions/checkout@v4
+        with:
+          repository: vhrdtech/wire_weaver
+          path: wire_weaver
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -32,24 +50,51 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: logring
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: logring
+      - uses: actions/checkout@v4
+        with:
+          repository: vhrdtech/wire_weaver
+          path: wire_weaver
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --workspace
 
   test-py:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: logring
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: logring
+      - uses: actions/checkout@v4
+        with:
+          repository: vhrdtech/wire_weaver
+          path: wire_weaver
       - uses: dtolnay/rust-toolchain@stable
       - uses: astral-sh/setup-uv@v5
-      - working-directory: crates/ww_logring_py
+      - working-directory: logring/crates/ww_logring_py
         run: uv run --group dev pytest -q
 
   cargo-sort:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: logring
     steps:
       - uses: actions/checkout@v4
+        with:
+          path: logring
+      - uses: actions/checkout@v4
+        with:
+          repository: vhrdtech/wire_weaver
+          path: wire_weaver
       - uses: taiki-e/install-action@v2
         with:
           tool: cargo-sort
