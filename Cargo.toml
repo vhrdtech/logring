@@ -1,0 +1,27 @@
+[workspace]
+resolver = "3"
+members = [
+    "crates/ww_logring",
+    "crates/ww_logring_cli",
+    "crates/ww_logring_export",
+    "crates/ww_logring_py",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+authors = ["Roman Isaikin <roman@vhrd.tech>"]
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/vhrdtech/logring"
+rust-version = "1.88"
+
+[workspace.dependencies]
+ww_logring = { path = "crates/ww_logring", version = "0.1.0", default-features = false }
+
+anyhow = "1"
+clap = { version = "4.6", features = ["derive", "env"] }
+clap_complete = { version = "4.6", features = ["unstable-dynamic"] }
+indicatif = "0.18"
+pyo3 = { version = "0.29", features = ["abi3-py39"] }
+serde_json = "1"
+thiserror = "2"

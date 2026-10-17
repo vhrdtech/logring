@@ -1,0 +1,17 @@
+[package]
+name = "ww_logring_py"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+description = "Python module for ww_logring: open, tracks, recordings, markers, to_pandas()"
+publish = false # distributed as a Python wheel, see pyproject.toml
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3.workspace = true
+ww_logring_export = { path = "../ww_logring_export", version = "0.1.0" }

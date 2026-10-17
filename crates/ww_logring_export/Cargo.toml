@@ -1,0 +1,13 @@
+[package]
+name = "ww_logring_export"
+description = "PC-side reader and exporter for ww_logring: dynamic decode from the stored API bundle, CSV/MCAP/MF4 export"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+thiserror.workspace = true
+ww_logring = { workspace = true, features = ["std"] }

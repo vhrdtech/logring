@@ -1,0 +1,18 @@
+[package]
+name = "ww_logring"
+description = "Power-cut-safe ring log store for embedded devices: many tracks of shrink_wrap data in one preallocated file, no_std, no alloc"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+# Host-side use (ww_logring_export, ww_logring_cli, tests): file-backed media, no RAM/flash limits assumed.
+std = []
+
+[dependencies]
+
+[dev-dependencies]

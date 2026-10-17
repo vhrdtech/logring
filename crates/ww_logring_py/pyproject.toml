@@ -1,0 +1,27 @@
+[build-system]
+requires = ["maturin>=1.11,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "ww_logring"
+description = "Open ww_logring cards, images and split files: tracks, recordings, markers, to_pandas()"
+requires-python = ">=3.9"
+license = "MIT OR Apache-2.0"
+classifiers = [
+    "Programming Language :: Rust",
+    "Programming Language :: Python :: Implementation :: CPython",
+]
+dynamic = ["version"]
+
+[project.urls]
+Repository = "https://github.com/vhrdtech/logring"
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.maturin]
+module-name = "ww_logring"
+
+[tool.uv]
+# Rebuild the package when any rust files change
+cache-keys = [{ file = "pyproject.toml" }, { file = "Cargo.toml" }, { file = "**/*.rs" }, { file = "../ww_logring_export/**/*.rs" }, { file = "../ww_logring/**/*.rs" }]

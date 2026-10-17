@@ -1,0 +1,20 @@
+[package]
+name = "ww_logring_cli"
+description = "The logring command line tool: info, ls, export, cat, check, make-image"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "logring"
+path = "src/main.rs"
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+clap_complete.workspace = true
+indicatif.workspace = true
+ww_logring_export = { path = "../ww_logring_export", version = "0.1.0" }
