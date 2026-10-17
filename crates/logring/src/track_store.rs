@@ -166,10 +166,15 @@ impl<'r, 'a, R: RawMutex, M: LogMedium, const BUF: usize, const TRACKS: usize>
         let low = self.oldest_pos.max(ts.released);
         let geo = g.geo();
         let segments = g.data_seq() + 1 - g.oldest_data_seq();
+        let newest = g.durable_newest(self.track).filter(|&n| n >= low);
         StoreState {
             session,
             oldest: (low < ts.next).then_some(low),
-            newest: g.durable_newest(self.track).filter(|&n| n >= low),
+            newest,
+            // right after newest's units: durable_next (g.durable) is newest's companion value, kept in
+            // lockstep with durable_newest at every seal and mount recovery (writer.rs); below `next` when a
+            // push since didn't make it to the medium yet, or a recovery cut records after it.
+            newest_end: newest.map(|_| g.durable(self.track).unwrap_or(0)),
             next: ts.next,
             used_bytes: segments * geo.seg,
             capacity_bytes: geo.data_n * geo.seg,

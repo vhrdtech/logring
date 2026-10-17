@@ -165,6 +165,11 @@ fn reliable_across_reboots_and_power_cuts() {
                 Some(durable.len() as u64 - 1),
                 "newest on the medium"
             );
+            assert_eq!(
+                st.newest_end,
+                Some(durable.len() as u64),
+                "newest_end right after it, below next: the 7 pushes since the sync never reached the medium"
+            );
         }
         medium = lr.into_inner().into_medium();
     }
@@ -307,6 +312,12 @@ fn finds_the_newest_record_after_a_mount() {
     let mut store = block_on(TrackStore::new(&lr, 1)).unwrap();
     let st = store.state();
     assert_eq!((st.next, st.newest, st.oldest), (300, Some(299), Some(0)));
+    assert_eq!(
+        st.newest_end,
+        Some(300),
+        "newest_end right after the newest record found on the medium itself, same as next here: durable_next \
+         was already recovered at the mount, before TrackStore::new's extra read filled in durable_newest"
+    );
     let mut buf = [0u8; 8];
     let e = block_on(store.read(299, &mut buf)).unwrap().unwrap();
     assert_eq!(e.item, &299u32.to_le_bytes()[..]);

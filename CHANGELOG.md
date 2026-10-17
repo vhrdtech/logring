@@ -144,4 +144,8 @@
   (`OneTrack::in_stream`, `Decode::ended`) stops there. Before, a seek for an older stream's position after a
   `reset_track` could find a later stream's record (positions restart in every stream) and a walk ran on into it.
   `just size` M33 opt s: `reader` 38.7 → 37.7 KB, `full` 88.0 → 87.4 (LOG-2, P2628#17oct-1711).
+- `TrackStore::state` fills `StoreState::newest_end` (`ww_stream` API-47): the position right after the newest
+  durable record's units, from `Logring::durable` (already kept in lockstep with `durable_newest`, including the
+  post-mount fixup `TrackStore::new` does when the mount's own recovery didn't find the newest record); below
+  `next` when a push since the last sync hasn't reached the medium yet (LOG-2).
 
