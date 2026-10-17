@@ -83,11 +83,6 @@
 - FEATURES.md with the planned items and ideas of `prj/P2628-logring/design/plan.md`: areas `LOG` (LOG-1..8),
   `VIEW` (VIEW-1..4), `PC` (PC-1, PC-2), `TEST` (TEST-22), each bound to its P2628 task where one exists
   (P2628#16oct-1016).
-- `logring_export`: opens a ring file, image, split `.wlr` or a mounted card's volume (its `logring.wlr`, no
-  root), decodes tracks dynamically from the API bundle stored with their session (`ww_self`,
-  `wire_weaver_snapshots` for stdlib traits and types), and exports CSV, MCAP (JSON + jsonschema) and MF4
-  (numeric channels, or ASAM `CAN_DataFrame` bus logging via `mdf4-rs` for CAN-shaped tracks). The `logring` CLI
-  and `logring_py` bindings are next (PC-1, P2628#16oct-1001h).
 - `logring` CLI: `info`, `export`, `cat`, `check` and `make-image` now do their real job (`info`/`check` were
   scaffolds, `export`/`cat` stubs); dynamic shell completions (live file paths, `--format` values) and
   `indicatif` progress bars. `make-image` builds a demo image with a genuine small bundle, for tests and demos
@@ -100,6 +95,12 @@
 - `crates/logring_py/tests/test_smoke.py::test_mf4_export_opens_in_asammdf` (`just test-py`): `logring export
   --format mf4`'s output opens in `asammdf` (`uv run`, a repo test now, not just done by hand) (PC-1,
   P2628#16oct-1001h).
+- `logring_export`: opens a ring file, image, split `.wlr` or a mounted card's volume (its `logring.wlr`, no
+  root), decodes tracks dynamically from the API bundle stored with their session (`ww_self`,
+  `wire_weaver_snapshots` for stdlib traits and types), and exports CSV, MCAP (JSON + jsonschema, uncompressed
+  chunks: `mcap`'s `lz4`/`zstd` features are both a C library, so this crate stays off them) and MF4
+  (numeric channels, or ASAM `CAN_DataFrame` bus logging via `mdf4-rs` for CAN-shaped tracks). The `logring` CLI
+  and `logring_py` bindings are next (PC-1, P2628#16oct-1001h).
 
 ### Changed
 

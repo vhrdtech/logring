@@ -100,7 +100,11 @@ against wire_weaver's master checked out next to it (`just deps-pull` updates it
 move to crates.io versions once wire_weaver 0.5 ships (crates.io takes no path or git deps, so logring publishes after
 it). Same for `exfat_lite` and `usb_msc_device`
 until they are published. Check new dependencies with `cargo tree` for `-sys` crates and `cc`/`bindgen` build
-deps (tpm CLAUDE.md "Pure-Rust crates, no C bindings").
+deps (tpm CLAUDE.md "Pure-Rust crates, no C bindings"). `logring_export`'s `mcap` dependency is
+`default-features = false`: its `lz4`/`zstd` features both bring their C library (`lz4-sys`, `zstd-sys`, built
+with `cc`), and `mcap` offers no pure-Rust compression codec; without them the writer's chunks go out
+uncompressed, which `mcap`'s own reader, Foxglove and the `mcap` validator all read fine (PC-1,
+P2628#16oct-1001h).
 
 ## Code conventions
 

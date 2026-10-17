@@ -108,7 +108,8 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   `docs/api/addressing.md`), filling in traits and types a device left out with `wire_weaver_snapshots`'
   embedded stdlib snapshots and the local `~/.wire_weaver/definitions` cache. Decodes items dynamically
   (`ww_self::value::ValueOwned::des_shrink_wrap_dyn`, no generated code) and exports CSV (dotted flattened
-  columns), MCAP (one JSON channel per track with a JSON Schema built from the resolved type) and MF4 (plain
+  columns), MCAP (one JSON channel per track with a JSON Schema built from the resolved type, `mcap`'s chunks
+  uncompressed: its `lz4`/`zstd` features each bring a C library, `AGENTS.md` "Dependencies") and MF4 (plain
   `f64` channels, or ASAM `CAN_DataFrame` bus logging via `mdf4-rs`'s `RawCanLogger` when a track's items look
   like CAN frames: an id field and a byte payload). `mdf4-rs` over `mf4-rs`: pure Rust, MIT/Apache-2.0, already
   implements ASAM bus logging for CAN instead of it being hand-rolled here; DBC stays out of what's stored
