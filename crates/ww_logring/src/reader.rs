@@ -126,14 +126,25 @@ pub trait Decode {
     fn codec(&mut self, track: u32) -> Option<&mut TrackCodec>;
     /// Whether a decoded record is returned (or stepped over).
     fn wants(&self, track: u32, head: &StreamHead) -> bool;
+    /// After a segment head and its table: whether what the decoder follows ended before this segment (a later
+    /// stream of its track starts at or before it). A [Walker] stops there for good.
+    fn ended(&self) -> bool {
+        false
+    }
 }
 
-/// One track by its stable key (0: the system track), records at `min_pos` and after.
+/// One track by its stable key (0: the system track), records at `min_pos` and after; with
+/// [in_stream](Self::in_stream) only those of one stream of the track.
 #[derive(Debug, Clone, Copy)]
 pub struct OneTrack {
     pub key: u64,
     /// Records before this position are stepped over.
     pub min_pos: u64,
+    /// Follow the stream current at this data seq only: a segment whose entry for the key has a later
+    /// `stream_start` ends it. `u64::MAX`: every stream.
+    stream: u64,
+    /// A segment of a later stream was seen
+    ended: bool,
     /// The track's number in the current segment, `None` when it isn't in its table
     number: Option<u32>,
     codec: TrackCodec,
@@ -171,11 +182,23 @@ impl OneTrack {
         OneTrack {
             key,
             min_pos,
+            stream: u64::MAX,
+            ended: false,
             number: None,
             codec: TrackCodec::default(),
             start: 0,
             full: false,
             entry: None,
+        }
+    }
+
+    /// Only the stream of the track that is current at data seq `seq` (its `stream_start` is at or before `seq`):
+    /// a stream reset ([Logring::reset_track](crate::Logring::reset_track)) restarts the positions, so a later
+    /// stream has the same positions again.
+    pub fn in_stream(key: u64, min_pos: u64, seq: u64) -> Self {
+        OneTrack {
+            stream: seq,
+            ..Self::new(key, min_pos)
         }
     }
 
@@ -193,6 +216,10 @@ impl Decode for OneTrack {
 
     fn entry(&mut self, e: &TrackEntry<'_>) {
         if self.key != 0 && e.key == self.key && self.number.is_none() {
+            if e.stream_start > self.stream {
+                self.ended = true;
+                return;
+            }
             self.number = Some(e.number);
             self.entry = Some(EntryFacts::of(e));
         }
@@ -222,6 +249,10 @@ impl Decode for OneTrack {
 
     fn wants(&self, _track: u32, head: &StreamHead) -> bool {
         head.pos >= self.min_pos
+    }
+
+    fn ended(&self) -> bool {
+        self.ended
     }
 }
 
@@ -424,6 +455,10 @@ impl<D: Decode> Walker<D> {
                         }
                         return Ok(None);
                     };
+                    if self.decode.ended() {
+                        self.state = WalkState::Done;
+                        return Ok(None);
+                    }
                     if !self.decode.wants_segment() {
                         if self.segment_ended(&range) {
                             continue;
@@ -1164,9 +1199,10 @@ impl Reader {
     // -----------------------------------------------------------------------------------------------------------
     // Seeks
 
-    /// A walker on the track with stable `key` (0: the system track) at its first record at or after `pos`,
-    /// looking at data segments `from_seq` and later only (a stream session's first segment: positions grow from
-    /// there). Binary searches over segments and flushes, see the [module docs](self).
+    /// A walker on the track with stable `key` (0: the system track) at its first record at or after `pos` in the
+    /// track's stream that is current at data seq `from_seq` (its `stream_start`, normally: positions grow from
+    /// there), looking at segments `from_seq` and later; the walker stops at the stream's end. Binary searches over
+    /// segments and flushes, see the [module docs](self).
     pub async fn seek_track<M: LogMedium>(
         &mut self,
         m: &mut M,
@@ -1175,18 +1211,19 @@ impl Reader {
         pos: u64,
     ) -> Result<Walker<OneTrack>, ReadError<M::Error>> {
         let range = self.data;
-        let decode = OneTrack::new(key, pos);
+        let decode = OneTrack::in_stream(key, pos, from_seq);
         let lo = from_seq.max(range.oldest);
         let Some(hi) = range.tail.filter(|&t| t >= lo) else {
             return Ok(Walker::at_segment(decode, Role::Data, lo));
         };
         // the last segment whose start position of the track is at or before `pos`; a segment without the track
-        // (or not readable) counts as after it, which only makes the scan start earlier
+        // (or not readable) counts as after it, which only makes the scan start earlier; a segment of a later
+        // stream is after it
         let mut best = lo;
         let (mut a, mut b) = (lo, hi + 1);
         while a < b {
             let mid = a + (b - a) / 2;
-            match self.segment_start(m, mid, key).await? {
+            match self.segment_start(m, mid, decode).await? {
                 Some((_, _, Some(start))) if start <= pos => {
                     best = mid;
                     a = mid + 1;
@@ -1194,7 +1231,7 @@ impl Reader {
                 _ => b = mid,
             }
         }
-        let Some((seg, number, Some(start))) = self.segment_start(m, best, key).await? else {
+        let Some((seg, number, Some(start))) = self.segment_start(m, best, decode).await? else {
             return Ok(Walker::at_segment(decode, Role::Data, best));
         };
         if start > pos {
@@ -1220,7 +1257,7 @@ impl Reader {
         Ok(self
             .walker_at_flush(m, decode, best, fstart)
             .await?
-            .unwrap_or_else(|| Walker::at_segment(OneTrack::new(key, pos), Role::Data, best)))
+            .unwrap_or_else(|| Walker::at_segment(decode, Role::Data, best)))
     }
 
     /// A walker over every track at the first flush of `session` whose device time is at or before `t` (the
@@ -1307,20 +1344,19 @@ impl Reader {
         key: u64,
     ) -> Result<Option<u64>, ReadError<M::Error>> {
         Ok(self
-            .segment_start(m, seq, key)
+            .segment_start(m, seq, OneTrack::new(key, 0))
             .await?
             .and_then(|(_, _, p)| p))
     }
 
-    /// The segment head of data segment `seq`, the track's number in it and its next position at the segment's
-    /// start (`None` when the track isn't in its table).
+    /// The segment head of data segment `seq`, the number in it of the track `one` follows and its next position
+    /// at the segment's start (`None` when the track isn't in its table, or the segment is of a later stream).
     async fn segment_start<M: LogMedium>(
         &mut self,
         m: &mut M,
         seq: u64,
-        key: u64,
+        mut one: OneTrack,
     ) -> Result<Option<(SegInfo, u32, Option<u64>)>, ReadError<M::Error>> {
-        let mut one = OneTrack::new(key, 0);
         let Some(seg) = self.segment(m, Role::Data, seq, &mut one).await? else {
             return Ok(None);
         };

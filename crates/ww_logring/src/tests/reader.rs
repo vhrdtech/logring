@@ -352,3 +352,53 @@ fn time_cmp_orders_as_picoseconds_do() {
         Some(core::cmp::Ordering::Greater)
     );
 }
+
+/// A seek by position stays in the stream it is asked for (P2628#17oct-1711): after a reset the track's
+/// positions restart at 0, and a seek for an older stream's position finds that stream's record, never a later
+/// stream's; the walker stops at the stream's end.
+#[test]
+fn seek_track_stays_in_its_stream() {
+    let cfg = cfg(4096, 1024);
+    let mut lr = mount(SimSd::new(size(&cfg, 40), 51), cfg);
+    let key = lr.track_key(1).unwrap();
+    let item = |v: u32| {
+        let mut b = vec![0u8; 100];
+        b[..4].copy_from_slice(&v.to_le_bytes());
+        b
+    };
+    let mut streams = Vec::new();
+    for (k, (base, n)) in [(0u32, 300u64), (1000, 300), (2000, 100)]
+        .into_iter()
+        .enumerate()
+    {
+        if k > 0 {
+            block_on(lr.reset_track(1, 4 + k as u32)).unwrap();
+        }
+        let start = lr.stream_session(1).unwrap().1;
+        for i in 0..n as u32 {
+            block_on(lr.push(1, &item(base + i), None)).unwrap();
+            block_on(lr.push(2, &[7; 30], None)).unwrap();
+        }
+        block_on(lr.sync()).unwrap();
+        streams.push((start, base, n));
+    }
+    assert!(streams.windows(2).all(|w| w[0].0 < w[1].0));
+    let mut m = lr.into_medium();
+    let mut rd = block_on(Reader::open(&mut m, None)).unwrap();
+    let mut buf = vec![0u8; 200];
+    for &(start, base, n) in &streams {
+        for pos in [0, 1, 50, 99, 150, n - 1, n, n + 50] {
+            let mut w = block_on(rd.seek_track(&mut m, key, start, pos)).unwrap();
+            let mut got = Vec::new();
+            while let Some(f) = block_on(w.next(&mut rd, &mut m, &mut buf)).unwrap() {
+                got.push((f.head.pos, u32::from_le_bytes(buf[..4].try_into().unwrap())));
+                assert!(
+                    got.len() <= n as usize,
+                    "stream {start} pos {pos}: walked past"
+                );
+            }
+            let want: Vec<(u64, u32)> = (pos.min(n)..n).map(|p| (p, base + p as u32)).collect();
+            assert_eq!(got, want, "stream {start}, pos {pos}");
+        }
+    }
+}

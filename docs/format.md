@@ -329,7 +329,9 @@ MBR | gap to the first boundary unit | exFAT boot regions | FAT | cluster heap:
 
 `ww_logring::reader` (no_std, no alloc) reads a ring without a scan, from what the format above already carries:
 
-- **By track position**: a binary search over the data segments of the track's stream (`stream_start` and later)
+- **By track position**: a binary search over the data segments of one stream of the track (the one current at
+  the segment asked for, normally its `stream_start`: a segment whose entry names a later `stream_start` is past
+  the stream, and a walk stops there; positions restart in every stream)
   by the track's `next` in each segment's first flush head, then over the segment's blocks: a block's `flush_off`
   gives the start of its flush, the flush head (or its full head, when the track isn't in a sparse one) the
   track's `next` there. The last flush starting at or before the

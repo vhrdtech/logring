@@ -92,3 +92,10 @@
 - wire_weaver crates by path (`../wire_weaver`, its master) instead of a pinned git rev; `just deps-pull`, `deploy`
   pulls it first, CI checks wire_weaver out next to the repo.
 
+### Fixed
+
+- `Reader::seek_track` stays in one stream of the track: the one current at `from_seq` (its `stream_start`); a
+  segment whose entry names a later `stream_start` counts as past it in the binary search, and the walker
+  (`OneTrack::in_stream`, `Decode::ended`) stops there. Before, a seek for an older stream's position after a
+  `reset_track` could find a later stream's record (positions restart in every stream) and a walk ran on into it.
+  `just size` M33 opt s: `reader` 38.7 → 37.7 KB, `full` 88.0 → 87.4 (LOG-2, P2628#17oct-1711).
