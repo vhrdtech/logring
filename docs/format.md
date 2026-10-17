@@ -147,7 +147,7 @@ system track and is never in the table). One entry per data track, a `uvar` leng
 | rate | u32 | nominal items per second, 0 unknown |
 | released | uvar | position released by the host (acknowledged) when the segment was opened |
 | path | uvar length + bytes | the stream's resource path in the device API: a `RefVec<UNib32>` of wire_weaver ids in its ShrinkWrap encoding, the form requests use (wire_weaver `docs/api/addressing.md`), array indices included, at most 16 ids |
-| stream_session | uvar | the track's stream session (`ww_stream`, set by `TrackStore::reset`), 0 before the first |
+| stream_session | uvar | the track's stream session (`ww_stream`, set by `TrackStore::reset`), 0 before the first; bit 31 set: a session the logring started itself (below) |
 | stream_start | uvar | data seq of the segment the stream session started in: the track's positions count from 0 there and grow in every segment after it |
 
 Fields a later version appends inside the entry are ignored by this reader.
@@ -169,6 +169,12 @@ A track's positions are monotonic from its `stream_start` segment on, across ses
 key from the tail segment's table, and a track the tail segment doesn't name starts at 0 in the new session's
 segment (its `stream_start`). A stream reset (`Logring::reset_track`) closes the data segment and opens the next
 one at once, its head carrying the new `stream_session` and `stream_start`.
+
+**Stream sessions with bit 31** (`STORE_SESSION`) are reserved for streams the logring starts by itself: a mount
+that doesn't recover positions starts every data track's stream at 0 in session `0x8000_0000 | session` (the
+logring session of that boot, unique for the card's life). Hosts and firmware choose stream sessions with bit 31
+clear (`ww_stream`'s `StoreState::session`; `Logring::reset_track` refuses others), so such a session never
+matches one a host remembers and a host never resumes across positions that restarted.
 
 FNV-1a, 64 bit: `h = 0xcbf29ce484222325; for each byte: h ^= byte; h *= 0x100000001b3`.
 

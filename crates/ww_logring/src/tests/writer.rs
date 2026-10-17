@@ -692,3 +692,23 @@ fn meta_next_every_cut_sd() {
 fn meta_next_every_cut_nor() {
     meta_next_every_cut::<4, 256, true>(32);
 }
+
+/// Stream sessions with bit 31 are the logring's own: `reset_track` refuses them and writes nothing.
+#[test]
+fn reset_track_refuses_store_sessions() {
+    let cfg = cfg(4096, 1024);
+    let mut lr = mount(SimSd::new(size(&cfg, 16), 41), cfg);
+    block_on(lr.push(1, &[1, 2, 3], None)).unwrap();
+    block_on(lr.sync()).unwrap();
+    let before = lr.stream_session(1).unwrap();
+    for session in [crate::STORE_SESSION, u32::MAX, crate::STORE_SESSION | 7] {
+        assert_eq!(
+            block_on(lr.reset_track(1, session)),
+            Err(Error::StoreSession)
+        );
+    }
+    assert_eq!(lr.stream_session(1).unwrap(), before);
+    assert_eq!(lr.track_state(1).unwrap().next, 1);
+    block_on(lr.reset_track(1, crate::STORE_SESSION - 1)).unwrap();
+    assert_eq!(lr.stream_session(1).unwrap().0, crate::STORE_SESSION - 1);
+}

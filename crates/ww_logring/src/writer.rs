@@ -6,7 +6,7 @@ use crate::api_root_id;
 pub use crate::format::header::MAX_TRACKS;
 use crate::format::header::{
     Durability, FlushEntry, FlushHead, KIND_FLUSH, MAX_FLUSH_ENTRY, MAX_FLUSH_HEAD, MAX_SEG_HEAD,
-    MAX_TRACK_ENTRY, SegHead, TrackDesc, TrackEntry,
+    MAX_TRACK_ENTRY, STORE_SESSION, SegHead, TrackDesc, TrackEntry,
 };
 use crate::format::record::{
     Decoded, MAX_REC_HEADER, PAD, Skipped, TrackCodec, decode_record_with, encode_record,
@@ -134,6 +134,9 @@ pub enum Error<E> {
     /// [Logring::mount] or [Logring::format] on a writer already mounted.
     #[error("already mounted")]
     Mounted,
+    /// A stream session with bit 31 set ([STORE_SESSION]): reserved for sessions the logring starts by itself.
+    #[error("stream session with bit 31 set")]
+    StoreSession,
 }
 
 /// What [Logring::mount] found.
@@ -730,11 +733,15 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
 
     /// A new stream session `session` on track `track`: positions from 0, nothing released, and a new data segment
     /// whose head carries it, written before this returns (the records of the session before stay in the ring).
+    /// `session` has bit 31 clear ([Error::StoreSession] otherwise: [STORE_SESSION]).
     pub async fn reset_track(&mut self, track: u32, session: u32) -> Result<(), Error<M::Error>> {
         self.ready()?;
         self.track(track)?;
         if track == 0 {
             return Err(Error::Track);
+        }
+        if session & STORE_SESSION != 0 {
+            return Err(Error::StoreSession);
         }
         self.close_segment(Role::Data).await?;
         let i = track as usize;

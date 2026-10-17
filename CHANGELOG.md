@@ -4,6 +4,10 @@
 
 ### Added
 
+- Stream sessions with bit 31 (`STORE_SESSION`) are reserved for streams the logring starts by itself (a small
+  build's boot, in `0x8000_0000 | session`); `Logring::reset_track` (and so `TrackStore::reset`) refuses them
+  with `Error::StoreSession` and writes nothing, as `ww_stream`'s docs now ask of hosts. `just size` M33 opt s: no
+  change (LOG-1, P2628#17oct-1711b).
 - `SessionStart`'s `formatted` byte is now flag bits: bit 0 formatted (encoded as before), bit 1 positions not
   recovered (`SystemEvent::SessionStart::positions_restarted`, `Recovery::positions_restarted`: a small build's
   mount, `torn_records` not counted); readers ignore bits they don't know. `just size` M33 opt s: +12 bytes

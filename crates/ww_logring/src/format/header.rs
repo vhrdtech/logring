@@ -95,6 +95,11 @@ pub const fn api_root_id(api: &FullVersion<'_>) -> u64 {
     fnv1a(&[api.crate_id.as_bytes(), &api.version.major.0.to_le_bytes()])
 }
 
+/// Bit 31 of a stream session: set only in sessions the logring starts by itself (a mount that didn't recover
+/// positions starts every data track's stream at 0 in session `STORE_SESSION | session`). Hosts and firmware keep
+/// it clear (`ww_stream`'s `StoreState::session`), so such a session never matches one a host remembers.
+pub const STORE_SESSION: u32 = 1 << 31;
+
 /// A track table entry as stored: a [TrackDesc] with its number in the session and its key.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TrackEntry<'a> {
@@ -107,7 +112,7 @@ pub struct TrackEntry<'a> {
     /// Position released by the host (acknowledged) when the segment was opened.
     pub released: u64,
     /// The track's stream session (`ww_stream`'s, set by [StreamStore::reset](ww_stream::store::StreamStore::reset)
-    /// through `TrackStore`), 0 before the first.
+    /// through `TrackStore`), 0 before the first; with bit 31 ([STORE_SESSION]) one the logring started itself.
     pub stream_session: u32,
     /// Data seq of the segment the stream session started in: positions count from 0 there and grow in every
     /// segment after it.
