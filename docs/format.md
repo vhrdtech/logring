@@ -292,5 +292,5 @@ would go to other events.
 ## 12. Not in this version
 
 Per-track compression (the `compression` byte is reserved), pinned recordings or a keep ring, several sources per
-card (`source` reserved), encryption, segment summaries written at a
-segment's end (they are computed by the reader).
+card (`source` reserved), encryption, segment summaries written at a segment's end (they are computed by the
+reader).

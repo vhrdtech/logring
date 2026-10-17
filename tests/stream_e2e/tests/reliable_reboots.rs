@@ -116,6 +116,7 @@ fn config() -> Config {
         flush_interval_ms: 20,
         full: FullPolicy::DropOldest,
         seed: 1,
+        ..Config::default()
     }
 }
 
