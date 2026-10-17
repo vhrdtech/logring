@@ -1,0 +1,23 @@
+[package]
+name = "logring_stream_e2e"
+description = "End-to-end test: a reliable wire_weaver stream on a logring TrackStore, a generated server, the real host event loop, device reboots"
+version = "0.1.0"
+publish = false
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+
+# a test-only crate: ww_codegen! finds the API crate among the [dependencies]
+[dependencies]
+critical-section = { version = "1.2", features = ["std"] }
+embassy-sync.workspace = true
+logring_stream_api = { path = "../stream_api" }
+tests_common = { path = "../../../wire_weaver/tests/tests_common" }
+tokio = { version = "1", features = ["sync", "rt-multi-thread", "rt", "macros", "time"] }
+tracing-subscriber = "0.3"
+wire_weaver = { workspace = true, features = ["std"] }
+wire_weaver_client = { path = "../../../wire_weaver/wire_weaver_client" }
+ww_client_server.workspace = true
+ww_logring = { workspace = true, features = ["std"] }
+ww_stream = { workspace = true, features = ["std"] }

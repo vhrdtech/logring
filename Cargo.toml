@@ -6,6 +6,8 @@ members = [
     "crates/ww_logring_cli",
     "crates/ww_logring_export",
     "crates/ww_logring_py",
+    "tests/stream_api",
+    "tests/stream_e2e",
 ]
 
 [workspace.package]
