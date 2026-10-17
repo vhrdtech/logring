@@ -70,8 +70,17 @@ hints and counters only: the state of the log is recovered from the segments (§
 | 112 | u64 | `segments_reused`: data segments the ring went round and overwrote |
 | 120 | u32 | `meta_reused`: meta segments reused |
 | 124 | u32 | `flush_bytes`: the best flush size the card check measured at format (0: not measured; LOG-3) |
-| 128..508 | | reserved, zero |
+| 128 | u64 | `meta_next`: the position the next meta record gets, as of this write (§7) |
+| 136..508 | | reserved, zero |
 | 508 | u32 | CRC-32C of bytes 0..508 |
+
+**`meta_next` and `META_SLACK`.** Every superblock write carries the writer's `meta_next`, and a writer writes at
+most `META_SLACK` = 4 meta records between two superblock writes (today at most 2: the bundle and the session at a
+mount, one record per recording start or stop). The newest valid slot was written at some point W; at most
+`META_SLACK` meta records came after W before the next superblock write, and a torn next write leaves W's slot
+intact. So the meta ring's real next position is in `[meta_next, meta_next + META_SLACK]`, and a mount that doesn't
+parse the meta tail can go on at `meta_next + META_SLACK` without ever reusing a position. A mount that parses it
+takes the larger of what it found and `meta_next`.
 
 Slot B is found through the segment size; a reader without one (slot A torn, no config) tries the powers of two
 from 2 KB to 64 MB.
@@ -202,7 +211,8 @@ unknown kinds are skipped by length.
 | 6 | CardEvent | kind u8, value uvar |
 
 **The meta area** uses the same segments, flushes and records (track 0 only, positions counting meta records;
-every meta record is its own flush, written at once). Its items:
+every meta record is its own flush, written at once). Meta positions increase strictly over the whole meta ring
+and may skip (by up to `META_SLACK` per mount, §3): they are counted, never searched. Its items:
 
 | kind | record | fields |
 |---|---|---|
@@ -233,7 +243,8 @@ blocks, whatever happened before (asserted in `tests/writer.rs`, `mount_reads_ar
 4. The last block's `flush_off` says where the **last flush** starts; its head and, when it is sparse, its full
    head give every track's position at its start, the segment head gives the track table (and `released` per
    track); the flush's records are parsed to the end (a record cut short by the end is counted as torn). Tracks are matched to the new session's by key: their
-   `next` continues, new keys start at 0. Malformed content never fails a mount: what was parsed counts, the rest
+   `next` continues, new keys start at 0. The meta ring's next position is the larger of its last flush's and
+   the superblock's `meta_next`. Malformed content never fails a mount: what was parsed counts, the rest
    is reported as torn.
 5. The new session: `next_session`, the meta records (the bundle if it isn't in the ring, the session with its
    track table), the superblock, a new data segment with its segment head and a `SessionStart` record carrying

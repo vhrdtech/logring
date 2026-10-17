@@ -290,6 +290,9 @@ pub struct Logring<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> {
     data: Ring,
     meta: Ring,
     meta_next: u64,
+    /// Meta records written since the last superblock write: never more than [META_SLACK](crate::format::META_SLACK)
+    #[cfg(debug_assertions)]
+    meta_since_sb: u64,
     st: Stage,
     scratch: [u8; BLOCK],
     peek: [u8; PEEK],
@@ -549,6 +552,8 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             data: Ring::default(),
             meta: Ring::default(),
             meta_next: 0,
+            #[cfg(debug_assertions)]
+            meta_since_sb: 0,
             st: Stage {
                 role: Role::Data,
                 seq: 0,
@@ -582,6 +587,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                 segments_reused: 0,
                 meta_reused: 0,
                 flush_bytes: cfg.card_flush_bytes,
+                meta_next: 0,
             },
             sb_every: (geo.data_n / 4).clamp(1, 16),
             recovery: Recovery::default(),
@@ -1296,8 +1302,21 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         let hdr = tmp;
         self.write_record(Role::Meta, 0, &head, &[&hdr[..n], tail])
             .await?;
-        self.meta_next += 1;
+        self.meta_written();
         self.end_flush().await
+    }
+
+    /// A meta record was written: the next one gets the next position.
+    fn meta_written(&mut self) {
+        self.meta_next += 1;
+        #[cfg(debug_assertions)]
+        {
+            self.meta_since_sb += 1;
+            debug_assert!(
+                self.meta_since_sb <= crate::format::META_SLACK,
+                "more than META_SLACK meta records between two superblock writes"
+            );
+        }
     }
 
     /// The session's meta record: its header, then the track entries as the item's tail.
@@ -1363,7 +1382,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             self.close_segment(Role::Meta).await?;
             fresh = true;
         }
-        self.meta_next += 1;
+        self.meta_written();
         self.end_flush().await
     }
 
@@ -1395,6 +1414,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
 
     async fn write_superblock(&mut self) -> Result<(), Error<M::Error>> {
         self.sb.log_id = self.geo.log_id;
+        self.sb.meta_next = self.meta_next;
         let off = (self.sb.write_seq % 2) * self.geo.seg / 2;
         if M::NEEDS_ERASE {
             self.medium
@@ -1405,6 +1425,10 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         let b = self.sb.encode();
         self.medium.write(off, &b).await.map_err(Error::Medium)?;
         self.sb.write_seq += 1;
+        #[cfg(debug_assertions)]
+        {
+            self.meta_since_sb = 0;
+        }
         Ok(())
     }
 
@@ -1436,6 +1460,9 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
         self.sb = sb;
         self.sb.write_seq += 1;
         let mut rec = Recovery::default();
+        // where meta positions go on, also when the meta ring holds no record yet; the scan below finds it, never
+        // behind what the superblock says (a mount that didn't parse the tail may have skipped ahead)
+        self.meta_next = sb.meta_next;
 
         // the meta tail: the last segment with a block 0, and the end of what it holds; appended to
         if sb.meta_tail_seq != NONE {
@@ -1453,7 +1480,8 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                     block: end,
                 };
                 // positions: the last flush of the meta tail
-                self.meta_next = self.scan_last_flush(Role::Meta, seq, end, &mut rec).await?;
+                let scanned = self.scan_last_flush(Role::Meta, seq, end, &mut rec).await?;
+                self.meta_next = scanned.max(sb.meta_next);
             } else {
                 self.meta.next_seq = sb.meta_tail_seq;
             }

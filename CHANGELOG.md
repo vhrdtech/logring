@@ -4,6 +4,13 @@
 
 ### Added
 
+- Superblock `meta_next` (u64 at offset 128, version stays 1): the meta position the next meta record gets,
+  written at every superblock write; `format::META_SLACK` (4): a writer writes at most that many meta records
+  between two superblock writes (asserted in debug builds), so a mount that doesn't parse the meta tail can go on
+  at `meta_next + META_SLACK` and never reuse a position. A full mount takes the larger of its scan and
+  `meta_next`; meta positions increase strictly and may skip. Power-cut test at every write of a remount with
+  recordings on SD and NOR checks the bound. `just size` M33 opt s: `raw_writer` 33.7 → 34.1 KB, `exfat_writer`
+  48.9 → 48.1, `full` 88.1 → 88.0 (LTO noise) (LOG-1, P2628#17oct-1711b).
 - Features `crc-table` (default on) and `crc-hw` for the CRC-32C of every block (`format::crc`): without
   `crc-table` it is computed bit by bit; with `crc-hw` on the MCU's CRC unit, a `Crc32cHw` the firmware names
   with `ww_logring::set_crc32c!` (a build without it fails to link). Same value in every build. `just size cuts`,

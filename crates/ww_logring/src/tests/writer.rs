@@ -1,10 +1,12 @@
 //! The writer on simulated SD and NOR media.
 
 use super::{Counting, Rng, block_on};
-use crate::format::BLOCK;
+use crate::format::{BLOCK, META_SLACK};
 use crate::scan::Scan;
 use crate::system::SystemEvent;
-use crate::{Config, Durability, Error, FullPolicy, Logring, SessionInfo, StreamHead, TrackDesc};
+use crate::{
+    Buffers, Config, Durability, Error, FullPolicy, Logring, SessionInfo, StreamHead, TrackDesc,
+};
 use crate::{FullVersion, UNib32};
 use wire_weaver::ww_version::Version;
 use ww_si::Prefix;
@@ -603,4 +605,90 @@ fn power_cut_sd() {
 #[test]
 fn power_cut_nor() {
     power_cut_everywhere::<4, 256, true>(40, 250, 22);
+}
+
+/// The meta record positions in the ring, oldest first.
+pub(super) fn meta_positions(scan: &Scan) -> Vec<u64> {
+    scan.meta
+        .iter()
+        .flat_map(|s| s.records.iter().map(|r| r.head.pos))
+        .collect()
+}
+
+/// After a mount: a few records, recordings started and stopped (meta records and superblock writes).
+fn meta_work<M: LogMedium>(lr: &mut Lr<M>, seed: u64) -> Result<(), Error<M::Error>> {
+    let mut g = Gen::new(seed, 600);
+    for _ in 0..4 {
+        workload(lr, &mut g, 8, &mut Vec::new())?;
+        block_on(lr.recording_start(1))?;
+        workload(lr, &mut g, 4, &mut Vec::new())?;
+        block_on(lr.recording_stop(2))?;
+    }
+    block_on(lr.sync())
+}
+
+/// A power cut at every write unit of a remount and the meta records after it: the newest superblock's
+/// `meta_next` and the meta ring's real next position are at most `META_SLACK` apart (so a mount that doesn't
+/// parse the meta tail never reuses a position), meta positions only grow, and a full mount continues after both.
+fn meta_next_every_cut<const W: usize, const E: usize, const NOR: bool>(seed: u64) {
+    type Sim<const W: usize, const E: usize, const NOR: bool> = SimMedium<W, E, NOR>;
+    let cfg = cfg(4096, 1024);
+    let size = size(&cfg, 40);
+    let base = {
+        let mut lr = mount(Sim::<W, E, NOR>::new(size, seed), cfg);
+        let mut g = Gen::new(seed, 600);
+        workload(&mut lr, &mut g, 100, &mut Vec::new()).unwrap();
+        block_on(lr.sync()).unwrap();
+        lr.into_medium().image()
+    };
+    let mut bufs = Box::new(Buffers::<BUF, TRACKS>::new());
+    let ops = {
+        let medium = Sim::<W, E, NOR>::from_image(base.clone(), seed);
+        let mut lr = Lr::new(medium, &mut bufs, cfg, info()).unwrap();
+        block_on(lr.mount()).unwrap();
+        meta_work(&mut lr, seed + 1).unwrap();
+        lr.into_medium().ops()
+    };
+    let mut slack_used = 0;
+    for cut in 0..=ops {
+        let what = format!("cut {cut}");
+        let mut medium = Sim::<W, E, NOR>::from_image(base.clone(), cut);
+        medium.cut_power_at(cut);
+        let mut lr = Lr::new(medium, &mut bufs, cfg, info()).unwrap();
+        match block_on(lr.mount()).and_then(|()| meta_work(&mut lr, seed + 1)) {
+            Ok(()) | Err(Error::Medium(SimError::PowerCut)) => {}
+            Err(e) => panic!("{what}: {e:?}"),
+        }
+        let mut medium = Sim::<W, E, NOR>::from_image(lr.into_medium().image(), cut);
+        let s = scan(&mut medium);
+        let pos = meta_positions(&s);
+        assert!(pos.windows(2).all(|w| w[0] < w[1]), "{what}: {pos:?}");
+        let real = pos.last().map_or(0, |p| p + 1);
+        let sb = s.superblock.meta_next;
+        assert!(
+            sb <= real && real <= sb + META_SLACK,
+            "{what}: superblock {sb}, real {real}"
+        );
+        slack_used = slack_used.max(real - sb);
+        // a full mount continues after both
+        let lr = mount(medium, cfg);
+        let mut medium = lr.into_medium();
+        let after = meta_positions(&scan(&mut medium));
+        assert!(after.windows(2).all(|w| w[0] < w[1]), "{what}: {after:?}");
+        assert!(after.last().is_some_and(|&p| p >= real), "{what}");
+    }
+    assert!(
+        slack_used >= 1,
+        "a cut fell between meta records and the superblock write after them"
+    );
+}
+
+#[test]
+fn meta_next_every_cut_sd() {
+    meta_next_every_cut::<512, 512, false>(31);
+}
+
+#[test]
+fn meta_next_every_cut_nor() {
+    meta_next_every_cut::<4, 256, true>(32);
 }

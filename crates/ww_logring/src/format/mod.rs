@@ -33,6 +33,10 @@ pub enum Role {
     Meta = 1,
 }
 
+/// Meta records a writer writes at most between two superblock writes: the meta position a mount that doesn't
+/// parse the meta ring's tail continues at is the superblock's `meta_next` plus this, so it never reuses one.
+pub const META_SLACK: u64 = 4;
+
 /// A value that means "none" in a `u64` field of the superblock.
 pub const NONE: u64 = u64::MAX;
 
@@ -308,6 +312,9 @@ pub struct Superblock {
     pub meta_reused: u32,
     /// Best `flush_bytes` the card check measured at format (0: not measured), LOG-3.
     pub flush_bytes: u32,
+    /// The position the next meta record gets, as of this write. Positions written after it are at most
+    /// [META_SLACK] further on.
+    pub meta_next: u64,
 }
 
 impl Superblock {
@@ -333,6 +340,7 @@ impl Superblock {
         b[112..120].copy_from_slice(&self.segments_reused.to_le_bytes());
         b[120..124].copy_from_slice(&self.meta_reused.to_le_bytes());
         b[124..128].copy_from_slice(&self.flush_bytes.to_le_bytes());
+        b[128..136].copy_from_slice(&self.meta_next.to_le_bytes());
         let crc = crc::checksum(&b[..SB_LEN - 4]);
         b[SB_LEN - 4..].copy_from_slice(&crc.to_le_bytes());
         b
@@ -366,6 +374,7 @@ impl Superblock {
             segments_reused: u64_at(b, 112),
             meta_reused: u32_at(b, 120),
             flush_bytes: u32_at(b, 124),
+            meta_next: u64_at(b, 128),
         })
     }
 }
@@ -456,6 +465,7 @@ mod tests {
             segments_reused: 3,
             meta_reused: 1,
             flush_bytes: 65536,
+            meta_next: (1 << 33) + 5,
         };
         let mut b = sb.encode();
         assert_eq!(Superblock::decode(&b), Some(sb));
