@@ -479,10 +479,7 @@ mod tests {
 
     #[test]
     fn heads_round_trip() {
-        let t = Second {
-            prefix: Prefix::Micro,
-            value: NumericValue::U32(123_456),
-        };
+        let t = Second::from_parts(Prefix::Micro, NumericValue::U32(123_456));
         let mut buf = [0u8; 128];
         let mut enc = Enc::new(&mut buf);
         SegHead {

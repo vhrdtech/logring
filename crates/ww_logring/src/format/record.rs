@@ -127,10 +127,7 @@ fn time_from_delta(prev: TimeBase, delta: i64) -> Option<Second> {
     } else {
         NumericValue::U32(u32::try_from(prev.value as i64 + delta).ok()?)
     };
-    Some(Second {
-        prefix: prev.prefix,
-        value,
-    })
+    Some(Second::from_parts(prev.prefix, value))
 }
 
 /// Encode a record's header (the item's bytes follow it, `item_len` of them) and advance the track's codec.
@@ -345,10 +342,7 @@ mod tests {
     use ww_stream::HeadExt;
 
     fn us(v: u32) -> Second {
-        Second {
-            prefix: Prefix::Micro,
-            value: NumericValue::U32(v),
-        }
+        Second::from_parts(Prefix::Micro, NumericValue::U32(v))
     }
 
     fn round_trip(heads: &[(u32, StreamHead)]) -> Vec<usize> {
@@ -438,10 +432,7 @@ mod tests {
         let a = StreamHead::at(10);
         let b = StreamHead::at(11);
         let mut c = StreamHead::at(12);
-        c.t = Some(Second {
-            prefix: Prefix::Milli,
-            value: NumericValue::U64(7),
-        });
+        c.t = Some(Second::from_parts(Prefix::Milli, NumericValue::U64(7)));
         let mut d = StreamHead::at(13);
         d.t = Some(us(1));
         let mut e = StreamHead::at(14);

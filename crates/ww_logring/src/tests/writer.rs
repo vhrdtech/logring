@@ -79,10 +79,7 @@ pub(super) fn size(cfg: &Config, data_segments: u64) -> usize {
 }
 
 pub(super) fn us(v: u32) -> Second {
-    Second {
-        prefix: Prefix::Micro,
-        value: NumericValue::U32(v),
-    }
+    Second::from_parts(Prefix::Micro, NumericValue::U32(v))
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -133,10 +130,7 @@ impl Gen {
         let t = match self.rng.range(0, 99) {
             0..=79 => Some(us((i * 1000 + self.rng.range(0, 999)) as u32)),
             80..=89 => None,
-            _ => Some(Second {
-                prefix: Prefix::Milli,
-                value: NumericValue::U64(i * 3),
-            }),
+            _ => Some(Second::from_parts(Prefix::Milli, NumericValue::U64(i * 3))),
         };
         Ev {
             track,

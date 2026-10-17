@@ -123,10 +123,10 @@ pub fn read_everything<M: ww_stream::store::LogMedium>(medium: &mut M) {
     }
     sessions.dedup();
     for s in sessions.iter().take(4) {
-        let t = ww_stream::Second {
-            prefix: ww_si::Prefix::Micro,
-            value: ww_si::ww_numeric::NumericValue::U32(1000),
-        };
+        let t = ww_stream::Second::from_parts(
+            ww_si::Prefix::Micro,
+            ww_si::ww_numeric::NumericValue::U32(1000),
+        );
         let _ = block_on(rd.seek_time::<TRACKS, _>(medium, *s, &t));
     }
     if let Some(tail) = range.tail {

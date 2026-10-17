@@ -53,10 +53,7 @@ pub fn now_ms() -> u64 {
 
 /// A device time, µs.
 pub fn now() -> Option<Second> {
-    Some(Second {
-        prefix: ww_si::Prefix::Micro,
-        value: NumericValue::U32(rd(TICKS)),
-    })
+    Some(Second::from_parts(ww_si::Prefix::Micro, NumericValue::U32(rd(TICKS))))
 }
 
 /// A CRC unit (feature `crc-hw`): the state goes to a register, the data through its FIFO, the result back.

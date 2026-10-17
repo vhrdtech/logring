@@ -311,7 +311,7 @@ fn time_cmp_orders_as_picoseconds_do() {
     use crate::reader::time_cmp;
     use ww_si::Prefix;
     use ww_si::ww_numeric::NumericValue;
-    let s = |prefix, value| Second { prefix, value };
+    let s = Second::from_parts;
     let mut rng = Rng::new(7);
     let prefixes = [
         Prefix::Unit,
