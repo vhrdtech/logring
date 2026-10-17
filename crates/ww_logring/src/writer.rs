@@ -113,6 +113,9 @@ pub enum Error<E> {
     /// The log on the medium is bound to another place ([Config::binding]): nothing was written.
     #[error("log bound elsewhere")]
     Unbound,
+    /// A read got a buffer smaller than the item.
+    #[error("buffer too small for an item of {item_len} bytes")]
+    BufferTooSmall { item_len: usize },
 }
 
 /// What [Logring::mount] found.

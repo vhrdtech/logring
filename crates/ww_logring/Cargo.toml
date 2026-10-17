@@ -21,6 +21,7 @@ block-device-driver = ["exfat", "dep:block-device-driver", "dep:aligned"]
 aligned = { workspace = true, optional = true }
 block-device-driver = { workspace = true, optional = true }
 crc.workspace = true
+embassy-sync.workspace = true
 exfat_lite = { workspace = true, optional = true }
 thiserror.workspace = true
 wire_weaver.workspace = true
@@ -28,3 +29,4 @@ ww_si.workspace = true
 ww_stream.workspace = true
 
 [dev-dependencies]
+ww_client_server.workspace = true

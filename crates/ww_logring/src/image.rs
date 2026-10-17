@@ -22,7 +22,10 @@ impl ImageFile {
 }
 
 fn read_only() -> io::Error {
-    io::Error::new(io::ErrorKind::PermissionDenied, "the image is opened read-only")
+    io::Error::new(
+        io::ErrorKind::PermissionDenied,
+        "the image is opened read-only",
+    )
 }
 
 impl LogMedium for ImageFile {

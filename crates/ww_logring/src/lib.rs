@@ -11,20 +11,22 @@ pub mod bdd;
 #[cfg(feature = "exfat")]
 pub mod exfat;
 pub mod format;
-pub mod reader;
 #[cfg(feature = "std")]
 pub mod harness;
 #[cfg(feature = "std")]
 pub mod image;
+pub mod reader;
 #[cfg(feature = "std")]
 pub mod scan;
 pub mod stream;
 pub mod system;
 #[cfg(feature = "std")]
 pub mod tests_support;
+pub mod track_store;
 pub mod writer;
 
 pub use format::header::{Durability, TrackDesc};
+pub use track_store::TrackStore;
 pub use writer::{Config, Error, Geo, Logring, Recovery, SessionInfo, TrackState};
 pub use ww_stream::store::FullPolicy;
 pub use ww_stream::store::LogMedium;

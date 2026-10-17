@@ -7,6 +7,7 @@ mod corrupt;
 #[cfg(feature = "exfat")]
 mod exfat;
 mod reader;
+mod track_store;
 mod writer;
 
 pub(crate) use crate::tests_support::block_on;

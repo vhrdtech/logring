@@ -22,7 +22,9 @@
 
 use crate::format::header::{FlushHead, KIND_FLUSH, MAX_TRACK_ENTRY, SegHead, TrackEntry};
 use crate::format::record::{Decoded, MAX_REC_HEADER, Skipped, TrackCodec, decode_record_with};
-use crate::format::{BLOCK, BlockCheck, Dec, MAX_TIME, NONE, PAYLOAD, Role, Superblock, check_block};
+use crate::format::{
+    BLOCK, BlockCheck, Dec, MAX_TIME, NONE, PAYLOAD, Role, Superblock, check_block,
+};
 use crate::system::{MetaEvent, SystemEvent};
 use crate::writer::{Geo, MAX_TRACKS};
 use ww_si::ww_numeric::NumericValue;
@@ -430,7 +432,14 @@ impl<D: Decode> Walker<D> {
                             Some(0) => {
                                 let mut place = self.place;
                                 if !rd
-                                    .flush_head(m, self.role, self.seq, &mut place, true, &mut self.decode)
+                                    .flush_head(
+                                        m,
+                                        self.role,
+                                        self.seq,
+                                        &mut place,
+                                        true,
+                                        &mut self.decode,
+                                    )
                                     .await?
                                 {
                                     if range.tail.is_some_and(|t| self.seq < t) {
@@ -449,7 +458,9 @@ impl<D: Decode> Walker<D> {
                         }
                     }
                     let mut look = [0u8; MAX_REC_HEADER];
-                    let n = rd.peek(m, self.role, self.seq, self.place, &mut look).await?;
+                    let n = rd
+                        .peek(m, self.role, self.seq, self.place, &mut look)
+                        .await?;
                     if n == 0 {
                         if self.segment_ended(&range) {
                             continue;
@@ -532,12 +543,17 @@ impl<D: Decode> Walker<D> {
                             }
                             let take = item_len.min(item.len());
                             let mut p = after;
-                            let ok = rd.read(m, self.role, self.seq, &mut p, &mut item[..take]).await?
+                            let ok = rd
+                                .read(m, self.role, self.seq, &mut p, &mut item[..take])
+                                .await?
                                 && (take == item_len || {
                                     let mut end = after;
                                     end.advance(item_len - 1);
                                     end.block < rd.geo.blocks
-                                        && rd.load(m, self.role, self.seq, end.block).await?.is_some()
+                                        && rd
+                                            .load(m, self.role, self.seq, end.block)
+                                            .await?
+                                            .is_some()
                                 });
                             if !ok {
                                 restore(self);
@@ -881,7 +897,9 @@ impl Reader {
         decode: &mut D,
     ) -> Result<Option<SegInfo>, ReadError<M::Error>> {
         let mut look = [0u8; LOOK];
-        let n = self.peek(m, role, seq, Place::START, &mut look[..32]).await?;
+        let n = self
+            .peek(m, role, seq, Place::START, &mut look[..32])
+            .await?;
         let mut d = Dec::new(&look[..n]);
         let Some(sh) = SegHead::decode(&mut d) else {
             return Ok(None);
@@ -926,18 +944,20 @@ impl Reader {
         plain: bool,
         decode: &mut D,
     ) -> Result<bool, ReadError<M::Error>> {
-        Ok(match self.flush_head_at(m, role, seq, *place, plain).await? {
-            Some((len, _t)) => {
-                let mut d = Dec::new(&self.look[usize::from(plain)..]);
-                FlushHead::decode(&mut d, |track, next| {
-                    decode.flush(track, next);
-                    Some(())
-                });
-                place.advance(len);
-                true
-            }
-            None => false,
-        })
+        Ok(
+            match self.flush_head_at(m, role, seq, *place, plain).await? {
+                Some((len, _t)) => {
+                    let mut d = Dec::new(&self.look[usize::from(plain)..]);
+                    FlushHead::decode(&mut d, |track, next| {
+                        decode.flush(track, next);
+                        Some(())
+                    });
+                    place.advance(len);
+                    true
+                }
+                None => false,
+            },
+        )
     }
 
     /// The flush head at `place`, left in `self.look`: its length (kind byte included when `plain`) and time.
@@ -989,7 +1009,10 @@ impl Reader {
                 off: 0,
             }
         };
-        let Some((_, t)) = self.flush_head_at(m, Role::Data, seq, place, start != 0).await? else {
+        let Some((_, t)) = self
+            .flush_head_at(m, Role::Data, seq, place, start != 0)
+            .await?
+        else {
             return Ok(None);
         };
         let mut next = None;
@@ -1085,7 +1108,10 @@ impl Reader {
                 _ => hi_b = mid,
             }
         }
-        let fstart = match self.flush_at(m, best, lo_b, seg.first_flush, number).await? {
+        let fstart = match self
+            .flush_at(m, best, lo_b, seg.first_flush, number)
+            .await?
+        {
             Some((s, _, _)) => s,
             None => 0,
         };
@@ -1172,6 +1198,21 @@ impl Reader {
                 .await?
                 .unwrap_or_else(|| Walker::at_segment(AllTracks::default(), Role::Data, best)),
         ))
+    }
+
+    /// The next position of the track with stable `key` at the start of data segment `seq`: every record of it
+    /// in that segment and after is at or after it. `None` when the segment isn't readable or doesn't name the
+    /// track.
+    pub async fn track_start<M: LogMedium>(
+        &mut self,
+        m: &mut M,
+        seq: u64,
+        key: u64,
+    ) -> Result<Option<u64>, ReadError<M::Error>> {
+        Ok(self
+            .segment_start(m, seq, key)
+            .await?
+            .and_then(|(_, _, p)| p))
     }
 
     /// The segment head of data segment `seq`, the track's number in it and its next position at the segment's
@@ -1266,7 +1307,10 @@ impl Reader {
             if f.track == 0 && item[0] == 2 {
                 sum.markers += 1;
             }
-            if let Some(t) = tracks.get_mut(f.track as usize).filter(|_| (f.track as usize) < n) {
+            if let Some(t) = tracks
+                .get_mut(f.track as usize)
+                .filter(|_| (f.track as usize) < n)
+            {
                 t.records += 1;
                 t.item_bytes += f.item_len as u64;
                 t.first_pos.get_or_insert(f.head.pos);
@@ -1303,7 +1347,8 @@ impl Reader {
         let Some(tail) = self.meta.tail else {
             return Ok(());
         };
-        let mut w = Walker::at_segment(AllTracks::default(), Role::Meta, self.meta.oldest).until(tail);
+        let mut w =
+            Walker::at_segment(AllTracks::default(), Role::Meta, self.meta.oldest).until(tail);
         w.truncate = true;
         let mut item = [0u8; 256];
         // a start waits for its stop (at most one recording runs at a time)

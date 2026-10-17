@@ -195,7 +195,10 @@ fn recordings_and_their_records() {
     let oldest = rd.range(Role::Data).oldest;
     let mut item = vec![0u8; MAX_ITEM];
     let mut checked = 0;
-    for r in recs.iter().filter(|r| r.start_seq >= oldest && r.stop.is_some()) {
+    for r in recs
+        .iter()
+        .filter(|r| r.start_seq >= oldest && r.stop.is_some())
+    {
         let is = |x: &Ref, start: bool| {
             x.key == 0
                 && match SystemEvent::decode(&mut Dec::new(&x.item)) {

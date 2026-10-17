@@ -4,8 +4,8 @@
 use crate::format::Role;
 use crate::reader::{AllTracks, Reader, TrackSummary, Walker};
 use crate::scan::Scan;
-use crate::writer::MAX_TRACKS;
 use crate::tests_support::block_on;
+use crate::writer::MAX_TRACKS;
 use crate::{Config, Durability, FullPolicy, Logring, SessionInfo, TrackDesc};
 use ww_stream::store::log::SimSd;
 
