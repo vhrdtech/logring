@@ -22,12 +22,14 @@ pub mod stream;
 pub mod system;
 #[cfg(feature = "std")]
 pub mod tests_support;
+#[cfg(feature = "tail-positions")]
 pub mod track_store;
 pub mod writer;
 
 #[cfg(feature = "crc-hw")]
 pub use format::crc::Crc32cHw;
 pub use format::header::{Durability, MAX_PATH, STORE_SESSION, TrackDesc, api_root_id};
+#[cfg(feature = "tail-positions")]
 pub use track_store::TrackStore;
 pub use wire_weaver::shrink_wrap::{RefVec, UNib32};
 pub use wire_weaver::ww_version::FullVersion;

@@ -47,6 +47,7 @@ jobs:
           targets: thumbv8m.main-none-eabihf
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo check -p logring --no-default-features --target thumbv8m.main-none-eabihf
+      - run: cargo clippy -p logring --all-targets --no-default-features --features std,card-check,crc-table -- -D warnings
 
   test:
     runs-on: ubuntu-latest
@@ -63,6 +64,8 @@ jobs:
           path: wire_weaver
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --workspace
+      # the small build (no tail-positions): its mount, power-cut and cross-build tests
+      - run: cargo test -p logring --no-default-features --features std
 
   test-py:
     runs-on: ubuntu-latest

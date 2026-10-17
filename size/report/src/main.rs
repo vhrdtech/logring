@@ -68,6 +68,10 @@ const FEATURES: &[(&str, &str)] = &[
         "the card check of `format_card` (aliasing test, sweep)",
     ),
     ("crc-table", "the CRC-32C table: bitwise CRC without it"),
+    (
+        "tail-positions",
+        "the mount's position scan: tracks restart at 0 after a boot, no `TrackStore` (its bins aren't built)",
+    ),
 ];
 
 /// The target and profile the per-crate and per-type tables are made for.
@@ -351,7 +355,8 @@ fn matrix() -> Result<String> {
 }
 
 /// What each of [FEATURES] costs: every bin with that feature off (its own target dir), against the default
-/// build of the same profile (built before).
+/// build of the same profile (built before); flash per profile and static RAM at opt s. A bin that needs the
+/// feature isn't built without it.
 fn cuts() -> Result<String> {
     let mut s = String::new();
     writeln!(
@@ -359,7 +364,7 @@ fn cuts() -> Result<String> {
         "## Feature cuts, {DETAIL_TARGET}: flash saved with one feature off, bytes\n"
     )
     .unwrap();
-    s.push_str("| feature off | bin | opt s | opt z |\n|---|---|---:|---:|\n");
+    s.push_str("| feature off | bin | opt s | opt z | RAM, opt s |\n|---|---|---:|---:|---:|\n");
     for (f, what) in FEATURES {
         let others: Vec<&str> = FEATURES.iter().map(|x| x.0).filter(|x| x != f).collect();
         let dir = size_dir().join("target").join(format!("cut-{f}"));
@@ -372,21 +377,36 @@ fn cuts() -> Result<String> {
             args.push("--features".into());
             args.push(others.join(","));
         }
+        for (p, _) in PROFILES {
+            build_with(DETAIL_TARGET, p, &args)?;
+        }
         let mut rows = Vec::new();
         for (b, _) in BINS {
             let mut saved = Vec::new();
+            let mut ram = 0;
             for (p, _) in PROFILES {
-                build_with(DETAIL_TARGET, p, &args)?;
-                let full = sections(&elf(DETAIL_TARGET, p, b))?.flash();
-                let cut = sections(&dir.join(DETAIL_TARGET).join(p).join(b))?.flash();
-                saved.push(full as i64 - cut as i64);
+                let full = sections(&elf(DETAIL_TARGET, p, b))?;
+                let path = dir.join(DETAIL_TARGET).join(p).join(b);
+                if !path.exists() {
+                    break;
+                }
+                let cut = sections(&path)?;
+                saved.push(full.flash() as i64 - cut.flash() as i64);
+                if *p == "release" {
+                    ram = full.ram() as i64 - cut.ram() as i64;
+                }
             }
-            if saved.iter().any(|&x| x != 0) {
-                rows.push(format!("| `{f}` | {b} | {} | {} |", saved[0], saved[1]));
+            if saved.len() < PROFILES.len() {
+                rows.push(format!("| `{f}` | {b} | not built | not built | |"));
+            } else if saved.iter().any(|&x| x != 0) || ram != 0 {
+                rows.push(format!(
+                    "| `{f}` | {b} | {} | {} | {ram} |",
+                    saved[0], saved[1]
+                ));
             }
         }
         if rows.is_empty() {
-            writeln!(s, "| `{f}` | (no bin changes) | 0 | 0 |").unwrap();
+            writeln!(s, "| `{f}` | (no bin changes) | 0 | 0 | 0 |").unwrap();
         }
         for r in rows {
             writeln!(s, "{r}").unwrap();

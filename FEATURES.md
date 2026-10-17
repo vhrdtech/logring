@@ -30,9 +30,12 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   Format pieces for small builds (S3, P2628#17oct-1711b, design `s3-tail-positions.md`): the superblock's
   `meta_next` with `META_SLACK` = 4; `SessionStart` flag bits (formatted, positions not recovered);
   stream sessions with bit 31 reserved for the logring's own (`reset_track` refuses them); segment head flag
-  `SEG_FRESH`, honoured by the reader on the system track. `Logring::mount_small` (`std`) writes them all as a
-  small build will; power-cut tests alternate full and small boots on SD and NOR. The small build itself
-  (feature `tail-positions`) is P2628#17oct-1623f.
+  `SEG_FRESH`, honoured by the reader on the system track. Feature `tail-positions` (default on, S3,
+  P2628#17oct-1623f): without it `mount` is the small mount (`Logring::mount_small`, also in a full `std` build
+  for tests): no scan of the tail's last flush, every track from 0 in a new stream after each boot, torn records
+  not counted on the device, no `TrackStore`; the card stays readable and mountable by a full build and the other
+  way round. Power-cut and round-trip suites run in both builds (`just test`, CI); cross-build tests mount the
+  checked-in images each build writes (`crates/logring/testdata`) with the other build.
 - 🧪 **LOG-2 reader-trackstore**: `logring::reader` (no_std, no alloc): a block-cached `Walker` over the
   data or meta segments decoding one track by stable key (`OneTrack`, the other tracks stepped over) or all
   (`AllTracks`); `seek_track` (binary search over segment and flush heads by a track's position), `seek_time`

@@ -18,7 +18,7 @@ use ww_stream::store::log::SimSd;
 
 /// A data record as the scan saw it, with its track's stable key (0: the system track).
 #[derive(Debug, Clone, PartialEq)]
-struct Ref {
+pub(super) struct Ref {
     seq: u64,
     session: u32,
     key: u64,
@@ -26,7 +26,7 @@ struct Ref {
     item: Vec<u8>,
 }
 
-fn reference(scan: &Scan) -> Vec<Ref> {
+pub(super) fn reference(scan: &Scan) -> Vec<Ref> {
     scan.records()
         .map(|(s, r)| Ref {
             seq: s.seq,
@@ -46,7 +46,31 @@ fn reference(scan: &Scan) -> Vec<Ref> {
         .collect()
 }
 
-fn walk_all<M: LogMedium>(rd: &mut Reader, m: &mut M) -> Vec<Ref>
+/// The data seq each of [reference]'s records' stream starts in: a data track's from its segment's track table,
+/// the system track's at the newest `SEG_FRESH` segment at or before it (0 without one).
+fn stream_starts(scan: &Scan) -> Vec<u64> {
+    let mut fresh = 0;
+    let mut out = Vec::new();
+    for s in &scan.data {
+        if s.flags & crate::format::header::SEG_FRESH != 0 {
+            fresh = s.seq;
+        }
+        for r in &s.records {
+            out.push(if r.track == 0 {
+                fresh
+            } else {
+                s.tracks
+                    .iter()
+                    .find(|t| t.number == r.track)
+                    .map(|t| t.stream_start)
+                    .unwrap()
+            });
+        }
+    }
+    out
+}
+
+pub(super) fn walk_all<M: LogMedium>(rd: &mut Reader, m: &mut M) -> Vec<Ref>
 where
     M::Error: core::fmt::Debug,
 {
@@ -97,7 +121,10 @@ fn walk_matches_the_scan() {
 #[test]
 fn seek_track_finds_the_first_record_at_or_after() {
     let mut m = Counting::new(three_sessions());
-    let want = reference(&scan(&mut m.inner));
+    let s = scan(&mut m.inner);
+    let want = reference(&s);
+    let starts = stream_starts(&s);
+    assert_eq!(starts.len(), want.len());
     let mut rd = block_on(Reader::open(&mut m, None)).unwrap();
     let keys: Vec<u64> = {
         let mut k: Vec<u64> = want.iter().map(|r| r.key).collect();
@@ -106,11 +133,29 @@ fn seek_track_finds_the_first_record_at_or_after() {
         k
     };
     assert_eq!(keys.len(), 4, "the system track and three data tracks");
+    // every stream of every track: one per track in a full build, one per session and track in a small one
+    let mut streams: Vec<(u64, u64)> = want
+        .iter()
+        .zip(&starts)
+        .map(|(r, &st)| (r.key, st))
+        .collect();
+    streams.sort();
+    streams.dedup();
+    if super::FULL {
+        assert_eq!(streams.len(), 4, "{streams:?}");
+    } else {
+        assert!(streams.len() > 4, "{streams:?}");
+    }
     let mut rng = Rng::new(5);
     let mut item = vec![0u8; MAX_ITEM];
     let mut max_reads = 0;
-    for &key in &keys {
-        let of_key: Vec<&Ref> = want.iter().filter(|r| r.key == key).collect();
+    for &(key, start) in &streams {
+        let of_key: Vec<&Ref> = want
+            .iter()
+            .zip(&starts)
+            .filter(|(r, st)| r.key == key && **st == start)
+            .map(|(r, _)| r)
+            .collect();
         let lo = of_key[0].head.pos;
         let hi = of_key.last().unwrap().head.end();
         for i in 0..60 {
@@ -122,7 +167,7 @@ fn seek_track_finds_the_first_record_at_or_after() {
                 _ => rng.range(lo, hi + 3),
             };
             let before = m.reads;
-            let mut w = block_on(rd.seek_track(&mut m, key, 0, pos)).unwrap();
+            let mut w = block_on(rd.seek_track(&mut m, key, start, pos)).unwrap();
             max_reads = max_reads.max(m.reads - before);
             let mut got = Vec::new();
             for _ in 0..3 {
@@ -137,7 +182,7 @@ fn seek_track_finds_the_first_record_at_or_after() {
                 .take(3)
                 .map(|r| (r.head, r.item.clone()))
                 .collect();
-            assert_eq!(got, exp, "key {key:x} at {pos}");
+            assert_eq!(got, exp, "key {key:x} stream {start} at {pos}");
         }
     }
     // binary searches, not a scan: the ring has 40 segments of 8 blocks

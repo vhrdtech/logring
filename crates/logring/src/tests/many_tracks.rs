@@ -149,7 +149,7 @@ fn run() {
     for t in 1..=N as u32 {
         assert_eq!(
             lr.track_state(t).unwrap().next,
-            next[t as usize],
+            if super::FULL { next[t as usize] } else { 0 },
             "track {t} resumed"
         );
     }

@@ -25,7 +25,7 @@ read and written with volatile accesses, so nothing is optimised away. The write
 | `reader` | the reader alone: open, recordings, a segment summary, seeks by track position and by time |
 
 `report/` is the host tool behind `just size` (`size-report`, its own workspace): `just size matrix`,
-`just size cuts` (the flash each feature costs: `card-check`), `just size attribute --bin full`, `just size types --bin raw_writer`, `just size --help`.
+`just size cuts` (the flash and RAM each default feature costs: `card-check`, `crc-table`, `tail-positions`; the `TrackStore` bins need `tail-positions` and aren't built without it), `just size attribute --bin full`, `just size types --bin raw_writer`, `just size --help`.
 
 Targets it needs:
 

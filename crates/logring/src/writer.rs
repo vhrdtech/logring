@@ -3,19 +3,23 @@
 //! power cut ([Recovery]). Layout: [format](crate::format), `docs/format.md`.
 
 use crate::api_root_id;
+#[cfg(feature = "tail-positions")]
+use crate::format::Dec;
 pub use crate::format::header::MAX_TRACKS;
 use crate::format::header::{
-    Durability, FlushEntry, FlushHead, KIND_FLUSH, MAX_FLUSH_ENTRY, MAX_FLUSH_HEAD, MAX_SEG_HEAD,
-    MAX_TRACK_ENTRY, SEG_FRESH, STORE_SESSION, SegHead, TrackDesc, TrackEntry,
+    Durability, FlushEntry, FlushHead, MAX_FLUSH_ENTRY, MAX_FLUSH_HEAD, MAX_TRACK_ENTRY, SEG_FRESH,
+    STORE_SESSION, SegHead, TrackDesc, TrackEntry,
 };
-use crate::format::record::{
-    Decoded, MAX_REC_HEADER, PAD, Skipped, TrackCodec, decode_record_with, encode_record,
-    skip_record,
-};
+#[cfg(feature = "tail-positions")]
+use crate::format::header::{KIND_FLUSH, MAX_SEG_HEAD};
+#[cfg(feature = "tail-positions")]
+use crate::format::record::{Decoded, Skipped, decode_record_with, skip_record};
+use crate::format::record::{MAX_REC_HEADER, PAD, TrackCodec, encode_record};
 use crate::format::{
-    BLOCK, BlockCheck, Dec, Enc, META_SLACK, NONE, PAYLOAD, Role, SB_LEN, Superblock, check_block,
+    BLOCK, BlockCheck, Enc, META_SLACK, NONE, PAYLOAD, Role, SB_LEN, Superblock, check_block,
     fnv1a, seal_block,
 };
+#[cfg(feature = "tail-positions")]
 use crate::stream::BlockStream;
 use crate::system::{MetaEvent, SystemEvent};
 use wire_weaver::shrink_wrap::SerializeShrinkWrap;
@@ -38,6 +42,7 @@ const fn flush_head_max(n: usize) -> u64 {
 /// it bounds how far back the tracks a sparse head lists were written.
 const FULL_EVERY: u64 = 32;
 /// [Track::tail_map] of a track the tail segment doesn't name.
+#[cfg(feature = "tail-positions")]
 const NO_TRACK: u32 = u32::MAX;
 
 /// How a [Logring] lays out and runs its medium.
@@ -192,9 +197,11 @@ pub(crate) struct Track {
     /// Records since the data segment's last full flush head: listed in every sparse head after it
     written: bool,
     /// At the mount: the number of this track in the tail segment's table
+    #[cfg(feature = "tail-positions")]
     tail_number: u32,
     /// At the mount, by the tail segment's track number (this slot's index): this session's track with that key,
     /// [NO_TRACK] for none. Mount-time scratch kept here so a mount needs no array of `TRACKS` on the stack.
+    #[cfg(feature = "tail-positions")]
     tail_map: u32,
 }
 
@@ -212,7 +219,9 @@ impl Track {
         stream_start: 0,
         known: false,
         written: false,
+        #[cfg(feature = "tail-positions")]
         tail_number: 0,
+        #[cfg(feature = "tail-positions")]
         tail_map: 0,
     };
 }
@@ -303,6 +312,7 @@ pub struct Logring<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> {
     fresh_segment: bool,
     st: Stage,
     scratch: [u8; BLOCK],
+    #[cfg(feature = "tail-positions")]
     peek: [u8; PEEK],
     t_last: Option<Second>,
     flush_started_ms: Option<u64>,
@@ -395,14 +405,18 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
     /// log after a power cut, see [Recovery]. Everything the mount wrote is on the medium when it returns. Runs
     /// in place: its future holds only the mount's own state, not a second writer. After an error, start again
     /// from [Logring::new].
+    ///
+    /// With the feature `tail-positions` (default) every track continues where the last flush before the reboot
+    /// left it; without, the mount is [Logring::mount_small]'s.
     pub async fn mount(&mut self) -> Result<(), Error<M::Error>> {
-        self.mount_with::<true>().await
+        self.mount_with::<{ cfg!(feature = "tail-positions") }>()
+            .await
     }
 
-    /// [Logring::mount] without recovering positions from the tail, as a small build will mount (S3, feature
-    /// `tail-positions` off): every track starts at 0 in a [SEG_FRESH] segment, data tracks in a stream session
-    /// with bit 31, meta positions go on at the superblock's `meta_next` + [META_SLACK]. Host side (`std`), for
-    /// the tests and the fuzz harness until that build exists.
+    /// [Logring::mount] without recovering positions from the tail, the mount of a build without the feature
+    /// `tail-positions` (S3): every track starts at 0 in a [SEG_FRESH] segment, data tracks in a stream session
+    /// with bit 31, meta positions go on at the superblock's `meta_next` + [META_SLACK], torn records at the tail
+    /// aren't counted ([Recovery::positions_restarted]). Host side (`std`), so one test build runs both mounts.
     #[cfg(feature = "std")]
     pub async fn mount_small(&mut self) -> Result<(), Error<M::Error>> {
         self.mount_with::<false>().await
@@ -588,6 +602,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                 flush_payload: 0,
             },
             scratch: [0; BLOCK],
+            #[cfg(feature = "tail-positions")]
             peek: [0; PEEK],
             t_last: None,
             flush_started_ms: None,
@@ -777,11 +792,13 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
     }
 
     /// The medium, for a reader on the same ring (between writes).
+    #[cfg(feature = "tail-positions")]
     pub(crate) fn medium_mut(&mut self) -> &mut M {
         &mut self.medium
     }
 
     /// The newest record of track `track` on the medium, found by a reader after the mount.
+    #[cfg(feature = "tail-positions")]
     pub(crate) fn note_durable_newest(&mut self, track: u32, pos: u64) {
         if let Some(n) = self.b.durable_newest.get_mut(track as usize)
             && n.is_none()
@@ -1525,6 +1542,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
                     block: end,
                 };
                 // positions: the last flush of the meta tail
+                #[cfg(feature = "tail-positions")]
                 if POSITIONS {
                     let scanned = self.scan_last_flush(Role::Meta, seq, end, &mut rec).await?;
                     self.meta_next = scanned.max(sb.meta_next);
@@ -1539,12 +1557,14 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             rec.segments_walked = walked;
             rec.torn_blocks += torn;
             if let Some(seq) = seq {
-                let (end, torn) = self.find_end(Role::Data, seq).await?;
+                let (_end, torn) = self.find_end(Role::Data, seq).await?;
                 rec.torn_blocks += torn;
                 self.data.next_seq = seq + 1;
                 self.data.seq = seq;
+                #[cfg(feature = "tail-positions")]
                 if POSITIONS {
-                    self.scan_last_flush(Role::Data, seq, end, &mut rec).await?;
+                    self.scan_last_flush(Role::Data, seq, _end, &mut rec)
+                        .await?;
                 }
             } else {
                 // opened, never written (a cut before the mount's sync): its slot is used again
@@ -1669,6 +1689,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
     /// and the segment's track table for the tracks' released positions. Returns track 0's next position and
     /// sets the data tracks' `next`/`released` by key. Malformed content never fails the mount: what was parsed
     /// before it counts, the rest is reported as a torn record.
+    #[cfg(feature = "tail-positions")]
     async fn scan_last_flush(
         &mut self,
         role: Role,

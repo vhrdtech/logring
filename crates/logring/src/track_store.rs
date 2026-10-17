@@ -20,6 +20,9 @@
 //!   released position (kept in the segment heads).
 //! - [state](StreamStore::state) is not async: it takes the lock when it is free and otherwise returns what it
 //!   saw last.
+//!
+//! Only with the feature `tail-positions` (default on): without it every boot restarts the positions, so a store
+//! couldn't be persistent, and it isn't built.
 
 use crate::format::Role;
 use crate::reader::{OneTrack, Range, ReadError, Reader, Walker};

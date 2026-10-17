@@ -105,12 +105,13 @@ uvar  tracks: data tracks in the table (numbers 1..=tracks), at most 65535
        tracks × track entry (§5)
 ```
 
-**`FRESH`** (flag bit 0) marks a session's first data segment when its mount didn't recover positions (a small
-build that doesn't parse the tail): every track counts its positions from 0 here, the system track included,
-and every data track's stream starts here (`stream_start` = this seq, a stream session with bit 31, §5); its
-`SessionStart` has flag bit 1 (§7). The system track has no track table entry: `FRESH` is where its positions
-restart (they continue for the log's life otherwise). Never set on meta segments. A reader ignores flag bits it
-doesn't know, so a flag bit may only add information, never change how the rest of the segment reads.
+**`FRESH`** (flag bit 0) marks a session's first data segment when its mount didn't recover positions (a build
+without the Cargo feature `tail-positions`, which doesn't parse the tail): every track counts its positions from 0
+here, the system track included, and every data track's stream starts here (`stream_start` = this seq, a stream
+session with bit 31, §5); its `SessionStart` has flag bit 1 (§7). The system track has no track table entry:
+`FRESH` is where its positions restart (they continue for the log's life otherwise). Never set on meta segments. A
+reader ignores flag bits it doesn't know, so a flag bit may only add information, never change how the rest of the
+segment reads.
 
 Every flush then has a **flush head**: the positions the flush's records are delta-coded against.
 

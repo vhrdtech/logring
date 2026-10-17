@@ -1,6 +1,6 @@
 //! The writer on simulated SD and NOR media.
 
-use super::{Counting, Rng, block_on};
+use super::{Counting, FULL, Rng, block_on};
 use crate::format::{BLOCK, META_SLACK};
 use crate::scan::Scan;
 use crate::system::SystemEvent;
@@ -305,15 +305,29 @@ fn remount_continues_positions_in_a_new_session() {
     assert!(!lr.recovery().formatted);
     assert_eq!(lr.recovery().torn_blocks, 0);
     assert_eq!(lr.recovery().torn_records, 0);
+    assert_eq!(lr.recovery().positions_restarted, !FULL);
     assert_eq!(lr.recording(), rec_id, "a recording survives a reboot");
-    // positions continue: track 0 got the session start record of session 2 already
-    assert_eq!(lr.track_state(0).unwrap().next, ends[0] + 1);
-    for t in 1..4 {
-        assert_eq!(
-            lr.track_state(t).unwrap().next,
-            ends[t as usize],
-            "track {t}"
-        );
+    if FULL {
+        // positions continue: track 0 got the session start record of session 2 already
+        assert_eq!(lr.track_state(0).unwrap().next, ends[0] + 1);
+        for t in 1..4 {
+            assert_eq!(
+                lr.track_state(t).unwrap().next,
+                ends[t as usize],
+                "track {t}"
+            );
+        }
+    } else {
+        // a small build: every track from 0 in a new stream, the system track's session start first
+        assert_eq!(lr.track_state(0).unwrap().next, 1);
+        for t in 1..4 {
+            assert_eq!(lr.track_state(t).unwrap().next, 0, "track {t}");
+            assert_eq!(
+                lr.stream_session(t).unwrap(),
+                (crate::STORE_SESSION | 2, lr.data_seq()),
+                "track {t}"
+            );
+        }
     }
     let mut more = Vec::new();
     workload(&mut lr, &mut g, 100, &mut more).unwrap();
@@ -526,6 +540,7 @@ fn power_cut_everywhere<const W: usize, const E: usize, const NOR: bool>(
         assert!(!rec.formatted, "{what}: the log survived");
         assert!(rec.torn_blocks <= 1, "{what}: {rec:?}");
         assert!(rec.torn_records <= 1, "{what}: {rec:?}");
+        assert_eq!(rec.positions_restarted, !FULL, "{what}");
         torn_blocks_seen += rec.torn_blocks;
         torn_records_seen += rec.torn_records;
         let resumed: Vec<u64> = (0..4).map(|t| lr.track_state(t).unwrap().next).collect();
@@ -557,14 +572,14 @@ fn power_cut_everywhere<const W: usize, const E: usize, const NOR: bool>(
             if last_old > durable[t as usize] {
                 beyond_durable += 1;
             }
-            // the new session continued where the old records end
-            assert_eq!(resumed[t as usize], last_old, "{what}: track {t} resumed");
-            let last = got
+            // the new session continued where the old records end; a small build's from 0
+            let from = if FULL { last_old } else { 0 };
+            assert_eq!(resumed[t as usize], from, "{what}: track {t} resumed");
+            let last = more
                 .iter()
                 .rev()
                 .find(|e| e.track == t)
-                .map(|e| e.head.end())
-                .unwrap_or(0);
+                .map_or(from, |e| e.head.end());
             assert_eq!(state[t as usize], last, "{what}: track {t}");
         }
         // the new records are all there, after the old ones
@@ -585,7 +600,8 @@ fn power_cut_everywhere<const W: usize, const E: usize, const NOR: bool>(
             "{what}"
         );
     }
-    assert!(torn_records_seen > 0, "some cut left a torn record");
+    // a small build doesn't count torn records (it doesn't parse the tail); the scan above saw them
+    assert_eq!(torn_records_seen > 0, FULL, "some cut left a torn record");
     assert!(
         beyond_durable > 0,
         "some cut came after blocks beyond the last completed write were written"
@@ -665,12 +681,13 @@ fn meta_next_every_cut<const W: usize, const E: usize, const NOR: bool>(seed: u6
         assert!(pos.windows(2).all(|w| w[0] < w[1]), "{what}: {pos:?}");
         let real = pos.last().map_or(0, |p| p + 1);
         let sb = s.superblock.meta_next;
+        // a small build's mount writes the skipped-to meta_next before its first meta record: ahead of the ring
         assert!(
-            sb <= real && real <= sb + META_SLACK,
+            (sb <= real || !FULL) && real <= sb + META_SLACK,
             "{what}: superblock {sb}, real {real}"
         );
-        slack_used = slack_used.max(real - sb);
-        // a full mount continues after both
+        slack_used = slack_used.max(real.saturating_sub(sb));
+        // the next mount continues after both
         let lr = mount(medium, cfg);
         let mut medium = lr.into_medium();
         let after = meta_positions(&scan(&mut medium));

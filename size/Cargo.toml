@@ -10,11 +10,30 @@ license = "MIT OR Apache-2.0"
 [workspace]
 exclude = ["report"]
 
+# a TrackStore needs the positions the mount recovers
+[[bin]]
+name = "raw_store"
+required-features = ["tail-positions"]
+
+[[bin]]
+name = "exfat_store"
+required-features = ["tail-positions"]
+
+[[bin]]
+name = "exfat_recreate"
+required-features = ["tail-positions"]
+
+[[bin]]
+name = "full"
+required-features = ["tail-positions"]
+
 [features]
-default = ["card-check", "crc-table"]
+default = ["card-check", "crc-table", "tail-positions"]
 # logring's features of the same name; `just size cuts` measures each default one off
 card-check = ["logring/card-check"]
 crc-table = ["logring/crc-table"]
+# the mount's position scan; the bins with a TrackStore need it (not built without)
+tail-positions = ["logring/tail-positions"]
 # the CRC on a (dummy) CRC unit: lib.rs names it with set_crc32c!
 crc-hw = ["logring/crc-hw"]
 

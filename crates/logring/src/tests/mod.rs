@@ -4,16 +4,23 @@
 #[cfg(feature = "block-device-driver")]
 mod bdd;
 mod corrupt;
+mod cross;
 #[cfg(feature = "exfat")]
 mod exfat;
 #[cfg(feature = "std")]
 mod many_tracks;
 mod reader;
+// both mounts in one build: needs the full one
+#[cfg(feature = "tail-positions")]
 mod small;
+#[cfg(feature = "tail-positions")]
 mod track_store;
 mod writer;
 
 pub(crate) use crate::tests_support::block_on;
+
+/// The build's mount recovers positions (feature `tail-positions`); without it every boot restarts them.
+pub(crate) const FULL: bool = cfg!(feature = "tail-positions");
 use ww_stream::store::LogMedium;
 
 /// Small seeded PRNG (xorshift64*), so every run can be repeated.

@@ -121,5 +121,7 @@ fn logring_on_a_block_device_driver() {
     };
     let (ring, cfg) = b.into_parts(base);
     let lr = block_on(Logring::<_, 8192, 6>::mount_leaked(ring, cfg, info())).unwrap();
-    assert_eq!(lr.track_state(1).unwrap().next, 2000);
+    // positions go on after the remount; a small build (no tail-positions) restarts them
+    let want = if super::FULL { 2000 } else { 0 };
+    assert_eq!(lr.track_state(1).unwrap().next, want);
 }
