@@ -59,6 +59,26 @@ pub fn now() -> Option<Second> {
     })
 }
 
+/// A CRC unit (feature `crc-hw`): the state goes to a register, the data through its FIFO, the result back.
+#[cfg(feature = "crc-hw")]
+pub struct CrcUnit;
+
+#[cfg(feature = "crc-hw")]
+impl ww_logring::Crc32cHw for CrcUnit {
+    fn update(state: u32, data: &[u8]) -> u32 {
+        wr(TICKS, state);
+        for c in data.chunks(4) {
+            let mut w = [0u8; 4];
+            w[..c.len()].copy_from_slice(c);
+            wr(FIFO, u32::from_le_bytes(w));
+        }
+        rd(TICKS)
+    }
+}
+
+#[cfg(feature = "crc-hw")]
+ww_logring::set_crc32c!(CrcUnit);
+
 /// The card driver's error.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct CardError(pub u32);

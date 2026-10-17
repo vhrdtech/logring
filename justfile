@@ -9,6 +9,8 @@ default:
 test: test-py
     cargo test --workspace --quiet
     cargo test -p ww_logring --features std,block-device-driver --quiet
+    cargo test -p ww_logring --no-default-features --features std,block-device-driver,card-check,crc-hw --quiet
+    cargo test -p ww_logring --no-default-features --features std --quiet check_value
     cargo check -p ww_logring --no-default-features --target thumbv8m.main-none-eabihf
     cargo check -p ww_logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf
     cargo build --quiet --manifest-path size/Cargo.toml --release --target thumbv8m.main-none-eabihf
@@ -26,6 +28,7 @@ lint:
     cargo clippy --workspace --all-targets -- -D warnings
     cargo clippy -p ww_logring --all-targets --features std,block-device-driver -- -D warnings
     cargo clippy -p ww_logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf -- -D warnings
+    cargo clippy -p ww_logring --no-default-features --features block-device-driver,card-check,crc-hw --target thumbv8m.main-none-eabihf -- -D warnings
     cargo fmt --manifest-path size/Cargo.toml --check
     cargo fmt --manifest-path size/report/Cargo.toml --check
     cargo sort --grouped --check size size/report

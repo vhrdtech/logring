@@ -9,7 +9,7 @@ repository.workspace = true
 rust-version.workspace = true
 
 [features]
-default = ["card-check"]
+default = ["card-check", "crc-table"]
 # Host-side use (ww_logring_export, ww_logring_cli, tests): file-backed media, no RAM/flash limits assumed.
 std = ["ww_stream/std", "wire_weaver/std", "ww_si/std", "exfat_lite?/std"]
 # The ring as the file logring.wlr of an exFAT volume (LOG-3): ExfatRing, the mount check, format and card check.
@@ -17,6 +17,10 @@ exfat = ["dep:exfat_lite"]
 # The card check of exfat::format_card (fake-card aliasing test, write-size sweep), 3.6-5 KB of flash; without
 # it a format checks nothing and stores no measured flush size (LOG-3).
 card-check = []
+# CRC-32C with a 1 KB table; without it bit by bit (slower, about 1 KB less flash). crc-hw overrides both: the
+# firmware's CRC unit through ww_logring::set_crc32c! (format::crc).
+crc-table = []
+crc-hw = []
 # BddDevice: an SD driver implementing block-device-driver's BlockDevice<512> under exfat (multi-block writes).
 block-device-driver = ["exfat", "dep:block-device-driver", "dep:aligned"]
 

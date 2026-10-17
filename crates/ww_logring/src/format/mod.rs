@@ -2,13 +2,10 @@
 //! 512-byte blocks, flushes, records and track tables. Pure encode/decode, no I/O, no allocation; every decoder is
 //! bounded and returns `None` or an error on garbage (a card is untrusted input).
 
+pub mod crc;
 pub mod header;
 pub mod record;
 
-use crc::{CRC_32_ISCSI, Crc};
-
-/// CRC-32C, used by every structure of the format.
-pub const CRC: Crc<u32> = Crc::<u32>::new(&CRC_32_ISCSI);
 /// Format version, in the superblock.
 pub const VERSION: u8 = 1;
 /// A block: the unit of the medium's power-cut atomicity and of the format.
@@ -214,7 +211,7 @@ pub fn block_tag(log_id: u32, role: Role, seq: u64) -> u16 {
 /// CRC of a block: over the log id, role, segment `seq`, the block's index in the segment, its payload and the
 /// first 4 bytes of the trailer, so a block moved to another place, lap or ring never checks out.
 pub fn block_crc(log_id: u32, role: Role, seq: u64, index: u32, block: &[u8; BLOCK]) -> u32 {
-    let mut d = CRC.digest();
+    let mut d = crc::Digest::new();
     d.update(&log_id.to_le_bytes());
     d.update(&[role as u8]);
     d.update(&seq.to_le_bytes());
@@ -336,7 +333,7 @@ impl Superblock {
         b[112..120].copy_from_slice(&self.segments_reused.to_le_bytes());
         b[120..124].copy_from_slice(&self.meta_reused.to_le_bytes());
         b[124..128].copy_from_slice(&self.flush_bytes.to_le_bytes());
-        let crc = CRC.checksum(&b[..SB_LEN - 4]);
+        let crc = crc::checksum(&b[..SB_LEN - 4]);
         b[SB_LEN - 4..].copy_from_slice(&crc.to_le_bytes());
         b
     }
@@ -347,7 +344,7 @@ impl Superblock {
             return None;
         }
         let b = &b[..SB_LEN];
-        if CRC.checksum(&b[..SB_LEN - 4]) != u32_at(b, SB_LEN - 4) {
+        if crc::checksum(&b[..SB_LEN - 4]) != u32_at(b, SB_LEN - 4) {
             return None;
         }
         Some(Superblock {

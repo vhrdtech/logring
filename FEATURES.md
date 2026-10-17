@@ -7,7 +7,8 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
 ## Engine (`LOG`)
 
 - 🧪 **LOG-1 format-writer**: the format ([docs/format.md](docs/format.md): superblock A/B, meta area, AU-sized
-  segments, self-identifying 512-byte blocks with an 8-byte trailer written once per lap, flushes with a head per
+  segments, self-identifying 512-byte blocks with an 8-byte trailer (CRC-32C with a table, bit by bit or on the MCU's CRC
+  unit: features `crc-table`, `crc-hw`) written once per lap, flushes with a head per
   flush, compact delta-coded records of track + `StreamHead` + item at ~4 bytes of overhead, track tables in every
   segment head, system track 0, meta records for sessions, bundles and recordings), the writer (`Logring`:
   `new` on lent `Buffers` (stage buffer, per-track state) then `mount`/`format` in place, `push`/`push_head`, markers, recordings, stage buffer, `flush_bytes`/`flush_interval`/`sync`,

@@ -11,9 +11,12 @@ license = "MIT OR Apache-2.0"
 exclude = ["report"]
 
 [features]
-default = ["card-check"]
-# ww_logring's features of the same name; `just size cuts` measures each off
+default = ["card-check", "crc-table"]
+# ww_logring's features of the same name; `just size cuts` measures each default one off
 card-check = ["ww_logring/card-check"]
+crc-table = ["ww_logring/crc-table"]
+# the CRC on a (dummy) CRC unit: lib.rs names it with set_crc32c!
+crc-hw = ["ww_logring/crc-hw"]
 
 [dependencies]
 embassy-sync = "0.8"

@@ -4,6 +4,11 @@
 
 ### Added
 
+- Features `crc-table` (default on) and `crc-hw` for the CRC-32C of every block (`format::crc`): without
+  `crc-table` it is computed bit by bit; with `crc-hw` on the MCU's CRC unit, a `Crc32cHw` the firmware names
+  with `ww_logring::set_crc32c!` (a build without it fails to link). Same value in every build. `just size cuts`,
+  M33: 0.9-1.3 KB less flash without the table (opt s), `crc-hw` 1.0 KB less with a dummy unit (LOG-1,
+  P2628#17oct-1623c).
 - Feature `card-check` (default on): `format_card`'s card check (aliasing test, write-size sweep, `CheckOptions`,
   `alias_test`, `sweep`); a small build without it formats unchecked, its `CardReport` says so
   (`alias_checked: false`, an all-zero `Sweep`, `card_flush_bytes` 0: the fallback or the setting). `just size
@@ -43,6 +48,7 @@
 
 ### Changed
 
+- `format::CRC` (the `crc` crate's `Crc<u32>`) is now `format::crc::{checksum, Digest}` (LOG-1).
 - The writer no longer sits in RAM twice: the stage buffer and the per-track state are `Buffers<BUF, TRACKS>`
   (`const fn new`, all zero, so a static of it is in `.bss`), lent by the firmware to `Logring::new(medium,
   &mut buffers, cfg, info)`, which checks and writes nothing; then `mount().await` / `format().await` run in

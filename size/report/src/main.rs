@@ -62,10 +62,13 @@ const BINS: &[(&str, &str)] = &[
 
 /// Features of the size crate, each forwarding to `ww_logring`'s feature of the same name (default on), with what
 /// turning it off takes out.
-const FEATURES: &[(&str, &str)] = &[(
-    "card-check",
-    "the card check of `format_card` (aliasing test, sweep)",
-)];
+const FEATURES: &[(&str, &str)] = &[
+    (
+        "card-check",
+        "the card check of `format_card` (aliasing test, sweep)",
+    ),
+    ("crc-table", "the CRC-32C table: bitwise CRC without it"),
+];
 
 /// The target and profile the per-crate and per-type tables are made for.
 const DETAIL_TARGET: &str = "thumbv8m.main-none-eabihf";
