@@ -1,0 +1,32 @@
+[package]
+name = "logring_size"
+description = "Size examples: no_std firmware-like bins that use ww_logring's device-side API on a dummy medium, measured by `just size`"
+version = "0.1.0"
+publish = false
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+# its own workspace: built only for MCU targets, with the size profiles below
+[workspace]
+exclude = ["report"]
+
+[dependencies]
+embassy-sync = "0.8"
+exfat_lite = { path = "../../exfat_lite", default-features = false }
+ww_logring = { path = "../crates/ww_logring", default-features = false, features = ["exfat"] }
+ww_si = { path = "../../wire_weaver/ww_stdlib/ww_si", default-features = false, features = ["time", "u32", "u64"] }
+ww_stream = { path = "../../wire_weaver/ww_stream", default-features = false, features = ["log-store"] }
+
+[profile.release]
+opt-level = "s"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+# line tables and inlining for the per-crate attribution; the code is the same as without
+debug = "limited"
+strip = false
+incremental = false
+
+[profile.release-z]
+inherits = "release"
+opt-level = "z"

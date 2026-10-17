@@ -4,6 +4,8 @@
 
 ### Added
 
+- `just size`: flash and RAM of the device side per MCU target (Cortex-M0+, M4/M7, M33, RISC-V imac/imc) at
+  opt-level s and z, per crate, source file, function and type, from size examples in `size/` (LOG-9).
 - `ww_logring::reader`: the indexed reader (no_std, no alloc): seeks by track position and by device time with
   binary searches over segment and flush heads, recordings and their records, segment summaries; `ImageFile`
   reads a ring image on a PC (LOG-2, P2628#16oct-1001c).

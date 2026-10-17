@@ -11,6 +11,7 @@ test: test-py
     cargo test -p ww_logring --features std,block-device-driver --quiet
     cargo check -p ww_logring --no-default-features --target thumbv8m.main-none-eabihf
     cargo check -p ww_logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf
+    cargo build --quiet --manifest-path size/Cargo.toml --release --target thumbv8m.main-none-eabihf
 
 # Build the Python module (crates/ww_logring_py) into a venv under /tmp and run its pytest smoke test
 [working-directory('crates/ww_logring_py')]
@@ -25,6 +26,15 @@ lint:
     cargo clippy --workspace --all-targets -- -D warnings
     cargo clippy -p ww_logring --all-targets --features std,block-device-driver -- -D warnings
     cargo clippy -p ww_logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf -- -D warnings
+    cargo fmt --manifest-path size/Cargo.toml --check
+    cargo fmt --manifest-path size/report/Cargo.toml --check
+    cargo sort --grouped --check size size/report
+    cargo clippy --manifest-path size/Cargo.toml --release --target thumbv8m.main-none-eabihf -- -D warnings
+    cargo clippy --manifest-path size/report/Cargo.toml -- -D warnings
+
+# Flash and RAM of the device side per MCU target, crate, file, function and type, as Markdown (size/README.md)
+size *args="all":
+    cargo run --quiet --release --manifest-path size/report/Cargo.toml -- {{args}}
 
 # Fuzz the mount on garbage and damaged rings (nightly, cargo install cargo-fuzz); seeds: fuzz/seeds
 [working-directory('fuzz')]

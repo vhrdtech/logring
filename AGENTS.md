@@ -66,6 +66,9 @@ instrument/tool repos (tpm CLAUDE.md "Code repos": tools are a library first):
 `tests/stream_api` and `tests/stream_e2e` (not published): a reliable `wire_weaver` stream on a `TrackStore`
 end to end, a generated server and the real host event loop (`wire_weaver`'s `tests_common`) across reboots.
 
+`size/` (not published, its own workspace): no_std size bins on a dummy card for the MCU targets and the host tool
+`size/report` behind `just size` (flash and RAM per target, crate, file, function and type, LOG-9).
+
 [docs/format.md](docs/format.md) documents the on-medium format as it is (LOG-1); `fuzz/` holds the cargo-fuzz
 targets (`just fuzz`, nightly) with seed images; the `prj/P2628-logring` tpm folder has the design history and
 open questions.
@@ -76,6 +79,7 @@ open questions.
 just test      # workspace tests (host; no card or image needed) + a no_std build check for ww_logring + Python smoke test
 just test-py   # builds crates/ww_logring_py into a venv under /tmp (uv + maturin), runs pytest
 just lint      # fmt --check, clippy -D warnings, all crates
+just size      # flash and RAM of the device side per MCU target, crate, file, function and type (size/README.md)
 just fuzz      # cargo-fuzz (nightly) on the mount target with the seed images in fuzz/seeds
 just install   # puts `logring` in ~/.cargo/bin; completion: source <(COMPLETE=bash logring)
 just deploy    # bring this PC up to main

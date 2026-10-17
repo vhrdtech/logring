@@ -60,6 +60,13 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   R6. Differences from the plan: the recording unit `flush_bytes` is rounded to is 16 KB for every card (the
   speed-class RU of larger classes isn't applied: it would force 512 KB flushes); lost attributes don't unbind the
   ring; a `VSC_AU_SIZE` over 64 MB is left out.
+- 🧪 **LOG-9 size-report**: `size/`: no_std firmware-like bins using the device-side API on a dummy card
+  (raw writer, `TrackStore`, exFAT mount check, re-create, format with card check, reader alone) and `just size`
+  (`size/report`, `size-report`): flash and static RAM per bin for thumbv6m, thumbv7em, thumbv8m.main,
+  riscv32imac and riscv32imc at opt-level s and z, flash per crate, source file and function from the DWARF line
+  tables (inlined code counted where it came from), RAM of the types and futures (nightly
+  `-Zprint-type-sizes`). Measured on built ELFs, not on hardware. P2628#17oct-1522; the numbers and the proposal
+  for small builds: `prj/P2628-logring/design/size-report.md`.
 - 💡 **LOG-4 merge-logstore**: whether `ww_stream`'s `LogStore` (one track, raw NOR/SD) could become a one-track
   logring later; decided after the logring ships.
 - 💡 **LOG-5 pinned-recordings-keep-ring**: pinned recordings the ring skips when wrapping, or a second small

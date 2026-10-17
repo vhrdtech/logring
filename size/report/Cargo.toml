@@ -1,0 +1,22 @@
+[package]
+name = "logring_size_report"
+description = "Builds the size bins for every MCU target and reports flash and RAM per bin, crate, source file, function and type"
+version = "0.1.0"
+publish = false
+edition = "2024"
+license = "MIT OR Apache-2.0"
+
+# its own workspace: a host tool next to the MCU-only size crate
+[workspace]
+
+[[bin]]
+name = "size-report"
+path = "src/main.rs"
+
+[dependencies]
+addr2line = { version = "0.27", features = ["loader"] }
+anyhow = "1"
+clap = { version = "4.6", features = ["derive"] }
+clap_complete = { version = "4.6", features = ["unstable-dynamic"] }
+indicatif = "0.18"
+object = { version = "0.40", default-features = false, features = ["read", "elf", "std"] }
