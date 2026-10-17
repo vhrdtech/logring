@@ -132,65 +132,13 @@ fn write_can(name: &str, frames: &[(u64, CanFrame)], path: impl AsRef<Path>) -> 
     logger.finalize_file().map_err(|e| anyhow!("mdf4: {e}"))
 }
 
-/// Flattens `value`'s numeric and boolean leaves into `(dotted.name, f64)` pairs (strings and byte blobs that
-/// aren't [frame_of]'s payload have no numeric representation and are dropped).
-fn flatten_numeric(prefix: &str, value: &ValueOwned, out: &mut Vec<(String, f64)>) {
-    match value {
-        ValueOwned::Bool(b) => out.push((prefix.to_string(), if *b { 1.0 } else { 0.0 })),
-        ValueOwned::Numeric(n) => out.push((prefix.to_string(), n.to_f64())),
-        ValueOwned::String(_) => {}
-        ValueOwned::Vec(items) | ValueOwned::Array(items) | ValueOwned::Tuple(items) => {
-            for (i, v) in items.iter().enumerate() {
-                flatten_numeric(&format!("{prefix}.{i}"), v, out);
-            }
-        }
-        ValueOwned::Struct { fields } => flatten_numeric_fields(prefix, fields, out),
-        ValueOwned::Enum { variant, fields } => {
-            flatten_numeric_fields(&format!("{prefix}.{variant}"), fields, out)
-        }
-        ValueOwned::Option(opt) => {
-            if let Some(v) = opt {
-                flatten_numeric(prefix, v, out);
-            }
-        }
-        ValueOwned::Result(res) => match res {
-            Ok(v) => flatten_numeric(&format!("{prefix}.Ok"), v, out),
-            Err(v) => flatten_numeric(&format!("{prefix}.Err"), v, out),
-        },
-        ValueOwned::Range(r) => {
-            out.push((format!("{prefix}.start"), r.start.to_f64()));
-            out.push((format!("{prefix}.end"), r.end.to_f64()));
-        }
-        ValueOwned::RangeInclusive(r) => {
-            out.push((format!("{prefix}.start"), r.start().to_f64()));
-            out.push((format!("{prefix}.end"), r.end().to_f64()));
-        }
-    }
-}
-
-fn flatten_numeric_fields(prefix: &str, fields: &FieldsValueOwned, out: &mut Vec<(String, f64)>) {
-    match fields {
-        FieldsValueOwned::Named(named) => {
-            for (name, v) in named {
-                flatten_numeric(&format!("{prefix}.{name}"), v, out);
-            }
-        }
-        FieldsValueOwned::Unnamed(values) => {
-            for (i, v) in values.iter().enumerate() {
-                flatten_numeric(&format!("{prefix}.{i}"), v, out);
-            }
-        }
-        FieldsValueOwned::Unit => {}
-    }
-}
-
 fn write_numeric(track: &Track, path: impl AsRef<Path>) -> Result<()> {
     let mut columns: Vec<String> = Vec::new();
     let mut seen = BTreeSet::new();
     let mut rows: Vec<Vec<(String, f64)>> = Vec::with_capacity(track.items.len());
     for item in &track.items {
         let mut cells = Vec::new();
-        flatten_numeric("value", &item.value, &mut cells);
+        crate::value_json::flatten_numeric("value", &item.value, &mut cells);
         for (name, _) in &cells {
             if seen.insert(name.clone()) {
                 columns.push(name.clone());

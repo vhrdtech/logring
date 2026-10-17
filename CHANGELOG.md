@@ -92,6 +92,8 @@
   scaffolds, `export`/`cat` stubs); dynamic shell completions (live file paths, `--format` values) and
   `indicatif` progress bars. `make-image` builds a demo image with a genuine small bundle, for tests and demos
   without a device. `ls` stays out until the USB view (VIEW-1) lands (PC-1, P2628#16oct-1001h).
+- `logring_py` (PyO3 + maturin, via uv): `open()`, tracks, sessions, markers, recordings,
+  `Track.rows()`/`to_numpy()`/`to_pandas()` (PC-1, P2628#16oct-1001h).
 
 ### Changed
 

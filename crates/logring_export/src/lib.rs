@@ -7,6 +7,7 @@
 
 pub mod csv_export;
 pub mod decode;
+pub mod events;
 pub mod mcap_export;
 pub mod meta;
 pub mod mf4_export;
@@ -18,6 +19,7 @@ pub mod value_json;
 mod test_support;
 
 pub use decode::{Item, Track};
+pub use events::{Marker, Recording};
 pub use meta::{BundleRecord, SessionRecord};
 pub use open::{LogFile, OpenError, open};
 pub use schema::Bundle;

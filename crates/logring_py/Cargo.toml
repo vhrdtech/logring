@@ -13,5 +13,9 @@ publish = false # distributed as a Python wheel, see pyproject.toml
 crate-type = ["cdylib"]
 
 [dependencies]
+logring = { workspace = true, features = ["std"] }
 logring_export = { path = "../logring_export", version = "0.1.0" }
+numpy = "0.29"
 pyo3.workspace = true
+pythonize = "0.29"
+serde_json.workspace = true

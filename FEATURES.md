@@ -128,7 +128,15 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   without a TTY or with `NO_COLOR`; `indicatif` progress bars on `make-image`'s writes and on exporting many
   tracks. CLI tests (`assert_cmd`) drive the real binary through `make-image` → `info`/`export`/`cat`/`check`;
   `export --format mf4`'s output opens in `asammdf` (`uv run`, done by hand this round, not yet a repo test).
-  `ls` stays out (VIEW-1); `logring_py` (PyO3 + maturin, via uv) is next. After LOG-2 (VIEW-1 for `ls`).
+  `ls` stays out (VIEW-1). `logring_py` (PyO3 + maturin, via uv): `logring.open(path)`, `LogFile.tracks()` /
+  `.track(name)` / `.sessions()` / `.markers()` / `.recordings()`, `Track.rows()` (decoded JSON per record),
+  `Track.to_numpy()` (one `numpy.ndarray` per numeric leaf field) and `Track.to_pandas()` (the same, as a
+  `pandas.DataFrame`; `pandas` is only imported inside it, not a hard dependency of the `logring` package).
+  Everything is converted to owned Rust/JSON values right after decode (in `open()`), so a `Track` doesn't
+  carry the bundle's borrow into a `#[pyclass]`. `markers`/`recordings` (`logring_export::events`) pair
+  `RecordingStart`/`RecordingStop` by id and give every marker's position, time and value: used by `logring_py`
+  and `logring info`'s counters alike. Tested with `pytest` (`just test-py`) against an image `make-image`
+  built, through `to_numpy`/`to_pandas` and the numpy/pandas it produced. After LOG-2 (VIEW-1 for `ls`).
   P2628#16oct-1001h. Plan R10.
 - 💡 **PC-2 fuse-mount**: `logring mount` (FUSE), so a card or image shows as a normal read-only filesystem
   without the `logring` CLI's own subcommands.

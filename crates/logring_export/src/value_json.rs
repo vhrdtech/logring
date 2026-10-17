@@ -26,6 +26,59 @@ pub fn numeric_to_string(v: &NumericValue) -> String {
     }
 }
 
+/// Flattens `value`'s numeric and boolean leaves into `(dotted.name, f64)` pairs: strings and byte blobs have
+/// no numeric representation and are dropped. Shared by MF4's plain-channel export and `logring_py`'s
+/// `to_numpy()`/`to_pandas()`.
+pub fn flatten_numeric(prefix: &str, value: &ValueOwned, out: &mut Vec<(String, f64)>) {
+    match value {
+        ValueOwned::Bool(b) => out.push((prefix.to_string(), if *b { 1.0 } else { 0.0 })),
+        ValueOwned::Numeric(n) => out.push((prefix.to_string(), n.to_f64())),
+        ValueOwned::String(_) => {}
+        ValueOwned::Vec(items) | ValueOwned::Array(items) | ValueOwned::Tuple(items) => {
+            for (i, v) in items.iter().enumerate() {
+                flatten_numeric(&format!("{prefix}.{i}"), v, out);
+            }
+        }
+        ValueOwned::Struct { fields } => flatten_numeric_fields(prefix, fields, out),
+        ValueOwned::Enum { variant, fields } => {
+            flatten_numeric_fields(&format!("{prefix}.{variant}"), fields, out)
+        }
+        ValueOwned::Option(opt) => {
+            if let Some(v) = opt {
+                flatten_numeric(prefix, v, out);
+            }
+        }
+        ValueOwned::Result(res) => match res {
+            Ok(v) => flatten_numeric(&format!("{prefix}.Ok"), v, out),
+            Err(v) => flatten_numeric(&format!("{prefix}.Err"), v, out),
+        },
+        ValueOwned::Range(r) => {
+            out.push((format!("{prefix}.start"), r.start.to_f64()));
+            out.push((format!("{prefix}.end"), r.end.to_f64()));
+        }
+        ValueOwned::RangeInclusive(r) => {
+            out.push((format!("{prefix}.start"), r.start().to_f64()));
+            out.push((format!("{prefix}.end"), r.end().to_f64()));
+        }
+    }
+}
+
+fn flatten_numeric_fields(prefix: &str, fields: &FieldsValueOwned, out: &mut Vec<(String, f64)>) {
+    match fields {
+        FieldsValueOwned::Named(named) => {
+            for (name, v) in named {
+                flatten_numeric(&format!("{prefix}.{name}"), v, out);
+            }
+        }
+        FieldsValueOwned::Unnamed(values) => {
+            for (i, v) in values.iter().enumerate() {
+                flatten_numeric(&format!("{prefix}.{i}"), v, out);
+            }
+        }
+        FieldsValueOwned::Unit => {}
+    }
+}
+
 /// The decoded value as JSON: structs and named-field enum variants become objects, tuples and unnamed fields
 /// become arrays, matching the shape [jsonschema_of] describes for the same type.
 pub fn value_to_json(value: &ValueOwned) -> Json {
