@@ -20,7 +20,7 @@ logring.wlr is its log: a ring the device writes all the time. Leave it where it
 truncated or defragmented, the device stops logging until it re-creates it (and the log in it is gone).\r\n\
 The rest of the card is free for your own files.\r\n\
 \r\n\
-Read the log with the logring CLI or the ww_logring Python package: https://github.com/vhrdtech/logring\r\n";
+Read the log with the logring CLI or the logring Python package: https://github.com/vhrdtech/logring\r\n";
 
 /// How to format a card.
 #[derive(Debug, Clone, Copy)]

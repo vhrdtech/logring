@@ -2,10 +2,10 @@
 resolver = "3"
 exclude = ["fuzz"]
 members = [
-    "crates/ww_logring",
-    "crates/ww_logring_cli",
-    "crates/ww_logring_export",
-    "crates/ww_logring_py",
+    "crates/logring",
+    "crates/logring_cli",
+    "crates/logring_export",
+    "crates/logring_py",
     "tests/stream_api",
     "tests/stream_e2e",
 ]
@@ -19,7 +19,7 @@ repository = "https://github.com/vhrdtech/logring"
 rust-version = "1.88"
 
 [workspace.dependencies]
-ww_logring = { path = "crates/ww_logring", version = "0.1.0", default-features = false }
+logring = { path = "crates/logring", version = "0.1.0", default-features = false }
 
 aligned = "0.4"
 anyhow = "1"

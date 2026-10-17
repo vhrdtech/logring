@@ -629,6 +629,49 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f9f8bd3e56ce4dfc153cf470fffbfa98c7620958b312ca5c3a4b8d5181fd13c6"
 
 [[package]]
+name = "logring"
+version = "0.1.0"
+dependencies = [
+ "aligned",
+ "block-device-driver",
+ "crc",
+ "embassy-sync",
+ "exfat_lite",
+ "thiserror",
+ "wire_weaver",
+ "ww_client_server",
+ "ww_si",
+ "ww_stream",
+]
+
+[[package]]
+name = "logring_cli"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "clap_complete",
+ "indicatif",
+ "logring_export",
+]
+
+[[package]]
+name = "logring_export"
+version = "0.1.0"
+dependencies = [
+ "logring",
+ "thiserror",
+]
+
+[[package]]
+name = "logring_py"
+version = "0.1.0"
+dependencies = [
+ "logring_export",
+ "pyo3",
+]
+
+[[package]]
 name = "logring_stream_api"
 version = "0.1.0"
 dependencies = [
@@ -641,6 +684,7 @@ version = "0.1.0"
 dependencies = [
  "critical-section",
  "embassy-sync",
+ "logring",
  "logring_stream_api",
  "tests_common",
  "tokio",
@@ -648,7 +692,6 @@ dependencies = [
  "wire_weaver",
  "wire_weaver_client",
  "ww_client_server",
- "ww_logring",
  "ww_stream",
 ]
 
@@ -1675,49 +1718,6 @@ dependencies = [
  "ww_framer",
  "ww_global",
  "ww_version",
-]
-
-[[package]]
-name = "ww_logring"
-version = "0.1.0"
-dependencies = [
- "aligned",
- "block-device-driver",
- "crc",
- "embassy-sync",
- "exfat_lite",
- "thiserror",
- "wire_weaver",
- "ww_client_server",
- "ww_si",
- "ww_stream",
-]
-
-[[package]]
-name = "ww_logring_cli"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "clap",
- "clap_complete",
- "indicatif",
- "ww_logring_export",
-]
-
-[[package]]
-name = "ww_logring_export"
-version = "0.1.0"
-dependencies = [
- "thiserror",
- "ww_logring",
-]
-
-[[package]]
-name = "ww_logring_py"
-version = "0.1.0"
-dependencies = [
- "pyo3",
- "ww_logring_export",
 ]
 
 [[package]]

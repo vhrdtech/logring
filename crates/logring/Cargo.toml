@@ -1,5 +1,5 @@
 [package]
-name = "ww_logring"
+name = "logring"
 description = "Power-cut-safe ring log store for embedded devices: many tracks of shrink_wrap data in one preallocated file, no_std, no alloc"
 version.workspace = true
 edition.workspace = true
@@ -10,7 +10,7 @@ rust-version.workspace = true
 
 [features]
 default = ["card-check", "crc-table"]
-# Host-side use (ww_logring_export, ww_logring_cli, tests): file-backed media, no RAM/flash limits assumed.
+# Host-side use (logring_export, logring_cli, tests): file-backed media, no RAM/flash limits assumed.
 std = ["ww_stream/std", "wire_weaver/std", "ww_si/std", "exfat_lite?/std"]
 # The ring as the file logring.wlr of an exFAT volume (LOG-3): ExfatRing, the mount check, format and card check.
 exfat = ["dep:exfat_lite"]
@@ -18,7 +18,7 @@ exfat = ["dep:exfat_lite"]
 # it a format checks nothing and stores no measured flush size (LOG-3).
 card-check = []
 # CRC-32C with a 1 KB table; without it bit by bit (slower, about 1 KB less flash). crc-hw overrides both: the
-# firmware's CRC unit through ww_logring::set_crc32c! (format::crc).
+# firmware's CRC unit through logring::set_crc32c! (format::crc).
 crc-table = []
 crc-hw = []
 # BddDevice: an SD driver implementing block-device-driver's BlockDevice<512> under exfat (multi-block writes).

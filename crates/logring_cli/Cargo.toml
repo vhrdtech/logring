@@ -1,5 +1,5 @@
 [package]
-name = "ww_logring_cli"
+name = "logring_cli"
 description = "The logring command line tool: info, ls, export, cat, check, make-image"
 version.workspace = true
 edition.workspace = true
@@ -17,4 +17,4 @@ anyhow.workspace = true
 clap.workspace = true
 clap_complete.workspace = true
 indicatif.workspace = true
-ww_logring_export = { path = "../ww_logring_export", version = "0.1.0" }
+logring_export = { path = "../logring_export", version = "0.1.0" }

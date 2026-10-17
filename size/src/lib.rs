@@ -9,8 +9,8 @@ use core::future::Future;
 use core::mem::MaybeUninit;
 use core::pin::pin;
 use core::task::{Context, Poll, Waker};
+use logring::{Durability, FullVersion, SessionInfo, TrackDesc, UNib32};
 use wire_weaver::ww_version::Version;
-use ww_logring::{Durability, FullVersion, SessionInfo, TrackDesc, UNib32};
 use ww_si::ww_numeric::NumericValue;
 use ww_stream::Second;
 
@@ -64,7 +64,7 @@ pub fn now() -> Option<Second> {
 pub struct CrcUnit;
 
 #[cfg(feature = "crc-hw")]
-impl ww_logring::Crc32cHw for CrcUnit {
+impl logring::Crc32cHw for CrcUnit {
     fn update(state: u32, data: &[u8]) -> u32 {
         wr(TICKS, state);
         for c in data.chunks(4) {
@@ -77,7 +77,7 @@ impl ww_logring::Crc32cHw for CrcUnit {
 }
 
 #[cfg(feature = "crc-hw")]
-ww_logring::set_crc32c!(CrcUnit);
+logring::set_crc32c!(CrcUnit);
 
 /// The card driver's error.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -256,7 +256,7 @@ fn panic(_: &core::panic::PanicInfo) -> ! {
 /// What a logging firmware does with a mounted writer, every call in reach: records on any track, markers,
 /// recordings, flushes on time and on demand.
 pub async fn log_loop<M: ww_stream::store::LogMedium>(
-    lr: &mut ww_logring::Logring<'static, M, BUF, TRACKS>,
+    lr: &mut logring::Logring<'static, M, BUF, TRACKS>,
 ) -> ! {
     let mut item = [0u8; 64];
     loop {

@@ -34,7 +34,7 @@
   48.9 → 48.1, `full` 88.1 → 88.0 (LTO noise) (LOG-1, P2628#17oct-1711b).
 - Features `crc-table` (default on) and `crc-hw` for the CRC-32C of every block (`format::crc`): without
   `crc-table` it is computed bit by bit; with `crc-hw` on the MCU's CRC unit, a `Crc32cHw` the firmware names
-  with `ww_logring::set_crc32c!` (a build without it fails to link). Same value in every build. `just size cuts`,
+  with `logring::set_crc32c!` (a build without it fails to link). Same value in every build. `just size cuts`,
   M33: 0.9-1.3 KB less flash without the table (opt s), `crc-hw` 1.0 KB less with a dummy unit (LOG-1,
   P2628#17oct-1623c).
 - Feature `card-check` (default on): `format_card`'s card check (aliasing test, write-size sweep, `CheckOptions`,
@@ -44,13 +44,13 @@
 - `just size cuts`: the flash each feature of the size crate costs, every bin built with it off (LOG-9).
 - `just size`: flash and RAM of the device side per MCU target (Cortex-M0+, M4/M7, M33, RISC-V imac/imc) at
   opt-level s and z, per crate, source file, function and type, from size examples in `size/` (LOG-9).
-- `ww_logring::reader`: the indexed reader (no_std, no alloc): seeks by track position and by device time with
+- `logring::reader`: the indexed reader (no_std, no alloc): seeks by track position and by device time with
   binary searches over segment and flush heads, recordings and their records, segment summaries; `ImageFile`
   reads a ring image on a PC (LOG-2, P2628#16oct-1001c).
 - `TrackStore`: one track of a logring as `wire_weaver`'s `StreamStore`, so a reliable stream is kept on the
   card and a host backfills from it after reboots; `Logring::release`, `reset_track`, `durable_newest`; track
   entries carry the track's stream session and its first segment (LOG-2).
-- `ww_logring::exfat` (feature `exfat`, on `exfat_lite`): the ring as the file `logring.wlr` of an SD card's exFAT
+- `logring::exfat` (feature `exfat`, on `exfat_lite`): the ring as the file `logring.wlr` of an SD card's exFAT
   volume. `ExfatRing`, a `LogMedium` window over the file's sectors that refuses anything outside it; `open`, the
   mount check (volume, contiguous file of whole sectors, bitmap bits, header A/B and its binding to the volume
   serial, first cluster, cluster count and start LBA) giving a `Bound` ring or `Unbound` with the reason
@@ -59,16 +59,16 @@
   sweep 16 KB..1 MB that picks the card's `flush_bytes`) and the geometry from `CardInfo` (SD Status: AU, UHS/VSC
   AU, erase, speed classes; 4 MB / 64 KB fallbacks); `recreate_ring`, keeping the rw files (LOG-3,
   P2628#16oct-1001d).
-- `ww_logring::bdd::BddDevice` (feature `block-device-driver`): an SD driver implementing `block-device-driver`'s
+- `logring::bdd::BddDevice` (feature `block-device-driver`): an SD driver implementing `block-device-driver`'s
   `BlockDevice<512>` under `ExfatRing` and the format, each multi-sector write one driver call (LOG-3).
 - `Config::binding` (written into the superblock at format; a mount of a log bound elsewhere fails with
   `Error::Unbound`) and `Config::card_flush_bytes` (the measured flush size, kept in the superblock) (LOG-3).
-- `ww_logring`: the ring format, the writer and power-cut recovery (`Logring::mount`/`format`, `push`,
+- `logring`: the ring format, the writer and power-cut recovery (`Logring::mount`/`format`, `push`,
   `push_head`, `marker`, `recording_start`/`stop`, `sync`, `flush_if_due`, `durable`), with sessions, track
   tables, the system track and the meta area; `docs/format.md` describes the layout; a `std` sequential `scan`
   and a cargo-fuzz target for mount with seed images (LOG-1, P2628#16oct-1000).
-- Repo scaffold: workspace (`ww_logring`, `ww_logring_export`, `ww_logring_cli` binary `logring`,
-  `ww_logring_py`), `just test`/`lint`/`install`/`deploy`, CI (fmt, clippy, tests, typos, cargo sort), licence
+- Repo scaffold: workspace (`logring`, `logring_export`, `logring_cli` binary `logring`,
+  `logring_py`), `just test`/`lint`/`install`/`deploy`, CI (fmt, clippy, tests, typos, cargo sort), licence
   (MIT OR Apache-2.0) (P2628#16oct-1016).
 - FEATURES.md with the planned items and ideas of `prj/P2628-logring/design/plan.md`: areas `LOG` (LOG-1..8),
   `VIEW` (VIEW-1..4), `PC` (PC-1, PC-2), `TEST` (TEST-22), each bound to its P2628 task where one exists
@@ -76,6 +76,10 @@
 
 ### Changed
 
+- **Breaking:** crate names: the engine `ww_logring` is now `logring`, `ww_logring_cli`/`ww_logring_export`/
+  `ww_logring_py` are now `logring_cli`/`logring_export`/`logring_py` (the `logring` binary and the `logring`
+  Python module name are unchanged); mechanical rename, no behaviour change. Frees `ww_logring` for a future
+  API-only crate (`#[ww_trait]`s, design `api-sketch.md` §1), not created here (P2628#17oct-1856).
 - The reader is smaller on the device: `seek_time` orders times with `reader::time_cmp` (u64, no 128-bit
   arithmetic; `time_ps` stays for the PC), and `recordings` walks the meta area with `OneTrack` instead of its own
   `AllTracks<1>` (one copy of the walker less). `just size`, M33 opt s: the reader alone 45.9 -> 39.4 KB, the

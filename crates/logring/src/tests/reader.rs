@@ -295,7 +295,7 @@ fn seek_time_starts_at_or_before() {
 fn reads_a_ring_from_an_image_file() {
     let mut m = three_sessions();
     let want = reference(&scan(&mut m));
-    let path = std::env::temp_dir().join(format!("ww_logring-reader-{}.wlr", std::process::id()));
+    let path = std::env::temp_dir().join(format!("logring-reader-{}.wlr", std::process::id()));
     std::fs::write(&path, m.image()).unwrap();
     let mut file = ImageFile::open(&path).unwrap();
     let mut rd = block_on(Reader::open(&mut file, None)).unwrap();

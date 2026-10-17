@@ -46,7 +46,7 @@ jobs:
           components: clippy
           targets: thumbv8m.main-none-eabihf
       - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo check -p ww_logring --no-default-features --target thumbv8m.main-none-eabihf
+      - run: cargo check -p logring --no-default-features --target thumbv8m.main-none-eabihf
 
   test:
     runs-on: ubuntu-latest
@@ -79,7 +79,7 @@ jobs:
           path: wire_weaver
       - uses: dtolnay/rust-toolchain@stable
       - uses: astral-sh/setup-uv@v5
-      - working-directory: logring/crates/ww_logring_py
+      - working-directory: logring/crates/logring_py
         run: uv run --group dev pytest -q
 
   cargo-sort:

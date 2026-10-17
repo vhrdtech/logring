@@ -1,6 +1,6 @@
 # Size examples
 
-What `ww_logring` costs in flash and RAM on small MCUs. `just size` builds every bin here for every target at
+What `logring` costs in flash and RAM on small MCUs. `just size` builds every bin here for every target at
 opt-level `s` and `z` (fat LTO, one codegen unit, `panic = "abort"`) and prints Markdown tables:
 
 - flash (text + rodata + data) and static RAM per bin and target, minus `baseline`;

@@ -1,8 +1,8 @@
 """Offline smoke test: the module loads and exposes a version. No card or image needed."""
 
-import ww_logring
+import logring
 
 
 def test_version():
-    assert isinstance(ww_logring.__version__, str)
-    assert ww_logring.__version__
+    assert isinstance(logring.__version__, str)
+    assert logring.__version__

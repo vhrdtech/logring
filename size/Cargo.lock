@@ -317,13 +317,26 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
 
 [[package]]
+name = "logring"
+version = "0.1.0"
+dependencies = [
+ "crc",
+ "embassy-sync",
+ "exfat_lite",
+ "thiserror",
+ "wire_weaver",
+ "ww_si",
+ "ww_stream",
+]
+
+[[package]]
 name = "logring_size"
 version = "0.1.0"
 dependencies = [
  "embassy-sync",
  "exfat_lite",
+ "logring",
  "wire_weaver",
- "ww_logring",
  "ww_si",
  "ww_stream",
 ]
@@ -869,19 +882,6 @@ dependencies = [
  "serde",
  "serde_json",
  "shrink_wrap",
-]
-
-[[package]]
-name = "ww_logring"
-version = "0.1.0"
-dependencies = [
- "crc",
- "embassy-sync",
- "exfat_lite",
- "thiserror",
- "wire_weaver",
- "ww_si",
- "ww_stream",
 ]
 
 [[package]]

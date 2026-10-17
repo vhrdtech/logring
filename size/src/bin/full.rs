@@ -5,11 +5,11 @@
 
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::mutex::Mutex;
+use logring::exfat::{ExfatRing, FormatOptions, Opened, format_card, open, recreate_ring};
+use logring::{Buffers, Config, Logring, TrackStore};
 use logring_size::{
     BUF, Card, ConstSlot, Slot, TRACKS, block_on, input, log_loop, now_ms, output, session,
 };
-use ww_logring::exfat::{ExfatRing, FormatOptions, Opened, format_card, open, recreate_ring};
-use ww_logring::{Buffers, Config, Logring, TrackStore};
 use ww_stream::store::StreamStore;
 
 type Lr = Logring<'static, ExfatRing<Card>, BUF, TRACKS>;

@@ -3,9 +3,9 @@
 #![no_std]
 #![no_main]
 
+use logring::exfat::{ExfatRing, Opened, open};
+use logring::{Buffers, Config, Logring};
 use logring_size::{BUF, Card, ConstSlot, Slot, TRACKS, block_on, log_loop, output, session};
-use ww_logring::exfat::{ExfatRing, Opened, open};
-use ww_logring::{Buffers, Config, Logring};
 
 static BUFS: ConstSlot<Buffers<BUF, TRACKS>> = ConstSlot::new(Buffers::new());
 static LR: Slot<Logring<'static, ExfatRing<Card>, BUF, TRACKS>> = Slot::new();

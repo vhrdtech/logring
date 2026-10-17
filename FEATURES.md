@@ -33,7 +33,7 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   `SEG_FRESH`, honoured by the reader on the system track. `Logring::mount_small` (`std`) writes them all as a
   small build will; power-cut tests alternate full and small boots on SD and NOR. The small build itself
   (feature `tail-positions`) is P2628#17oct-1623f.
-- 🧪 **LOG-2 reader-trackstore**: `ww_logring::reader` (no_std, no alloc): a block-cached `Walker` over the
+- 🧪 **LOG-2 reader-trackstore**: `logring::reader` (no_std, no alloc): a block-cached `Walker` over the
   data or meta segments decoding one track by stable key (`OneTrack`, the other tracks stepped over) or all
   (`AllTracks`); `seek_track` (binary search over segment and flush heads by a track's position), `seek_time`
   (by device time in a session), `recordings` and the records of a recording, `summary` of a segment;
@@ -51,7 +51,7 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
   flush heads already make the binary searches work); a track's released position is kept in the segment heads,
   so a reboot can forget acknowledgements since the last segment opened (the host's resume cursor covers them);
   no `ww_stream` change was needed.
-- 🧪 **LOG-3 logring-on-exfat**: `ww_logring::exfat` (feature `exfat`, on `exfat_lite`): `ExfatRing`, the ring
+- 🧪 **LOG-3 logring-on-exfat**: `logring::exfat` (feature `exfat`, on `exfat_lite`): `ExfatRing`, the ring
   file `logring.wlr` as a `LogMedium` window that refuses any access outside it; `open`, the mount binding check
   (volume, contiguous file, whole sectors, bitmap, header A/B bound to volume serial, first cluster, cluster count
   and start LBA) giving `Bound` or `Unbound(reason)`, lost attributes a warning with `restore_attributes`;
@@ -86,7 +86,7 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
 
 ## USB view (`VIEW`)
 
-- 📋 **VIEW-1 usb-view**: `ww_logring::view` — a snapshot tree by recording/time/track, native `.wlr` split
+- 📋 **VIEW-1 usb-view**: `logring::view` — a snapshot tree by recording/time/track, native `.wlr` split
   files, `index.csv`, `README.txt`, fixed-width CSV, lowercase names (paired with `exfat_lite`'s FS-2). After
   FS-1, LOG-2. P2628#16oct-1001f. Plan R8.
 - 📋 **VIEW-2 passthrough-lun-guard**: the real exFAT volume's LUN, with the ring-extent write guard (SCSI data
@@ -98,9 +98,9 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
 
 ## PC (`PC`)
 
-- 📋 **PC-1 pc-tool**: `ww_logring_export` (dynamic decode from the stored bundle, CSV, MCAP JSON + jsonschema,
+- 📋 **PC-1 pc-tool**: `logring_export` (dynamic decode from the stored bundle, CSV, MCAP JSON + jsonschema,
   MF4 incl. CAN bus logging), the `logring` CLI (`info`/`ls`/`export`/`cat`/`check`/`make-image`, `--version`,
-  completions, progress bars), `ww_logring_py` (PyO3 + maturin, via uv). After LOG-2 (VIEW-1 for `ls`).
+  completions, progress bars), `logring_py` (PyO3 + maturin, via uv). After LOG-2 (VIEW-1 for `ls`).
   P2628#16oct-1001h. Plan R10.
 - 💡 **PC-2 fuse-mount**: `logring mount` (FUSE), so a card or image shows as a normal read-only filesystem
   without the `logring` CLI's own subcommands.

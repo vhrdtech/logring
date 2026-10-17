@@ -1,5 +1,5 @@
 [package]
-name = "ww_logring_fuzz"
+name = "logring_fuzz"
 version = "0.0.0"
 publish = false
 edition = "2024"
@@ -9,7 +9,7 @@ cargo-fuzz = true
 
 [dependencies]
 libfuzzer-sys = "0.4"
-ww_logring = { path = "../crates/ww_logring", features = ["std"] }
+logring = { path = "../crates/logring", features = ["std"] }
 ww_stream = { path = "../../wire_weaver/ww_stream", default-features = false, features = ["log-store", "std"] }
 
 [[bin]]

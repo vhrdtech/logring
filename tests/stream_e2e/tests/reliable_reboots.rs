@@ -11,15 +11,15 @@ use std::time::Duration;
 
 use embassy_sync::blocking_mutex::raw::CriticalSectionRawMutex;
 use embassy_sync::mutex::Mutex;
+use logring::tests_support::block_on;
+use logring::{
+    Config, FullPolicy, FullVersion, Logring, SessionInfo, TrackDesc, TrackStore, UNib32,
+};
 use logring_stream_api::Sample;
 use tests_common::TestDevice;
 use wire_weaver::prelude::*;
 use wire_weaver::ww_version::Version;
 use wire_weaver_client::StreamEvent;
-use ww_logring::tests_support::block_on;
-use ww_logring::{
-    Config, FullPolicy, FullVersion, Logring, SessionInfo, TrackDesc, TrackStore, UNib32,
-};
 use ww_stream::StreamCursor;
 use ww_stream::store::LogMedium;
 use ww_stream::store::log::{SimError, SimSd};

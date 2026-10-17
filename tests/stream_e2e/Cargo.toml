@@ -12,6 +12,7 @@ repository.workspace = true
 [dependencies]
 critical-section = { version = "1.2", features = ["std"] }
 embassy-sync.workspace = true
+logring = { workspace = true, features = ["std"] }
 logring_stream_api = { path = "../stream_api" }
 tests_common = { path = "../../../wire_weaver/tests/tests_common" }
 tokio = { version = "1", features = ["sync", "rt-multi-thread", "rt", "macros", "time"] }
@@ -19,5 +20,4 @@ tracing-subscriber = "0.3"
 wire_weaver = { workspace = true, features = ["std"] }
 wire_weaver_client = { path = "../../../wire_weaver/wire_weaver_client" }
 ww_client_server.workspace = true
-ww_logring = { workspace = true, features = ["std"] }
 ww_stream = { workspace = true, features = ["std"] }

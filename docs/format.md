@@ -1,6 +1,6 @@
 # The logring format (version 1)
 
-The on-medium layout `ww_logring` writes and reads, as it is. The medium is anything implementing `wire_weaver`'s
+The on-medium layout `logring` writes and reads, as it is. The medium is anything implementing `wire_weaver`'s
 `ww_stream::store::LogMedium` (a window of an SD card, a NOR flash, a simulated card in tests); on an SD card it is
 the preallocated ring file `logring.wlr` of an exFAT volume (LOG-3). Every number is little endian unless it says
 varint. Every structure a reader trusts has a CRC-32C (`CRC_32_ISCSI`).
@@ -171,7 +171,7 @@ samples) follows from the item type in the bundle.
 **Stable key**: the same track across sessions, firmware updates that keep its path, and split files. From numbers
 only: `h = FNV-1a(api_root as u64 LE)`, then FNV-1a goes on over every path id as u32 LE. `api_root` names the
 device API across firmware updates: FNV-1a of the API root crate's name and its major version (u32 LE), the
-`FullVersion` wire_weaver generates as `<ROOT_TRAIT>_FULL_GID`; `ww_logring::api_root_id` is a `const fn`, so firmware
+`FullVersion` wire_weaver generates as `<ROOT_TRAIT>_FULL_GID`; `logring::api_root_id` is a `const fn`, so firmware
 computes it at build time and the crate name never reaches the card through a track.
 
 A track's positions are monotonic from its `stream_start` segment on, across sessions: a mount continues them by
@@ -303,7 +303,7 @@ it the segment heads' tables (`a_thousand_tracks`).
 
 ## 10. On an SD card: the ring file
 
-On a card the medium is the file `logring.wlr` in the root directory of the card's exFAT volume (`ww_logring::exfat`,
+On a card the medium is the file `logring.wlr` in the root directory of the card's exFAT volume (`logring::exfat`,
 feature `exfat`). The device writes it by raw sector address, past the filesystem, so it has to know the file
 is still where it put it:
 
@@ -336,7 +336,7 @@ MBR | gap to the first boundary unit | exFAT boot regions | FAT | cluster heap:
 
 ## 11. Reading
 
-`ww_logring::reader` (no_std, no alloc) reads a ring without a scan, from what the format above already carries:
+`logring::reader` (no_std, no alloc) reads a ring without a scan, from what the format above already carries:
 
 - **By track position**: a binary search over the data segments of one stream of the track (the one current at
   the segment asked for, normally its `stream_start`: a segment whose entry names a later `stream_start` is past

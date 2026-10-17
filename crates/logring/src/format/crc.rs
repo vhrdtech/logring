@@ -29,16 +29,16 @@ pub trait Crc32cHw {
 
 #[cfg(feature = "crc-hw")]
 unsafe extern "Rust" {
-    fn _ww_logring_crc32c_update(state: u32, data: &[u8]) -> u32;
+    fn _logring_crc32c_update(state: u32, data: &[u8]) -> u32;
 }
 
-/// Name the firmware's [Crc32cHw] (feature `crc-hw`), once in the binary: `ww_logring::set_crc32c!(MyCrc);`.
+/// Name the firmware's [Crc32cHw] (feature `crc-hw`), once in the binary: `logring::set_crc32c!(MyCrc);`.
 #[cfg(feature = "crc-hw")]
 #[macro_export]
 macro_rules! set_crc32c {
     ($t:ty) => {
         #[unsafe(no_mangle)]
-        fn _ww_logring_crc32c_update(state: u32, data: &[u8]) -> u32 {
+        fn _logring_crc32c_update(state: u32, data: &[u8]) -> u32 {
             <$t as $crate::format::crc::Crc32cHw>::update(state, data)
         }
     };
@@ -68,7 +68,7 @@ impl Digest {
         #[cfg(feature = "crc-hw")]
         {
             // SAFETY: the symbol is the firmware's `set_crc32c!` function, a safe Rust fn of this signature
-            self.state = unsafe { _ww_logring_crc32c_update(self.state, data) };
+            self.state = unsafe { _logring_crc32c_update(self.state, data) };
         }
     }
 

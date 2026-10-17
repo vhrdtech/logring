@@ -1,4 +1,4 @@
-//! `ww_logring`: a power-cut-safe ring log store for embedded devices.
+//! `logring`: a power-cut-safe ring log store for embedded devices.
 //!
 //! Many tracks of any [shrink_wrap](https://github.com/vhrdtech/wire_weaver) type are written at once into one
 //! preallocated ring file, with sessions, recordings and markers, read back over `wire_weaver`, as a USB disk or

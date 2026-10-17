@@ -1,6 +1,6 @@
 [package]
 name = "logring_size"
-description = "Size examples: no_std firmware-like bins that use ww_logring's device-side API on a dummy medium, measured by `just size`"
+description = "Size examples: no_std firmware-like bins that use logring's device-side API on a dummy medium, measured by `just size`"
 version = "0.1.0"
 publish = false
 edition = "2024"
@@ -12,17 +12,17 @@ exclude = ["report"]
 
 [features]
 default = ["card-check", "crc-table"]
-# ww_logring's features of the same name; `just size cuts` measures each default one off
-card-check = ["ww_logring/card-check"]
-crc-table = ["ww_logring/crc-table"]
+# logring's features of the same name; `just size cuts` measures each default one off
+card-check = ["logring/card-check"]
+crc-table = ["logring/crc-table"]
 # the CRC on a (dummy) CRC unit: lib.rs names it with set_crc32c!
-crc-hw = ["ww_logring/crc-hw"]
+crc-hw = ["logring/crc-hw"]
 
 [dependencies]
 embassy-sync = "0.8"
 exfat_lite = { path = "../../exfat_lite", default-features = false }
+logring = { path = "../crates/logring", default-features = false, features = ["exfat"] }
 wire_weaver = { path = "../../wire_weaver/wire_weaver", default-features = false }
-ww_logring = { path = "../crates/ww_logring", default-features = false, features = ["exfat"] }
 ww_si = { path = "../../wire_weaver/ww_stdlib/ww_si", default-features = false, features = ["time", "u32", "u64"] }
 ww_stream = { path = "../../wire_weaver/ww_stream", default-features = false, features = ["log-store"] }
 

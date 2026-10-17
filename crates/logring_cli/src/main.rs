@@ -5,7 +5,7 @@
 
 use clap::{CommandFactory, Parser, Subcommand};
 
-/// `logring <SUBCOMMAND>`: read a ww_logring card, image or split file.
+/// `logring <SUBCOMMAND>`: read a logring card, image or split file.
 #[derive(Parser)]
 #[command(name = "logring", version = version())]
 struct Cli {

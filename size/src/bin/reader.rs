@@ -3,8 +3,8 @@
 #![no_std]
 #![no_main]
 
+use logring::reader::{Reader, TrackSummary};
 use logring_size::{RawCard, block_on, input, now, output};
-use ww_logring::reader::{Reader, TrackSummary};
 
 #[unsafe(no_mangle)]
 pub extern "C" fn _start() -> ! {

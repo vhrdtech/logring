@@ -4,8 +4,8 @@
 
 use embassy_sync::blocking_mutex::raw::NoopRawMutex;
 use embassy_sync::mutex::Mutex;
+use logring::{Buffers, Config, Logring, TrackStore};
 use logring_size::{BUF, ConstSlot, RawCard, Slot, TRACKS, block_on, input, now, output, session};
-use ww_logring::{Buffers, Config, Logring, TrackStore};
 use ww_stream::StreamHead;
 use ww_stream::store::StreamStore;
 

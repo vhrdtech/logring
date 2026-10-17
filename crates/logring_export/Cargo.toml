@@ -1,6 +1,6 @@
 [package]
-name = "ww_logring_export"
-description = "PC-side reader and exporter for ww_logring: dynamic decode from the stored API bundle, CSV/MCAP/MF4 export"
+name = "logring_export"
+description = "PC-side reader and exporter for logring: dynamic decode from the stored API bundle, CSV/MCAP/MF4 export"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true
@@ -9,5 +9,5 @@ repository.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+logring = { workspace = true, features = ["std"] }
 thiserror.workspace = true
-ww_logring = { workspace = true, features = ["std"] }

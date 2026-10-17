@@ -11,21 +11,21 @@ time; exports to MF4, MCAP and CSV. The card is formatted on the device: put in 
 
 | crate | what |
 |---|---|
-| [`crates/ww_logring`](crates/ww_logring) | the engine: format, writer, recovery, reader, `TrackStore`, the view model, media |
-| [`crates/ww_logring_export`](crates/ww_logring_export) | PC-side reader and exporter (CSV, MCAP, MF4) |
-| [`crates/ww_logring_cli`](crates/ww_logring_cli) | the `logring` command line tool |
-| [`crates/ww_logring_py`](crates/ww_logring_py) | the `ww_logring` Python module (PyO3 + maturin) |
+| [`crates/logring`](crates/logring) | the engine: format, writer, recovery, reader, `TrackStore`, the view model, media |
+| [`crates/logring_export`](crates/logring_export) | PC-side reader and exporter (CSV, MCAP, MF4) |
+| [`crates/logring_cli`](crates/logring_cli) | the `logring` command line tool |
+| [`crates/logring_py`](crates/logring_py) | the `logring` Python module (PyO3 + maturin) |
 
 ```sh
-cargo install --path crates/ww_logring_cli
+cargo install --path crates/logring_cli
 logring info card.img         # sessions, recordings, tracks, counters
 logring export card.img --format csv --out ./out
 ```
 
 ```python
-import ww_logring
+import logring
 
-card = ww_logring.open("card.img")
+card = logring.open("card.img")
 df = card.track("can1_rx").to_pandas()
 ```
 

@@ -117,7 +117,7 @@ fn corrupted_images_never_panic() {
     mount_garbage(&garbage);
 }
 
-/// Seed images for the fuzzer: `cargo test -p ww_logring --features std write_fuzz_seeds -- --ignored`, then
+/// Seed images for the fuzzer: `cargo test -p logring --features std write_fuzz_seeds -- --ignored`, then
 /// `cd fuzz && cargo +nightly fuzz run mount corpus/mount seeds`.
 #[test]
 #[ignore]

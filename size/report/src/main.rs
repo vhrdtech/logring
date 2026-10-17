@@ -60,7 +60,7 @@ const BINS: &[(&str, &str)] = &[
     ),
 ];
 
-/// Features of the size crate, each forwarding to `ww_logring`'s feature of the same name (default on), with what
+/// Features of the size crate, each forwarding to `logring`'s feature of the same name (default on), with what
 /// turning it off takes out.
 const FEATURES: &[(&str, &str)] = &[
     (
@@ -580,7 +580,7 @@ fn innermost(loader: &addr2line::Loader, addr: u64) -> Option<String> {
     Some(shorten(&name))
 }
 
-/// `ww_logring::writer::Logring<ww_logring::exfat::ring::ExfatRing<logring_size::Card>, 4096: usize, 8:
+/// `logring::writer::Logring<logring::exfat::ring::ExfatRing<logring_size::Card>, 4096: usize, 8:
 /// usize>::mount::{closure#0}` -> `Logring<ExfatRing<Card>, 4096, 8>::mount`: module paths, const types,
 /// closure suffixes and hashes dropped.
 fn shorten(name: &str) -> String {
@@ -753,14 +753,14 @@ fn types(target: &str, bin: &str) -> Result<String> {
         "core::",
         "logring_size::Slot",
         "embassy_sync::mutex::Mutex",
-        "ww_logring::Error",
-        "ww_logring::exfat::Opened",
+        "logring::Error",
+        "logring::exfat::Opened",
     ];
     let ours = |n: &str| {
         let n = n.strip_prefix("{async fn body of ").unwrap_or(n);
-        (n.starts_with("ww_logring::")
+        (n.starts_with("logring::")
             || n.starts_with("exfat_lite::")
-            || n.starts_with("<ww_logring::")
+            || n.starts_with("<logring::")
             || n.starts_with("{async block@src/bin/"))
             && !WRAPPERS.iter().any(|w| n.starts_with(w))
     };
@@ -778,7 +778,7 @@ fn types(target: &str, bin: &str) -> Result<String> {
     }
     if let Some((n, size, fields)) = all
         .iter()
-        .find(|(n, _, _)| n.starts_with("ww_logring::Logring<"))
+        .find(|(n, _, _)| n.starts_with("logring::Logring<"))
     {
         writeln!(s, "\n`{}`, {size} bytes, by field:\n", shorten(n)).unwrap();
         s.push_str("| field | bytes |\n|---|---:|\n");
