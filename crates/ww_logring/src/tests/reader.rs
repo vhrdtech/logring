@@ -304,3 +304,51 @@ fn reads_a_ring_from_an_image_file() {
     assert!(got == want, "image walk differs from the scan");
     assert!(block_on(file.write(0, &[0; 512])).is_err(), "read-only");
 }
+
+#[test]
+fn time_cmp_orders_as_picoseconds_do() {
+    use crate::Second;
+    use crate::reader::time_cmp;
+    use ww_si::Prefix;
+    use ww_si::ww_numeric::NumericValue;
+    let s = |prefix, value| Second { prefix, value };
+    let mut rng = Rng::new(7);
+    let prefixes = [
+        Prefix::Unit,
+        Prefix::Milli,
+        Prefix::Micro,
+        Prefix::Nano,
+        Prefix::Pico,
+    ];
+    for _ in 0..20_000 {
+        let pick = |rng: &mut Rng| {
+            let p = prefixes[rng.range(0, prefixes.len() as u64 - 1) as usize];
+            let v = match rng.range(0, 3) {
+                0 => NumericValue::U32(rng.range(0, 2000) as u32),
+                1 => NumericValue::U32(rng.next() as u32),
+                2 => NumericValue::U64(rng.range(0, 1 << 40)),
+                _ => NumericValue::U64(rng.next()),
+            };
+            s(p, v)
+        };
+        let (a, b) = (pick(&mut rng), pick(&mut rng));
+        if let (Some(x), Some(y)) = (time_ps(&a), time_ps(&b)) {
+            assert_eq!(time_cmp(&a, &b), Some(x.cmp(&y)), "{a:?} {b:?}");
+        }
+    }
+    let ms = s(Prefix::Milli, NumericValue::U32(1));
+    assert_eq!(
+        time_cmp(&ms, &s(Prefix::Micro, NumericValue::U32(1000))),
+        Some(core::cmp::Ordering::Equal)
+    );
+    assert_eq!(
+        time_cmp(&ms, &s(Prefix::Micro, NumericValue::U32(999))),
+        Some(core::cmp::Ordering::Greater)
+    );
+    // u64::MAX seconds in picoseconds overflows u64: still the larger
+    let big = s(Prefix::Unit, NumericValue::U64(u64::MAX));
+    assert_eq!(
+        time_cmp(&big, &s(Prefix::Pico, NumericValue::U64(u64::MAX))),
+        Some(core::cmp::Ordering::Greater)
+    );
+}

@@ -621,7 +621,44 @@ fn skip_or_end(dec: &mut Dec) -> Option<Skipped> {
     crate::format::record::skip_record(dec)
 }
 
-/// A device time as picoseconds, for ordering; `None` for values that aren't numbers.
+/// Order two device times: integers by their values when the prefixes are the same, else the one with the larger
+/// prefix scaled up in u64 (an overflow means it is the larger), other numbers as `f64`. `None` for values that
+/// aren't numbers (and NaN). No 128-bit arithmetic: it runs in every seek by time on the device.
+pub fn time_cmp(a: &Second, b: &Second) -> Option<core::cmp::Ordering> {
+    use core::cmp::Ordering;
+    let int = |t: &Second| match t.value {
+        NumericValue::U32(v) => Some(v as u64),
+        NumericValue::U64(v) => Some(v),
+        _ => None,
+    };
+    let (ea, eb): (i8, i8) = (a.prefix.into(), b.prefix.into());
+    match (int(a), int(b)) {
+        (Some(x), Some(y)) if ea == eb => Some(x.cmp(&y)),
+        (Some(x), Some(y)) => {
+            // `hi` has the larger exponent: hi * 10^d against lo
+            let (hi, lo, swapped) = if ea > eb { (x, y, false) } else { (y, x, true) };
+            let d = (ea as i32 - eb as i32).unsigned_abs();
+            let o = match 10u64.checked_pow(d).and_then(|p| hi.checked_mul(p)) {
+                Some(h) => h.cmp(&lo),
+                None => Ordering::Greater,
+            };
+            Some(if swapped { o.reverse() } else { o })
+        }
+        _ => {
+            let fa = a.value.to_f64() * libm_pow10(ea as i32);
+            let fb = b.value.to_f64() * libm_pow10(eb as i32);
+            fa.partial_cmp(&fb)
+        }
+    }
+}
+
+/// `t` is at or before `target`.
+fn at_or_before(t: &Second, target: &Second) -> bool {
+    time_cmp(t, target).is_some_and(|o| o != core::cmp::Ordering::Greater)
+}
+
+/// A device time as picoseconds, for ordering; `None` for values that aren't numbers. The PC side's form;
+/// the device orders with [time_cmp].
 pub fn time_ps(t: &Second) -> Option<i128> {
     let exp: i8 = t.prefix.into();
     let shift = exp as i32 + 12;
@@ -1199,7 +1236,6 @@ impl Reader {
         let Some(tail) = self.data.tail else {
             return Ok(None);
         };
-        let target = time_ps(t);
         // the session's segments are consecutive; sessions grow with seq
         let (mut a, mut b) = (self.data.oldest, tail + 1);
         while a < b {
@@ -1230,8 +1266,8 @@ impl Reader {
             let at = self
                 .flush_at(m, mid, 0, s.first_flush, 0)
                 .await?
-                .and_then(|(_, _, ft)| ft.as_ref().and_then(time_ps));
-            if at.is_some_and(|x| target.is_some_and(|tg| x <= tg)) {
+                .and_then(|(_, _, ft)| ft);
+            if at.is_some_and(|x| at_or_before(&x, t)) {
                 best = mid;
                 a = mid + 1;
             } else {
@@ -1245,11 +1281,7 @@ impl Reader {
         while hi_b - lo_b > 1 {
             let mid = lo_b + (hi_b - lo_b) / 2;
             match self.flush_at(m, best, mid, seg.first_flush, 0).await? {
-                Some((_, _, Some(ft)))
-                    if time_ps(&ft).is_some_and(|x| target.is_some_and(|tg| x <= tg)) =>
-                {
-                    lo_b = mid
-                }
+                Some((_, _, Some(ft))) if at_or_before(&ft, t) => lo_b = mid,
                 Some((fstart, _, _)) if fstart > lo_b => hi_b = fstart,
                 _ => hi_b = mid,
             }
@@ -1436,7 +1468,7 @@ impl Reader {
             return Ok(());
         };
         let mut w =
-            Walker::at_segment(AllTracks::<1>::default(), Role::Meta, self.meta.oldest).until(tail);
+            Walker::at_segment(OneTrack::new(0, 0), Role::Meta, self.meta.oldest).until(tail);
         w.truncate = true;
         let mut item = [0u8; 256];
         // a start waits for its stop (at most one recording runs at a time)

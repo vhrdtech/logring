@@ -48,6 +48,10 @@
 
 ### Changed
 
+- The reader is smaller on the device: `seek_time` orders times with `reader::time_cmp` (u64, no 128-bit
+  arithmetic; `time_ps` stays for the PC), and `recordings` walks the meta area with `OneTrack` instead of its own
+  `AllTracks<1>` (one copy of the walker less). `just size`, M33 opt s: the reader alone 45.9 -> 39.4 KB, the
+  other bins unchanged (LOG-2, P2628#17oct-1623d).
 - `format::CRC` (the `crc` crate's `Crc<u32>`) is now `format::crc::{checksum, Digest}` (LOG-1).
 - The writer no longer sits in RAM twice: the stage buffer and the per-track state are `Buffers<BUF, TRACKS>`
   (`const fn new`, all zero, so a static of it is in `.bss`), lent by the firmware to `Logring::new(medium,
