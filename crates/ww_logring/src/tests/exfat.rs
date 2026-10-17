@@ -803,3 +803,43 @@ fn fsck_exfat_is_clean_after_format_and_logging() {
         Err(_) => eprintln!("fsck.exfat not installed: skipped"),
     }
 }
+
+#[test]
+fn damaged_cards_never_panic() {
+    let card = logged_card(3);
+    let copy = |card: &SimCard| SimCard {
+        data: card.data.clone(),
+        claimed: card.claimed,
+        ..SimCard::new(0)
+    };
+    let file = ring_file(&mut copy(&card));
+    let vi = *block_on(Volume::mount(&mut copy(&card))).unwrap().info();
+    let ring_at = vi.cluster_lba(file.first_cluster).unwrap() as usize * 512;
+    let meta_end = vi.heap_lba() as usize * 512 + 4 * vi.cluster_bytes() as usize;
+    let mut rng = super::Rng::new(77);
+    let (mut bound_n, mut unbound_n) = (0, 0);
+    for _ in 0..300 {
+        let mut c = copy(&card);
+        for _ in 0..rng.range(1, 8) {
+            // the MBR, boot regions, FAT, bitmap, root directory, or the ring header
+            let at = if rng.chance(50) {
+                rng.range(0, meta_end as u64 - 1) as usize
+            } else {
+                ring_at + rng.range(0, 1023) as usize
+            };
+            c.data[at] = rng.next() as u8;
+        }
+        match block_on(open(c)).unwrap() {
+            Opened::Bound(b) => {
+                bound_n += 1;
+                let (ring, cfg) = b.into_parts(base());
+                let _ = block_on(Lr::mount(ring, cfg, info()));
+            }
+            Opened::Unbound(..) => unbound_n += 1,
+        }
+    }
+    assert!(
+        bound_n > 0 && unbound_n > 0,
+        "{bound_n} bound, {unbound_n} unbound"
+    );
+}

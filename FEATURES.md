@@ -22,10 +22,22 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (with a P262
 - 📋 **LOG-2 reader-trackstore**: reader by track/time/recording with binary search, segment summaries;
   `TrackStore` implementing `wire_weaver` `ww_stream`'s `StreamStore` so a reliable stream backfills from the
   logring. After LOG-1. P2628#16oct-1001c. Plan R5.
-- 📋 **LOG-3 logring-on-exfat**: `ExfatRing` medium on `exfat_lite`, mount binding check + `Unbound`, re-create
-  ring file, format flow with card check (aliasing for fake cards, a write-size sweep storing the best
-  `flush_bytes`), geometry from `CardInfo` (SD Status AU/RU/erase, with fallbacks), a `block-device-driver`
-  medium with multi-block writes. After LOG-1, FS-1. P2628#16oct-1001d. Plan R6.
+- 🧪 **LOG-3 logring-on-exfat**: `ww_logring::exfat` (feature `exfat`, on `exfat_lite`): `ExfatRing`, the ring
+  file `logring.wlr` as a `LogMedium` window that refuses any access outside it; `open`, the mount binding check
+  (volume, contiguous file, whole sectors, bitmap, header A/B bound to volume serial, first cluster, cluster count
+  and start LBA) giving `Bound` or `Unbound(reason)`, lost attributes a warning with `restore_attributes`;
+  `format_card` with the card check (aliasing test for fake cards, a write-size sweep 16 KB..1 MB that stores the
+  best `flush_bytes` in the superblock) and geometry from `CardInfo` (SD Status `AU_SIZE`/`UHS_AU_SIZE`/`VSC_AU_SIZE`,
+  erase fields, speed classes; 4 MB segments / 64 KB flushes as fallbacks); `recreate_ring` keeping the rw files;
+  `bdd::BddDevice` (feature `block-device-driver`): a `block-device-driver` SD driver under it, multi-block writes
+  in one call (straight from the writer's aligned stage buffer). Format: docs/format.md §10. Tests on in-memory
+  card images: deleted, renamed, truncated, short valid length, moved, defragmented, freed clusters, replaced,
+  damaged header, copied from another card, attributes changed; wrapping and dropping fake cards caught; sweeps on
+  EVO-like (64 KB dip) and flat timing models; `fsck.exfat -n` clean after format and logging. Not yet run on a
+  real card or rePort (needs the SD driver with `CardInfo`, P2628#16oct-1002; TEST-22). P2628#16oct-1001d. Plan
+  R6. Differences from the plan: the recording unit `flush_bytes` is rounded to is 16 KB for every card (the
+  speed-class RU of larger classes isn't applied: it would force 512 KB flushes); lost attributes don't unbind the
+  ring; a `VSC_AU_SIZE` over 64 MB is left out.
 - 💡 **LOG-4 merge-logstore**: whether `ww_stream`'s `LogStore` (one track, raw NOR/SD) could become a one-track
   logring later; decided after the logring ships.
 - 💡 **LOG-5 pinned-recordings-keep-ring**: pinned recordings the ring skips when wrapping, or a second small

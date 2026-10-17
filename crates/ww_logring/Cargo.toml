@@ -14,8 +14,12 @@ default = []
 std = ["ww_stream/std", "wire_weaver/std", "ww_si/std", "exfat_lite?/std"]
 # The ring as the file logring.wlr of an exFAT volume (LOG-3): ExfatRing, the mount check, format and card check.
 exfat = ["dep:exfat_lite"]
+# BddDevice: an SD driver implementing block-device-driver's BlockDevice<512> under exfat (multi-block writes).
+block-device-driver = ["exfat", "dep:block-device-driver", "dep:aligned"]
 
 [dependencies]
+aligned = { workspace = true, optional = true }
+block-device-driver = { workspace = true, optional = true }
 crc.workspace = true
 exfat_lite = { workspace = true, optional = true }
 thiserror.workspace = true

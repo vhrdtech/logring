@@ -6,6 +6,8 @@
 //! is implemented.
 #![cfg_attr(not(feature = "std"), no_std)]
 
+#[cfg(feature = "block-device-driver")]
+pub mod bdd;
 #[cfg(feature = "exfat")]
 pub mod exfat;
 pub mod format;

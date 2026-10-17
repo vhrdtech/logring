@@ -13,6 +13,8 @@
   sweep 16 KB..1 MB that picks the card's `flush_bytes`) and the geometry from `CardInfo` (SD Status: AU, UHS/VSC
   AU, erase, speed classes; 4 MB / 64 KB fallbacks); `recreate_ring`, keeping the rw files (LOG-3,
   P2628#16oct-1001d).
+- `ww_logring::bdd::BddDevice` (feature `block-device-driver`): an SD driver implementing `block-device-driver`'s
+  `BlockDevice<512>` under `ExfatRing` and the format, each multi-sector write one driver call (LOG-3).
 - `Config::binding` (written into the superblock at format; a mount of a log bound elsewhere fails with
   `Error::Unbound`) and `Config::card_flush_bytes` (the measured flush size, kept in the superblock) (LOG-3).
 

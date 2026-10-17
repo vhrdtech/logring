@@ -8,7 +8,9 @@ default:
 # Tests (host, no card or image needed), Rust and Python, plus a no_std build check for the engine
 test: test-py
     cargo test --workspace --quiet
+    cargo test -p ww_logring --features std,block-device-driver --quiet
     cargo check -p ww_logring --no-default-features --target thumbv8m.main-none-eabihf
+    cargo check -p ww_logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf
 
 # Build the Python module (crates/ww_logring_py) into a venv under /tmp and run its pytest smoke test
 [working-directory('crates/ww_logring_py')]
@@ -21,6 +23,8 @@ lint:
     cargo sort --workspace --grouped --check
     typos
     cargo clippy --workspace --all-targets -- -D warnings
+    cargo clippy -p ww_logring --all-targets --features std,block-device-driver -- -D warnings
+    cargo clippy -p ww_logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf -- -D warnings
 
 # Fuzz the mount on garbage and damaged rings (nightly, cargo install cargo-fuzz); seeds: fuzz/seeds
 [working-directory('fuzz')]

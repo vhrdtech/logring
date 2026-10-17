@@ -57,7 +57,7 @@ hints and counters only: the state of the log is recovered from the segments (§
 | 20 | u32 | `segment_size` |
 | 24 | u32 | `meta_segments` (m) |
 | 28 | u32 | `data_segments` (n) |
-| 32 | 16 | `binding`: the ring file's place on the card (volume serial, first cluster, cluster count; LOG-3), zero on a raw medium |
+| 32 | 16 | `binding`: the ring file's place on the card, four u32: volume serial, first cluster, cluster count, start LBA (low 32 bits); zero on a raw medium (§10) |
 | 48 | u32 | `next_session`: the session the next mount gets (sessions start at 1) |
 | 52 | u32 | `next_recording`: the id the next recording gets (1 at format; 0 means "none") |
 | 56 | u64 | `data_tail_seq`: highest data seq opened when this was written; `u64::MAX` before the first |
@@ -228,9 +228,42 @@ pass, so the next mount takes the segment before it as the tail and reuses the s
 | stage buffer | `BUF` const generic, 512 B and up | whole blocks are assembled in it; a flush bigger than it is written in `BUF`-sized pieces, sequential inside the segment |
 | tracks | `TRACKS` const generic, up to 64 | the system track included |
 
-## 10. Not in this version
+## 10. On an SD card: the ring file
+
+On a card the medium is the file `logring.wlr` in the root directory of the card's exFAT volume (`ww_logring::exfat`,
+feature `exfat`). The device writes it by raw sector address, past the filesystem, so it has to know the file
+is still where it put it:
+
+```text
+MBR | gap to the first boundary unit | exFAT boot regions | FAT | cluster heap:
+    bitmap, up-case table, root dir, README.txt, ... rw files (rw_bytes free, 128 MB default) ... logring.wlr
+```
+
+- **Placement** (format and re-create): the ring file is contiguous (`NoFatChain`, the FAT untouched), starts on
+  the card's allocation unit (and a cluster) and is whole segments long, at the end of the longest free run of
+  clusters, with `rw_bytes` of all free space left free. Attributes read-only + system + hidden (+ archive).
+- **Segment size** from the card's SD Status (ACMD13): the largest of `AU_SIZE`, `UHS_AU_SIZE` and
+  `VSC_AU_SIZE` (up to 64 MB), at least 4 MB (a multiple of the AU when that is smaller); 4 MB when the card
+  reports none. The exFAT boundary unit is the AU when it is a power of two larger than the SD Association
+  default for the capacity.
+- **Binding**: at format the superblock's `binding` gets the volume serial, the file's first cluster, cluster
+  count and start LBA. A mount (`exfat::open`) checks, in order: the volume mounts (boot checksum and fields);
+  `logring.wlr` exists, is a file, `NoFatChain`, of whole sectors, valid data length = data length, every
+  cluster set in the bitmap; slot A or B decodes (slot B searched at half of every AU size from 16 KB to 64 MB
+  when A doesn't); the binding matches (serial: else *other card*; first cluster and start LBA: else *moved*;
+  cluster count: else *resized*); the superblock's segments fit the file. Anything else leaves the ring
+  *unbound*: nothing is written until the device re-creates the ring file (a new log; the rw files stay) or
+  formats the card. Lost attributes are only a warning (the place is checked anyway) and can be restored.
+- **Card check** before a format (it writes to the card): an aliasing test (a tag at sector 0, then at every
+  power of two, 64 spread points and the last sector, each read back with sector 0 after it, then all read again:
+  a fake card wraps or drops writes and fails at its real size) and a write-size sweep (16 KB to 1 MB, 4 MB at each
+  size, each from its own AU, in the second half of the card): the smallest size within 90 % of the fastest
+  becomes `flush_bytes` (rounded to 16 KB), stored in the superblock's `flush_bytes`; 64 KB when nothing was
+  measured. Sizes larger than the scratch buffer the device gives are not measured.
+
+## 11. Not in this version
 
 Per-track compression (the `compression` byte is reserved), pinned recordings or a keep ring, several sources per
-card (`source` reserved), encryption, the exFAT binding (LOG-3 fills `binding`), the indexed reader and
+card (`source` reserved), encryption, the indexed reader and
 `TrackStore` (LOG-2; the format carries what they need: segment heads with per-track `released`, flush heads with
 per-track `next`, `flush_off` in every trailer).

@@ -1,6 +1,8 @@
 //! Tests on simulated media: round trips of random multi-track workloads, a power cut at every write, bounded mount
 //! reads, geometry checks.
 
+#[cfg(feature = "block-device-driver")]
+mod bdd;
 mod corrupt;
 #[cfg(feature = "exfat")]
 mod exfat;

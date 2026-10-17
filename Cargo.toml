@@ -19,7 +19,9 @@ rust-version = "1.88"
 [workspace.dependencies]
 ww_logring = { path = "crates/ww_logring", version = "0.1.0", default-features = false }
 
+aligned = "0.4"
 anyhow = "1"
+block-device-driver = "0.2"
 clap = { version = "4.6", features = ["derive", "env"] }
 clap_complete = { version = "4.6", features = ["unstable-dynamic"] }
 crc = "3.4"
