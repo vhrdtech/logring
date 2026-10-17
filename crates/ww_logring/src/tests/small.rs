@@ -40,6 +40,9 @@ where
     (lr, r)
 }
 
+/// A record as a reader returns it: position and item.
+type Rec = (u64, Vec<u8>);
+
 /// An event pushed: its track, position and item (unique: the boot and its number in it).
 type Pushed = (u32, u64, Vec<u8>);
 
@@ -267,7 +270,7 @@ fn reader_keeps_streams_apart_across_small_boots() {
     check_ring(&s, "reader");
     assert_eq!(s.superblock.segments_reused, 0, "the ring didn't go round");
     // every stream by (key, stream_start), the system track's by the FRESH segment it starts at
-    let mut streams: HashMap<(u64, u64), Vec<(u64, Vec<u8>)>> = HashMap::new();
+    let mut streams: HashMap<(u64, u64), Vec<Rec>> = HashMap::new();
     let mut sys_start = 0;
     for seg in &s.data {
         if seg.flags & SEG_FRESH != 0 {
