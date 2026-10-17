@@ -13,6 +13,11 @@ pub const MAX_API: usize = 128;
 /// Longest string in a [SystemEvent] or [MetaEvent].
 pub const MAX_LABEL: usize = 64;
 
+/// `SessionStart` flag bit 0: a new log was started.
+pub const SESSION_FORMATTED: u8 = 1;
+/// `SessionStart` flag bit 1: the mount didn't recover positions (see [SystemEvent::SessionStart]).
+pub const SESSION_POSITIONS_RESTARTED: u8 = 2;
+
 /// What the recorder itself logs into track 0.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum SystemEvent<'a> {
@@ -22,7 +27,11 @@ pub enum SystemEvent<'a> {
         /// What the mount found, see [Recovery](crate::Recovery).
         torn_blocks: u32,
         torn_records: u32,
+        /// A new log was started (flag bit 0).
         formatted: bool,
+        /// The mount didn't recover the tracks' positions (a small build: every track, the system track
+        /// included, starts at 0 in this session's first segment, `torn_records` wasn't counted; flag bit 1).
+        positions_restarted: bool,
         device_id: &'a str,
         fw: &'a str,
         hw: &'a str,
@@ -62,6 +71,7 @@ impl<'a> SystemEvent<'a> {
                 torn_blocks,
                 torn_records,
                 formatted,
+                positions_restarted,
                 device_id,
                 fw,
                 hw,
@@ -71,7 +81,14 @@ impl<'a> SystemEvent<'a> {
                 enc.u32le(session)?;
                 enc.uvar(torn_blocks as u64)?;
                 enc.uvar(torn_records as u64)?;
-                enc.u8(formatted as u8)?;
+                let mut flags = 0;
+                if formatted {
+                    flags |= SESSION_FORMATTED;
+                }
+                if positions_restarted {
+                    flags |= SESSION_POSITIONS_RESTARTED;
+                }
+                enc.u8(flags)?;
                 str_blob(enc, device_id)?;
                 str_blob(enc, fw)?;
                 str_blob(enc, hw)?;
@@ -115,16 +132,24 @@ impl<'a> SystemEvent<'a> {
     /// `None` on garbage or an unknown kind.
     pub fn decode(dec: &mut Dec<'a>) -> Option<Self> {
         Some(match dec.u8()? {
-            1 => SystemEvent::SessionStart {
-                session: dec.u32le()?,
-                torn_blocks: u32::try_from(dec.uvar()?).ok()?,
-                torn_records: u32::try_from(dec.uvar()?).ok()?,
-                formatted: dec.u8()? != 0,
-                device_id: dec.str()?,
-                fw: dec.str()?,
-                hw: dec.str()?,
-                bundle_hash: dec.u64le()?,
-            },
+            1 => {
+                let session = dec.u32le()?;
+                let torn_blocks = u32::try_from(dec.uvar()?).ok()?;
+                let torn_records = u32::try_from(dec.uvar()?).ok()?;
+                // flag bits this reader doesn't know only add information: ignored
+                let flags = dec.u8()?;
+                SystemEvent::SessionStart {
+                    session,
+                    torn_blocks,
+                    torn_records,
+                    formatted: flags & SESSION_FORMATTED != 0,
+                    positions_restarted: flags & SESSION_POSITIONS_RESTARTED != 0,
+                    device_id: dec.str()?,
+                    fw: dec.str()?,
+                    hw: dec.str()?,
+                    bundle_hash: dec.u64le()?,
+                }
+            }
             2 => SystemEvent::Marker {
                 kind: dec.u8()?,
                 label: dec.str()?,
@@ -299,6 +324,18 @@ mod tests {
                 torn_blocks: 1,
                 torn_records: 0,
                 formatted: true,
+                positions_restarted: false,
+                device_id: "rePort-0042",
+                fw: "usb_io_fw 1.2.3",
+                hw: "rev A",
+                bundle_hash: 0xabcd,
+            },
+            SystemEvent::SessionStart {
+                session: 4,
+                torn_blocks: 0,
+                torn_records: 0,
+                formatted: false,
+                positions_restarted: true,
                 device_id: "rePort-0042",
                 fw: "usb_io_fw 1.2.3",
                 hw: "rev A",
@@ -339,6 +376,41 @@ mod tests {
         assert_eq!(SystemEvent::decode(&mut Dec::new(&[9])), None);
         for cut in 0..n {
             let _ = SystemEvent::decode(&mut Dec::new(&buf[..cut]));
+        }
+    }
+
+    #[test]
+    fn session_start_flag_bits() {
+        let ev = |formatted, positions_restarted| SystemEvent::SessionStart {
+            session: 2,
+            torn_blocks: 0,
+            torn_records: 0,
+            formatted,
+            positions_restarted,
+            device_id: "",
+            fw: "",
+            hw: "",
+            bundle_hash: 0,
+        };
+        // kind, session u32, two one-byte uvars, then the flags
+        const FLAGS: usize = 1 + 4 + 1 + 1;
+        for (f, r, byte) in [
+            (false, false, 0),
+            (true, false, 1),
+            (false, true, 2),
+            (true, true, 3),
+        ] {
+            let mut buf = [0u8; 64];
+            let mut enc = Enc::new(&mut buf);
+            ev(f, r).encode(&mut enc).unwrap();
+            let n = enc.len();
+            assert_eq!(buf[FLAGS], byte);
+            // bits this reader doesn't know are ignored
+            buf[FLAGS] |= 0xf0;
+            assert_eq!(
+                SystemEvent::decode(&mut Dec::new(&buf[..n])),
+                Some(ev(f, r))
+            );
         }
     }
 

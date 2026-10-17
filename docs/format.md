@@ -203,12 +203,17 @@ unknown kinds are skipped by length.
 
 | kind | event | fields |
 |---|---|---|
-| 1 | SessionStart | session u32, torn_blocks uvar, torn_records uvar, formatted u8, device_id, fw, hw (strings, ≤ 64 bytes), bundle_hash u64 |
+| 1 | SessionStart | session u32, torn_blocks uvar, torn_records uvar, flags u8 (below), device_id, fw, hw (strings, ≤ 64 bytes), bundle_hash u64 |
 | 2 | Marker | kind u8, label string, value: u8 0 (none) or 1 + ivar |
 | 3 | RecordingStart | id u32, trigger u8 |
 | 4 | RecordingStop | id u32, reason u8 |
 | 5 | Dropped | track uvar, units uvar |
 | 6 | CardEvent | kind u8, value uvar |
+
+`SessionStart` flags: bit 0 *formatted* (a new log was started), bit 1 *positions not recovered* (the mount
+didn't parse the tail: every track, the system track included, starts at 0 in the session's first segment;
+`torn_records` 0 then means "not counted", not "none"). Other bits are written 0; a reader
+ignores bits it doesn't know.
 
 **The meta area** uses the same segments, flushes and records (track 0 only, positions counting meta records;
 every meta record is its own flush, written at once). Meta positions increase strictly over the whole meta ring

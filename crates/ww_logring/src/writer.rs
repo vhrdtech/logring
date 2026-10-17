@@ -146,6 +146,9 @@ pub struct Recovery {
     pub torn_blocks: u32,
     /// A record cut short at the end of the last flush (its first bytes were written, the rest not).
     pub torn_records: u32,
+    /// The mount didn't recover the tracks' positions from the tail (a small build): every track starts at 0 in
+    /// this session's first segment, `torn_records` wasn't counted. Also in the session's `SessionStart`.
+    pub positions_restarted: bool,
     /// Data segments found beyond the one the superblock knew of.
     pub segments_walked: u32,
     /// Blocks read from the medium by the mount.
@@ -1918,6 +1921,7 @@ impl<'a, M: LogMedium, const BUF: usize, const TRACKS: usize> Logring<'a, M, BUF
             torn_blocks: rec.torn_blocks,
             torn_records: rec.torn_records,
             formatted: rec.formatted,
+            positions_restarted: rec.positions_restarted,
             device_id: self.info.device_id,
             fw: self.info.fw,
             hw: self.info.hw,

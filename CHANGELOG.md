@@ -4,6 +4,10 @@
 
 ### Added
 
+- `SessionStart`'s `formatted` byte is now flag bits: bit 0 formatted (encoded as before), bit 1 positions not
+  recovered (`SystemEvent::SessionStart::positions_restarted`, `Recovery::positions_restarted`: a small build's
+  mount, `torn_records` not counted); readers ignore bits they don't know. `just size` M33 opt s: +12 bytes
+  (`raw_writer` 33308 → 33320 B of text) (LOG-1, P2628#17oct-1711b).
 - Superblock `meta_next` (u64 at offset 128, version stays 1): the meta position the next meta record gets,
   written at every superblock write; `format::META_SLACK` (4): a writer writes at most that many meta records
   between two superblock writes (asserted in debug builds), so a mount that doesn't parse the meta tail can go on
