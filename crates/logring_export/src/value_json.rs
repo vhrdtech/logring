@@ -177,9 +177,6 @@ pub fn jsonschema_of(ty: &TypeOwned, bundle: &ApiBundleOwned) -> Json {
             json!({ "type": "object", "properties": { "start": n.clone(), "end": n } })
         }
         TypeOwned::MaxLen { ty: inner, .. } => jsonschema_of(inner, bundle),
-        TypeOwned::Delta(base) | TypeOwned::DeltaOfDelta(base) | TypeOwned::XorFloat(base) => {
-            json!({ "type": "array", "items": numeric_base_schema(base) })
-        }
         TypeOwned::OutOfLine { type_idx } => match bundle.types.get(type_idx.0 as usize) {
             Some(TypeLocationOwned::InLine { ty, .. }) => jsonschema_of(ty, bundle),
             _ => json!(true),

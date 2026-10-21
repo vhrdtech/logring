@@ -29,6 +29,7 @@ pub fn one_stream_bundle() -> ApiBundleOwned {
                 docs: vec![],
                 optional: None,
             }],
+            compact_id: None,
         },
         types: vec![],
         traits: vec![],

@@ -107,6 +107,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "atomic-waker"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
+dependencies = [
+ "portable-atomic",
+]
+
+[[package]]
 name = "autocfg"
 version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -224,17 +233,6 @@ name = "cfg-if"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4e7648175b45a9a48536d676f68d918270699102aa8dab5496df06904c914600"
-
-[[package]]
-name = "chacha20"
-version = "0.10.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65c35e4b699c7e15ccbe7ee35c005e4fc0a278d22238a2857e6ce2dadeda1b06"
-dependencies = [
- "cfg-if",
- "cpufeatures",
- "rand_core",
-]
 
 [[package]]
 name = "clap"
@@ -679,7 +677,6 @@ dependencies = [
  "cfg-if",
  "libc",
  "r-efi",
- "rand_core",
 ]
 
 [[package]]
@@ -921,6 +918,12 @@ dependencies = [
  "ww_client_server",
  "ww_stream",
 ]
+
+[[package]]
+name = "lz4_flex"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ecbdfe44b1bd960b68170b417450a628c43f7cf56bb3c5317e61cb230ee7f226"
 
 [[package]]
 name = "mach2"
@@ -1176,7 +1179,7 @@ dependencies = [
 [[package]]
 name = "picoboot_host"
 version = "0.1.0"
-source = "git+https://github.com/vhrdtech/picoboot_host?branch=main#0d5d04dcbcc3b5eb9883af1b37b637c1805dd242"
+source = "git+https://github.com/vhrdtech/picoboot_host?tag=v0.1.0#795498dd2b17d8ff2711b8db78cccad56607bd2d"
 dependencies = [
  "thiserror",
 ]
@@ -1342,23 +1345,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f8dcc9c7d52a811697d2151c701e0d08956f92b0e24136cf4cf27b57a6a0d9bf"
 
 [[package]]
-name = "rand"
-version = "0.10.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "65c9fb96cbc91e3478eaae79a69fcd3f1ae4ad052e471fe6732fff548984b4af"
-dependencies = [
- "chacha20",
- "getrandom",
- "rand_core",
-]
-
-[[package]]
-name = "rand_core"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63b8176103e19a2643978565ca18b50549f6101881c443590420e4dc998a3c69"
-
-[[package]]
 name = "rawpointer"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1392,15 +1378,6 @@ name = "regex-syntax"
 version = "0.8.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6f6ff9a378485b298a5286656da665ba74413d36db0979633275d2e708145d4"
-
-[[package]]
-name = "relative-path"
-version = "2.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2a073568cd8b9c4825429d3e9fc5f52851b4f97cc1348800689408921e6b8f8"
-dependencies = [
- "serde",
-]
 
 [[package]]
 name = "ron"
@@ -2042,13 +2019,11 @@ name = "wire_weaver_client"
 version = "0.5.0"
 dependencies = [
  "anyhow",
- "cfg-if",
  "either",
  "futures-lite",
  "hex",
  "nusb",
  "picoboot_host",
- "rand",
  "ron",
  "semver",
  "strum",
@@ -2061,11 +2036,15 @@ dependencies = [
  "ww_client_server",
  "ww_device",
  "ww_framer",
+ "ww_global",
  "ww_link",
+ "ww_lz4",
  "ww_numeric",
  "ww_self",
  "ww_si",
  "ww_stream",
+ "ww_tap",
+ "ww_tape",
  "ww_version",
 ]
 
@@ -2075,7 +2054,6 @@ version = "0.5.0"
 dependencies = [
  "anyhow",
  "cargo_toml",
- "console",
  "convert_case",
  "hex",
  "pest",
@@ -2083,12 +2061,12 @@ dependencies = [
  "proc-macro2",
  "quote",
  "regex",
- "relative-path",
  "ron",
  "semver",
  "shrink_wrap",
  "syn 3.0.9",
  "wire_weaver_snapshots",
+ "ww_global",
  "ww_numeric",
  "ww_self",
  "ww_version",
@@ -2103,10 +2081,10 @@ dependencies = [
  "pathsearch",
  "proc-macro2",
  "quote",
- "relative-path",
  "subprocess",
  "syn 3.0.9",
  "wire_weaver_core",
+ "ww_global",
 ]
 
 [[package]]
@@ -2116,6 +2094,15 @@ dependencies = [
  "ron",
  "ww_self",
  "ww_version",
+]
+
+[[package]]
+name = "ww_block"
+version = "0.1.0"
+dependencies = [
+ "crc",
+ "wire_weaver",
+ "ww_error",
 ]
 
 [[package]]
@@ -2136,6 +2123,7 @@ dependencies = [
  "ww_client_server",
  "ww_framer",
  "ww_link",
+ "ww_tap",
 ]
 
 [[package]]
@@ -2169,9 +2157,17 @@ version = "0.5.0"
 dependencies = [
  "shrink_wrap",
  "wire_weaver",
+ "ww_block",
  "ww_framer",
  "ww_global",
  "ww_version",
+]
+
+[[package]]
+name = "ww_lz4"
+version = "0.1.0"
+dependencies = [
+ "lz4_flex",
 ]
 
 [[package]]
@@ -2187,9 +2183,11 @@ name = "ww_self"
 version = "0.3.0"
 dependencies = [
  "anyhow",
+ "quote",
  "serde",
  "sha2",
  "shrink_wrap",
+ "syn 3.0.9",
  "ww_numeric",
  "ww_version",
 ]
@@ -2206,11 +2204,30 @@ dependencies = [
 name = "ww_stream"
 version = "0.5.0"
 dependencies = [
+ "atomic-waker",
  "crc",
  "portable-atomic",
  "wire_weaver",
  "ww_client_server",
  "ww_si",
+]
+
+[[package]]
+name = "ww_tap"
+version = "0.1.0"
+dependencies = [
+ "tracing",
+ "wire_weaver",
+ "ww_tape",
+]
+
+[[package]]
+name = "ww_tape"
+version = "0.1.0"
+dependencies = [
+ "crc",
+ "shrink_wrap",
+ "ww_version",
 ]
 
 [[package]]

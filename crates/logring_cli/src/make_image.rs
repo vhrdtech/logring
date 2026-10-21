@@ -45,6 +45,7 @@ fn bundle(n_tracks: u32) -> ApiBundleOwned {
             crate_idx: UNib32(0),
             trait_name: "DemoApi".to_string(),
             items,
+            compact_id: None,
         },
         types: vec![],
         traits: vec![],

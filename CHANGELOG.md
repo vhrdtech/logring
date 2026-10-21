@@ -148,4 +148,12 @@
   durable record's units, from `Logring::durable` (already kept in lockstep with `durable_newest`, including the
   post-mount fixup `TrackStore::new` does when the mount's own recovery didn't find the newest record); below
   `next` when a push since the last sync hasn't reached the medium yet (LOG-2).
+- `logring_export`'s JSON Schema builder matched on `Type::Delta`/`DeltaOfDelta`/`XorFloat`, which `wire_weaver`
+  master removed (those codecs moved into `Series<T>`, chosen automatically per column): the dead match arm broke
+  the build. No data or behavior is lost: the existing `Series` arm already builds the right schema (recursing
+  into `T`, which is more precise than the old bare numeric array), and decoding a `Series` already produced a
+  `ValueOwned::Vec` before this change, so CSV, MF4 and the numpy/pandas flattener were already correct (PC-1).
+- Hand-built `ApiBundleOwned`/`StreamHead` fixtures (`logring_cli`'s `make-image`, `logring_export`'s test
+  support and `export.rs`, a `logring` unit test) filled in `wire_weaver` master's new `ApiLevel::compact_id`
+  (API-20) and `HeadExt::codec_restart` (API-55) fields with their no-op defaults, to build against it again.
 

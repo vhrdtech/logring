@@ -415,6 +415,7 @@ mod tests {
             t: Some(us(1600)),
             ext: Some(HeadExt {
                 clock_epoch: Some(wire_weaver::shrink_wrap::UVlq32(4)),
+                codec_restart: false,
             }),
         };
         let lens = round_trip(&[(1, h), (1, h2), (1, h3), (1, h4), (9, h2), (9, h2)]);

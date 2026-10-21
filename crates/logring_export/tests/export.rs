@@ -43,6 +43,7 @@ fn one_u32_stream_bundle() -> ApiBundleOwned {
                 docs: vec![],
                 optional: None,
             }],
+            compact_id: None,
         },
         types: vec![],
         traits: vec![],
