@@ -5,8 +5,14 @@ py_venv := "/tmp/logring_py-venv"
 default:
     @just --list
 
+# The tests. `just test`: all of them (test-all), the run of the `tpm land` gate. `just test --changed`: only the
+# workspace crates changed against main and the crates that depend on them (tpm test changed), what a session runs
+# before tpm work ready.
+test *flags:
+    if [ "{{flags}}" = "--changed" ]; then tpm test changed -- cargo nextest run --workspace; else {{just_executable()}} test-all {{flags}}; fi
+
 # Tests (host, no card or image needed), Rust and Python, plus a no_std build check for the engine
-test: test-py
+test-all: test-py
     cargo test --workspace --quiet
     cargo test -p logring --features std,block-device-driver --quiet
     # without tail-positions (S3): the small build's mount, its power-cut, round-trip and cross-build tests

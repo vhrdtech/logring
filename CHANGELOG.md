@@ -101,6 +101,7 @@
   chunks: `mcap`'s `lz4`/`zstd` features are both a C library, so this crate stays off them) and MF4
   (numeric channels, or ASAM `CAN_DataFrame` bus logging via `mdf4-rs` for CAN-shaped tracks). The `logring` CLI
   and `logring_py` bindings are next (PC-1, P2628#16oct-1001h).
+- `just test --changed` runs only the workspace crates changed against main and their dependents (`tpm test changed`, nextest's `rdeps()`); plain `just test` runs everything, as `just test-all` does (tpm ops#22oct-2049).
 
 ### Changed
 
