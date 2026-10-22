@@ -1570,6 +1570,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2eb9349b6444b326872e140eb1cf5e7c522154d69e7a0ffb0fb81c06b37543f"
 
 [[package]]
+name = "stm32_dfu_host"
+version = "0.1.0"
+dependencies = [
+ "thiserror",
+ "tokio",
+]
+
+[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1692,9 +1700,9 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.53.3"
+version = "1.54.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce3335fa71841cda333a58d7615b03901380ecf09d59b3296d21f8bbac0dde4e"
+checksum = "b52fd3255258d26fac7264ab5a76b53c13367136dc011d3d6ad4f8ed070396a3"
 dependencies = [
  "pin-project-lite",
  "tokio-macros",
@@ -2022,22 +2030,28 @@ dependencies = [
  "either",
  "futures-lite",
  "hex",
+ "libc",
  "nusb",
  "picoboot_host",
  "ron",
  "semver",
+ "sha2",
+ "stm32_dfu_host",
  "strum",
  "strum_macros",
  "thiserror",
  "tokio",
  "tracing",
+ "windows-sys",
  "wire_weaver",
  "wire_weaver_snapshots",
  "ww_client_server",
+ "ww_date_time",
  "ww_device",
  "ww_framer",
  "ww_global",
  "ww_link",
+ "ww_local_socket",
  "ww_lz4",
  "ww_numeric",
  "ww_self",
@@ -2045,6 +2059,7 @@ dependencies = [
  "ww_stream",
  "ww_tap",
  "ww_tape",
+ "ww_timebase",
  "ww_version",
 ]
 
@@ -2115,6 +2130,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "ww_date_time"
+version = "0.1.0"
+dependencies = [
+ "shrink_wrap",
+]
+
+[[package]]
 name = "ww_device"
 version = "0.5.0"
 dependencies = [
@@ -2161,6 +2183,13 @@ dependencies = [
  "ww_framer",
  "ww_global",
  "ww_version",
+]
+
+[[package]]
+name = "ww_local_socket"
+version = "0.5.0"
+dependencies = [
+ "libc",
 ]
 
 [[package]]
@@ -2228,6 +2257,15 @@ dependencies = [
  "crc",
  "shrink_wrap",
  "ww_version",
+]
+
+[[package]]
+name = "ww_timebase"
+version = "0.1.0"
+dependencies = [
+ "wire_weaver",
+ "ww_date_time",
+ "ww_si",
 ]
 
 [[package]]
