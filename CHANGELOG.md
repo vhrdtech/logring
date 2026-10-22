@@ -2,10 +2,6 @@
 
 ## [Unreleased]
 
-### Changed
-
-- `just install` works anywhere: it builds with the new `deploy` profile (release, incremental) and installs through `tpm install` when tpm is there (the binary on PATH once, in the kept-releases stack in ~/.local/bin; a stale ~/.cargo/bin copy goes to the trash), else with `cargo install --locked`. `just deploy` checks `--version` against main's commit.
-
 ### Added
 
 - Feature `tail-positions` (default on, S3): without it `Logring::mount` is the small mount (`mount_small`): no
@@ -108,6 +104,7 @@
 
 ### Changed
 
+- `just install` works anywhere: it builds with the new `deploy` profile (release, incremental) and installs through `tpm install` when tpm is there (the binary on PATH once, in the kept-releases stack in ~/.local/bin; a stale ~/.cargo/bin copy goes to the trash), else with `cargo install --locked`. `just deploy` checks `--version` against main's commit.
 - **Breaking:** crate names: the engine `ww_logring` is now `logring`, `ww_logring_cli`/`ww_logring_export`/
   `ww_logring_py` are now `logring_cli`/`logring_export`/`logring_py` (the `logring` binary and the `logring`
   Python module name are unchanged); mechanical rename, no behaviour change. Frees `ww_logring` for a future
