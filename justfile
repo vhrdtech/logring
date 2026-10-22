@@ -51,7 +51,7 @@ fuzz:
 fuzz-bundle:
     cargo +nightly fuzz run bundle_decode corpus/bundle_decode
 
-# Our PCs: the kept-releases stack, one copy on PATH; anywhere else: plain cargo install
+# With tpm on PATH: tpm install (kept-releases stack, one copy on PATH); otherwise: cargo install
 # Build and install logring on this PC; completion: source <(COMPLETE=bash logring)
 install:
     cargo build --profile deploy --locked -p logring_cli
