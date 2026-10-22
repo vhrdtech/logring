@@ -17,7 +17,7 @@ time; exports to MF4, MCAP and CSV. The card is formatted on the device: put in 
 | [`crates/logring_py`](crates/logring_py) | the `logring` Python module (PyO3 + maturin) |
 
 ```sh
-cargo install --path crates/logring_cli
+cargo install --path crates/logring_cli     # (in a checkout with tpm: `just install`)
 logring info card.img         # sessions, recordings, tracks, counters
 logring export card.img --format csv --out ./out
 ```

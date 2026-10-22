@@ -49,3 +49,8 @@ ww_self = { path = "../wire_weaver/ww_self", default-features = false }
 ww_si = { path = "../wire_weaver/ww_stdlib/ww_si", default-features = false, features = ["time", "u32", "u64"] }
 ww_stream = { path = "../wire_weaver/ww_stream", default-features = false, features = ["log-store"] }
 ww_version = { path = "../wire_weaver/ww_stdlib/ww_version", default-features = false }
+
+# `just install`: a release build that rebuilds incrementally, installed through `tpm install`
+[profile.deploy]
+inherits = "release"
+incremental = true

@@ -51,15 +51,19 @@ fuzz:
 fuzz-bundle:
     cargo +nightly fuzz run bundle_decode corpus/bundle_decode
 
+# Our PCs: the kept-releases stack, one copy on PATH; anywhere else: plain cargo install
 # Build and install logring on this PC; completion: source <(COMPLETE=bash logring)
 install:
-    cargo install --quiet --path crates/logring_cli --locked
+    cargo build --profile deploy --locked -p logring_cli
+    if command -v tpm >/dev/null; then tpm install target/deploy/logring; else cargo install --locked --path crates/logring_cli; fi
 
 # Pull the sibling checkouts this repo builds against by path
 deps-pull:
     git -C ../wire_weaver pull --ff-only
 
-# Bring this PC up to main
+# Bring this PC up to main: pull, install, check --version against main
 deploy: deps-pull
-    tpm repos pull logring
+    if command -v tpm >/dev/null; then tpm repos pull logring; else git pull --ff-only; fi
     just install
+    logring --version | grep -q "($(git rev-parse --short HEAD)" || { echo "logring --version does not show $(git rev-parse --short HEAD)"; logring --version; exit 1; }
+    logring --version

@@ -81,7 +81,7 @@ just test-py   # builds crates/logring_py into a venv under /tmp (uv + maturin),
 just lint      # fmt --check, clippy -D warnings, all crates
 just size      # flash and RAM of the device side per MCU target, crate, file, function and type (size/README.md)
 just fuzz      # cargo-fuzz (nightly) on the mount target with the seed images in fuzz/seeds
-just install   # puts `logring` in ~/.cargo/bin; completion: source <(COMPLETE=bash logring)
+just install   # puts `logring` on PATH (with tpm: the release stack in ~/.local/bin; without: cargo install); completion: source <(COMPLETE=bash logring)
 just deploy    # bring this PC up to main
 ```
 
