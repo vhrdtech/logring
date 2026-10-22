@@ -35,6 +35,7 @@ fn bundle(n_tracks: u32) -> ApiBundleOwned {
             ident: format!("sensor_{}", i - 1),
             docs: vec![],
             optional: None,
+            meta: Default::default(),
         })
         .collect();
     ApiBundleOwned {
@@ -46,6 +47,7 @@ fn bundle(n_tracks: u32) -> ApiBundleOwned {
             trait_name: "DemoApi".to_string(),
             items,
             compact_id: None,
+            meta: Default::default(),
         },
         types: vec![],
         traits: vec![],
