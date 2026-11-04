@@ -1,5 +1,5 @@
 //! Colour for `info`/`check`'s own output (clap's `--help`/error colour follows `ColorChoice::Auto` on its
-//! own): off when stdout isn't a terminal, or `NO_COLOR` is set (tpm CLAUDE.md "CLI quality").
+//! own): off when stdout isn't a terminal, or `NO_COLOR` is set (our usual CLI-quality convention).
 
 use std::io::IsTerminal;
 

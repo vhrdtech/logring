@@ -1,5 +1,5 @@
 //! Drives the `logring` binary end to end on an image `make-image` built, like a user would from a shell: the
-//! CLI's own "done when" (P2628#16oct-1001h) alongside `logring_export`'s crate-level tests.
+//! CLI's own "done when" alongside `logring_export`'s crate-level tests.
 
 use assert_cmd::Command;
 use predicates::prelude::*;

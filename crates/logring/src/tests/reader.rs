@@ -398,7 +398,7 @@ fn time_cmp_orders_as_picoseconds_do() {
     );
 }
 
-/// A seek by position stays in the stream it is asked for (P2628#17oct-1711): after a reset the track's
+/// A seek by position stays in the stream it is asked for: after a reset the track's
 /// positions restart at 0, and a seek for an older stream's position finds that stream's record, never a later
 /// stream's; the walker stops at the stream's end.
 #[test]

@@ -7,11 +7,11 @@ Guidance for AI agents and contributors. Read this before changing code.
 `logring` holds the power-cut-safe ring log store for embedded devices: many tracks of any
 [shrink_wrap](https://github.com/vhrdtech/wire_weaver) type written at once into one preallocated ring file (default
 extension `.wlr`), with sessions, recordings and markers, read back over `wire_weaver`, as a USB disk, or with the
-`logring` PC tool. First user: rePort (P2424); not tied to one product or one medium (SD today, SPI/QSPI flash and
+`logring` PC tool. First user: rePort; not tied to one product or one medium (SD today, SPI/QSPI flash and
 eMMC behind the same `LogMedium` trait later).
 
-This is one of three repos split out of the tpm project P2628 (design: `prj/P2628-logring/design/plan.md` in the
-tpm folder on Syncthing, not in this repo — design notes stay out of code repos):
+This is one of three repos split out of a larger internal project (design notes stay out of code repos, kept
+in our internal design notes instead):
 
 - **`logring`** (this repo): the engine and the PC tools.
 - [`exfat_lite`](https://github.com/vhrdtech/exfat_lite): no-alloc exFAT for SD cards, knows nothing of logring.
@@ -29,9 +29,9 @@ IDs per area (`LOG` the engine and format, `VIEW` the USB view, `PC` export/CLI/
 - **Read the relevant area before starting.** A "new" idea is often already recorded there.
 - **Name IDs with a short slug when talking to the user**: `LOG-1 format-writer`, never a bare `LOG-1`. Commit
   messages, CHANGELOG and code `TODO`s keep the bare ID.
-- **New IDs**: `tpm work claim AREA` prints the next free one. Never renumber or reuse IDs.
+- **New IDs**: take the next free number in the area by hand. Never renumber or reuse IDs.
 - Status ✅ means verified on real hardware (a card, rePort); 🧪 recorded fixtures/images and unit tests only;
-  📋 planned with a P2628 task; 💡 an idea, not filed as a task yet. Keep that honest.
+  📋 planned and tracked internally; 💡 an idea, not filed as a task yet. Keep that honest.
 
 ## CHANGELOG.md records every change
 
@@ -44,7 +44,7 @@ IDs per area (`LOG` the engine and format, `VIEW` the USB view, `PC` export/CLI/
 ## Layout
 
 Cargo workspace, edition 2024, one version for all crates (`[workspace.package]`), the same layout as the other
-instrument/tool repos (tpm CLAUDE.md "Code repos": tools are a library first):
+instrument/tool repos (tools are a library first):
 
 - `crates/logring` — the engine: `no_std`, no `alloc`. Format (superblock, meta area, segments, blocks,
   records), writer (stage buffers, `flush_bytes`/`flush_interval`, `sync`), recovery, the indexed reader
@@ -59,7 +59,7 @@ instrument/tool repos (tpm CLAUDE.md "Code repos": tools are a library first):
   type), MF4 (numeric channels, CAN as ASAM bus logging). DBC is never stored; it applies only at export.
 - `crates/logring_cli`, binary **`logring`** — `info`, `ls` (the same tree as the USB view, via
   `logring::view`), `export`, `cat`, `check` (like fsck), `make-image`; `--version` with git SHA and commit
-  time (`build.rs`, no extra crates), shell completions, colour, progress bars (tpm CLAUDE.md "CLI quality").
+  time (`build.rs`, no extra crates), shell completions, colour, progress bars (our usual CLI-quality convention).
 - `crates/logring_py` (PyO3 + maturin, package `logring`) — `open()`, tracks, recordings, markers,
   `track.to_pandas()`, built on `logring_export`.
 
@@ -70,8 +70,8 @@ end to end, a generated server and the real host event loop (`wire_weaver`'s `te
 `size/report` behind `just size` (flash and RAM per target, crate, file, function and type, LOG-9).
 
 [docs/format.md](docs/format.md) documents the on-medium format as it is (LOG-1); `fuzz/` holds the cargo-fuzz
-targets (`just fuzz`, nightly) with seed images; the `prj/P2628-logring` tpm folder has the design history and
-open questions.
+targets (`just fuzz`, nightly) with seed images; the design history and open questions live in our internal
+design notes, kept outside this repo.
 
 ## Commands
 
@@ -88,8 +88,8 @@ just deploy    # bring this PC up to main
 Before declaring a change done: `just lint` and `just test`. Nothing here needs a real SD card or rePort to
 build and unit-test (fixtures and a simulated card); hardware runs (R2 SD spike, R9 OS/MSC behaviour, R12
 power-cut cycles) need rePort, a probe and real cards — a piece of hardware next to a PC, not something a
-session can touch on its own. Ask the user or the parent session (`tpm work say parent`) when a change needs
-checking against it, then carry on with what can be tested without it. Say in the report which commands were
+session can touch on its own. Ask the user when a change needs checking against it, then carry on with what
+can be tested without it. Say in the report which commands were
 run against real hardware versus only against fixtures/images.
 
 ## Dependencies
@@ -101,11 +101,10 @@ crates.io yet (wire_weaver 0.5 unreleased): depend on them by git, without `rev`
 move to crates.io versions once wire_weaver 0.5 ships (crates.io takes no path or git deps, so logring publishes after
 it). Same for `exfat_lite` and `usb_msc_device`
 until they are published. Check new dependencies with `cargo tree` for `-sys` crates and `cc`/`bindgen` build
-deps (tpm CLAUDE.md "Pure-Rust crates, no C bindings"). `logring_export`'s `mcap` dependency is
+deps: pure Rust only, no C bindings. `logring_export`'s `mcap` dependency is
 `default-features = false`: its `lz4`/`zstd` features both bring their C library (`lz4-sys`, `zstd-sys`, built
 with `cc`), and `mcap` offers no pure-Rust compression codec; without them the writer's chunks go out
-uncompressed, which `mcap`'s own reader, Foxglove and the `mcap` validator all read fine (PC-1,
-P2628#16oct-1001h).
+uncompressed, which `mcap`'s own reader, Foxglove and the `mcap` validator all read fine (PC-1).
 
 ## Code conventions
 
@@ -130,13 +129,13 @@ P2628#16oct-1001h).
 Conventional Commits with a scope: `feat(log): ...`, `fix(view): ...`, scopes `log`, `view`, `pc`, `cli`, `py`,
 `build`. Short imperative summary, blank line, body with what and why; reference feature IDs.
 
-Commit on your own initiative on a session branch (`tpm work new SLUG logring`), each finished step one commit
-with FEATURES.md and CHANGELOG.md updated in it. When the work is done and the user agrees, `tpm land` puts it
-on main.
+Commit on your own initiative on a feature branch, each finished step one commit
+with FEATURES.md and CHANGELOG.md updated in it. When the work is done and the user agrees, merge it
+to main.
 
 ## Versions
 
-Landing bumps the version, not each work commit (tpm CLAUDE.md "Landing bumps the version"): session commits add
-CHANGELOG entries under `[Unreleased]` without bumping. This repo's version is its next crates.io release
-(`bump = "at-publish"` in tpm's repos.toml): `tpm land` never bumps or tags it on its own; `tpm release logring`
-does, once there is something to publish. `logring --version` prints version, git SHA and commit time.
+Landing bumps the version, not each work commit: session commits add
+CHANGELOG entries under `[Unreleased]` without bumping. This repo's version is its next crates.io release:
+merging to main never bumps or tags it on its own; a release step does, once there is something to publish.
+`logring --version` prints version, git SHA and commit time.

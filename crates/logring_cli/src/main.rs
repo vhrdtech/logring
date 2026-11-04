@@ -1,6 +1,6 @@
 //! The `logring` command line tool: `info`, `export`, `cat`, `check`, `make-image`.
 //!
-//! See `AGENTS.md` and `FEATURES.md` (PC-1, P2628#16oct-1001h). `ls` (the USB view's tree) waits on VIEW-1;
+//! See `AGENTS.md` and `FEATURES.md` (PC-1). `ls` (the USB view's tree) waits on VIEW-1;
 //! `prepare` on S2.
 
 use clap::{CommandFactory, Parser};

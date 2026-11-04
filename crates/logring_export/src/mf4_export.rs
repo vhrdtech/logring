@@ -2,7 +2,7 @@
 //! ([mdf4_rs::can::RawCanLogger]) for a track whose items look like CAN frames (a struct with an id and a data
 //! byte array), plain `f64` channels for everything else.
 //!
-//! `mdf4-rs` was picked over `mf4-rs` for this (P2628#16oct-1001h): pure Rust (`#![forbid(unsafe_code)]`),
+//! `mdf4-rs` was picked over `mf4-rs` for this: pure Rust (`#![forbid(unsafe_code)]`),
 //! MIT/Apache-2.0 like this repo, actively published, minimal dependencies, and it already implements the
 //! ASAM MDF4 bus-logging convention for raw CAN frames (`RawCanLogger`) instead of leaving it to be hand-rolled
 //! here. DBC decoding is a separate, optional feature of the crate that this exporter doesn't use: `AGENTS.md`

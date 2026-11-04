@@ -567,7 +567,7 @@ fn at(n: usize, mb_s: f64) -> u64 {
     300 + (n as f64 / (mb_s * 1e6) * 1e6) as u64
 }
 
-/// A Samsung EVO (2019, 128 GB) as measured on omarchy-m1, 16 Oct 2026: a dip at 64 KB.
+/// A Samsung EVO (2019, 128 GB) as measured on one of our PCs, 16 Oct 2026: a dip at 64 KB.
 fn evo(n: usize) -> u64 {
     match n {
         x if x <= 16 << 10 => at(n, 11.9),

@@ -17,7 +17,7 @@ time; exports to MF4, MCAP and CSV. The card is formatted on the device: put in 
 | [`crates/logring_py`](crates/logring_py) | the `logring` Python module (PyO3 + maturin) |
 
 ```sh
-cargo install --path crates/logring_cli     # (in a checkout with tpm: `just install`)
+cargo install --path crates/logring_cli     # (or, from a checkout: `just install`)
 logring info card.img         # sessions, recordings, tracks, counters
 logring export card.img --format csv --out ./out
 ```
@@ -30,7 +30,7 @@ df = card.track("can1_rx").to_pandas()
 ```
 
 The medium is a trait (`LogMedium`, from `wire_weaver`'s `ww_stream`), so storage other than SD (SPI/QSPI flash,
-eMMC) can follow. Not tied to one product: rePort (hardware project P2424) is the first user, and this is meant
+eMMC) can follow. Not tied to one product: rePort is the first user, and this is meant
 to be the base for every logging device built after it.
 
 See [AGENTS.md](AGENTS.md) for how the repo is laid out, [FEATURES.md](FEATURES.md) for what is implemented,

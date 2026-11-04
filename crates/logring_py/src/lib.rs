@@ -1,6 +1,5 @@
 //! Python module for `logring` (`logring_export` underneath), built with PyO3 + maturin: `open()`, tracks,
-//! recordings, markers, `Track.rows()`/`to_numpy()`/`to_pandas()`. See `AGENTS.md` and `FEATURES.md` (PC-1,
-//! P2628#16oct-1001h).
+//! recordings, markers, `Track.rows()`/`to_numpy()`/`to_pandas()`. See `AGENTS.md` and `FEATURES.md` (PC-1).
 
 mod convert;
 mod track;

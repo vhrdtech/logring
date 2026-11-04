@@ -1,6 +1,6 @@
 //! Sets `GIT_SHA` (short, `-dirty` with local changes) and `COMMIT_TIME` (UTC) for `logring --version`
 //! (both `unknown` without git). The commit's time, not the build's: a build time forces rebuilds when nothing
-//! changed and means nothing once builds are reproducible (tpm CLAUDE.md "CLI quality").
+//! changed and means nothing once builds are reproducible (our usual CLI-quality convention).
 
 use std::process::Command;
 
