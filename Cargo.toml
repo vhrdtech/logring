@@ -37,18 +37,37 @@ serde_json = "1"
 tempfile = "3"
 thiserror = { version = "2", default-features = false }
 
-# not on crates.io yet: the checkout next to this repo (AGENTS.md "Dependencies")
-exfat_lite = { path = "../exfat_lite", default-features = false }
-# wire_weaver 0.5 is unreleased: its master, checked out next to this repo (AGENTS.md "Dependencies")
-wire_weaver = { path = "../wire_weaver/wire_weaver", default-features = false }
-wire_weaver_snapshots = { path = "../wire_weaver/wire_weaver_snapshots" }
-ww_client_server = { path = "../wire_weaver/ww_stdlib/ww_client_server", default-features = false }
-ww_global = { path = "../wire_weaver/ww_global" }
-ww_numeric = { path = "../wire_weaver/ww_stdlib/ww_numeric", default-features = false }
-ww_self = { path = "../wire_weaver/ww_self", default-features = false }
-ww_si = { path = "../wire_weaver/ww_stdlib/ww_si", default-features = false, features = ["time", "u32", "u64"] }
-ww_stream = { path = "../wire_weaver/ww_stream", default-features = false, features = ["log-store"] }
-ww_version = { path = "../wire_weaver/ww_stdlib/ww_version", default-features = false }
+# not on crates.io yet: by git (no rev; Cargo.lock pins the commit, `cargo update -p NAME` moves it; AGENTS.md "Dependencies").
+# exfat_lite is a private repository: fetching it needs git credentials on the build PC (e.g. `net.git-fetch-with-cli = true`)
+exfat_lite = { git = "https://github.com/vhrdtech/exfat_lite", default-features = false }
+# wire_weaver 0.5 is unreleased: its default branch
+wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+wire_weaver_client = { git = "https://github.com/vhrdtech/wire_weaver" }
+wire_weaver_snapshots = { git = "https://github.com/vhrdtech/wire_weaver" }
+tests_common = { git = "https://github.com/vhrdtech/wire_weaver" }
+ww_client_server = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+ww_global = { git = "https://github.com/vhrdtech/wire_weaver" }
+ww_numeric = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+ww_self = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+ww_si = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["time", "u32", "u64"] }
+ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["log-store"] }
+ww_version = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+
+# For local work against the sibling checkouts next to this repo: uncomment
+# [patch."https://github.com/vhrdtech/exfat_lite"]
+# exfat_lite = { path = "../exfat_lite" }
+# [patch."https://github.com/vhrdtech/wire_weaver"]
+# wire_weaver = { path = "../wire_weaver/wire_weaver" }
+# wire_weaver_client = { path = "../wire_weaver/wire_weaver_client" }
+# wire_weaver_snapshots = { path = "../wire_weaver/wire_weaver_snapshots" }
+# tests_common = { path = "../wire_weaver/tests/tests_common" }
+# ww_client_server = { path = "../wire_weaver/ww_stdlib/ww_client_server" }
+# ww_global = { path = "../wire_weaver/ww_global" }
+# ww_numeric = { path = "../wire_weaver/ww_stdlib/ww_numeric" }
+# ww_self = { path = "../wire_weaver/ww_self" }
+# ww_si = { path = "../wire_weaver/ww_stdlib/ww_si" }
+# ww_stream = { path = "../wire_weaver/ww_stream" }
+# ww_version = { path = "../wire_weaver/ww_stdlib/ww_version" }
 
 # `just install`: a release build that rebuilds incrementally, installed through `tpm install`
 [profile.deploy]

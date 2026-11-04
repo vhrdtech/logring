@@ -39,11 +39,19 @@ crc-hw = ["logring/crc-hw"]
 
 [dependencies]
 embassy-sync = "0.8"
-exfat_lite = { path = "../../exfat_lite", default-features = false }
+exfat_lite = { git = "https://github.com/vhrdtech/exfat_lite", default-features = false }
 logring = { path = "../crates/logring", default-features = false, features = ["exfat"] }
-wire_weaver = { path = "../../wire_weaver/wire_weaver", default-features = false }
-ww_si = { path = "../../wire_weaver/ww_stdlib/ww_si", default-features = false, features = ["time", "u32", "u64"] }
-ww_stream = { path = "../../wire_weaver/ww_stream", default-features = false, features = ["log-store"] }
+wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+ww_si = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["time", "u32", "u64"] }
+ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["log-store"] }
+
+# For local work against the sibling checkouts next to this repo: uncomment
+# [patch."https://github.com/vhrdtech/exfat_lite"]
+# exfat_lite = { path = "../../exfat_lite" }
+# [patch."https://github.com/vhrdtech/wire_weaver"]
+# wire_weaver = { path = "../../wire_weaver/wire_weaver" }
+# ww_si = { path = "../../wire_weaver/ww_stdlib/ww_si" }
+# ww_stream = { path = "../../wire_weaver/ww_stream" }
 
 [profile.release]
 opt-level = "s"

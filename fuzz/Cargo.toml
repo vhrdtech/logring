@@ -11,8 +11,13 @@ cargo-fuzz = true
 libfuzzer-sys = "0.4"
 logring = { path = "../crates/logring", features = ["std"] }
 logring_export = { path = "../crates/logring_export" }
-ww_self = { path = "../../wire_weaver/ww_self", features = ["std"] }
-ww_stream = { path = "../../wire_weaver/ww_stream", default-features = false, features = ["log-store", "std"] }
+ww_self = { git = "https://github.com/vhrdtech/wire_weaver", features = ["std"] }
+ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["log-store", "std"] }
+
+# For local work against the sibling checkout ~/git/wire_weaver: uncomment
+# [patch."https://github.com/vhrdtech/wire_weaver"]
+# ww_self = { path = "../../wire_weaver/ww_self" }
+# ww_stream = { path = "../../wire_weaver/ww_stream" }
 
 [[bin]]
 name = "mount"

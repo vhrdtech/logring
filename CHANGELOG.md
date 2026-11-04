@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- `exfat_lite` and the wire_weaver crates (`wire_weaver`, `wire_weaver_client`, `wire_weaver_snapshots`, `tests_common`, `ww_*`) come from their repositories by git (no `rev`, Cargo.lock pins the commit) instead of the sibling paths, in the workspace, `fuzz/` and `size/`; a commented-out `[patch]` in each of those root manifests switches back to the sibling checkouts for local work
+
 ### Added
 
 - Feature `tail-positions` (default on, S3): without it `Logring::mount` is the small mount (`mount_small`): no
