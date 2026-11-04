@@ -2,10 +2,6 @@
 
 ## [Unreleased]
 
-### Changed
-
-- `exfat_lite` and the wire_weaver crates (`wire_weaver`, `wire_weaver_client`, `wire_weaver_snapshots`, `tests_common`, `ww_*`) come from their repositories by git (no `rev`, Cargo.lock pins the commit) instead of the sibling paths, in the workspace, `fuzz/` and `size/`; a commented-out `[patch]` in each of those root manifests switches back to the sibling checkouts for local work
-
 ### Added
 
 - Feature `tail-positions` (default on, S3): without it `Logring::mount` is the small mount (`mount_small`): no
@@ -109,6 +105,7 @@
 
 ### Changed
 
+- `exfat_lite` and the wire_weaver crates (`wire_weaver`, `wire_weaver_client`, `wire_weaver_snapshots`, `tests_common`, `ww_*`) come from their repositories by git (no `rev`, Cargo.lock pins the commit) instead of the sibling paths, in the workspace, `fuzz/` and `size/`; a commented-out `[patch]` in each of those root manifests switches back to the sibling checkouts for local work
 - `just install` works anywhere: it builds with the new `deploy` profile (release, incremental) and installs through `tpm install` when tpm is there (the binary on PATH once, in the kept-releases stack in ~/.local/bin; a stale ~/.cargo/bin copy goes to the trash), else with `cargo install --locked`. `just deploy` checks `--version` against main's commit.
 - **Breaking:** crate names: the engine `ww_logring` is now `logring`, `ww_logring_cli`/`ww_logring_export`/
   `ww_logring_py` are now `logring_cli`/`logring_export`/`logring_py` (the `logring` binary and the `logring`
