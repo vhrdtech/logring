@@ -6,6 +6,7 @@ members = [
     "crates/logring_cli",
     "crates/logring_export",
     "crates/logring_py",
+    "crates/logring_wheel",
     "crates/logring_ww_cli",
     "tests/stream_api",
     "tests/stream_e2e",

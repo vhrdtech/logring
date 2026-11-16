@@ -6,11 +6,8 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 rust-version.workspace = true
-description = "Python module for logring: open, tracks, recordings, markers, to_pandas()"
-publish = false # distributed as a Python wheel, see pyproject.toml
-
-[lib]
-crate-type = ["cdylib"]
+description = "The logring Python API on PyO3: open, tracks, recordings, markers, to_pandas()"
+publish = false # in the logring and wire_weaver wheels
 
 [dependencies]
 logring = { workspace = true, features = ["std"] }
@@ -19,7 +16,3 @@ numpy = "0.29"
 pyo3.workspace = true
 pythonize = "0.29"
 serde_json.workspace = true
-ww_snapshots.workspace = true
-
-[build-dependencies]
-ww_snapshots.workspace = true

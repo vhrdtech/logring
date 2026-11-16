@@ -130,7 +130,7 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   `wire_weaver_cli`-style bash adapter for quoting) give live file paths and `--format` values; colour off
   without a TTY or with `NO_COLOR`; `indicatif` progress bars on `make-image`'s writes and on exporting many
   tracks. CLI tests (`assert_cmd`) drive the real binary through `make-image` → `info`/`export`/`cat`/`check`;
-  `export --format mf4`'s output opens in `asammdf` (`crates/logring_py/tests/test_smoke.py`, `just test-py`,
+  `export --format mf4`'s output opens in `asammdf` (`crates/logring_wheel/tests/test_smoke.py`, `just test-py`,
   `uv run`). `ls` stays out (VIEW-1). `logring_py` (PyO3 + maturin, via uv): `logring.open(path)`, `LogFile.tracks()` /
   `.track(name)` / `.sessions()` / `.markers()` / `.recordings()`, `Track.rows()` (decoded JSON per record),
   `Track.to_numpy()` (one `numpy.ndarray` per numeric leaf field) and `Track.to_pandas()` (the same, as a
@@ -150,7 +150,8 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   (arguments and `run()`), the `logring` binary a thin main over it (`--version`, completion), and
   `logring_ww_cli` registers `ww logring info|export|cat|check|make-image` with `wire_weaver_cli`'s registry,
   help examples naming `ww logring`; `check`'s trouble still exits 1. The `ww` binary of `ww_tools` links it:
-  no plugin on `PATH`. Tests: the registered commands,
+  no plugin on `PATH`. Python: `logring_py` is the API as a library (`init()`), `logring_wheel` the standalone
+  `logring` wheel, and the `wire_weaver` wheel has it as `wire_weaver.logring`. Tests: the registered commands,
   the renamed examples, a run of `make-image`, `info`, `export`, `check` and a refused `cat` through `ww`'s parser.
 
 ## Hardware tests (`TEST`)

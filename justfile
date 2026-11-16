@@ -22,8 +22,8 @@ test-all: test-py
     cargo check -p logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf
     cargo build --quiet --manifest-path size/Cargo.toml --release --target thumbv8m.main-none-eabihf
 
-# Build the Python module (crates/logring_py) into a venv under /tmp and run its pytest smoke test
-[working-directory('crates/logring_py')]
+# Build the Python module (crates/logring_wheel over logring_py) into a venv under /tmp and run its pytest smoke test
+[working-directory('crates/logring_wheel')]
 test-py:
     UV_PROJECT_ENVIRONMENT={{py_venv}} uv run --quiet --group dev pytest -q
 

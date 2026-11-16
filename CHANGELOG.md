@@ -100,6 +100,7 @@
 
 ### Changed
 
+- `logring_py` is the Python API as a library; the `logring` wheel is built from `crates/logring_wheel` (PC-3).
 - Builds on wire_weaver's layered crates: skipped stdlib types resolve through `ww_snapshots`, embedded per build (PC-1).
 - `export`/`cat`: a value whose type stays unresolved shows as its raw bytes, not a decode error (PC-1).
 - A track on a keyed array's `keys` stream resolves to its key events (PC-1).

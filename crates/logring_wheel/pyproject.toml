@@ -29,4 +29,4 @@ module-name = "logring"
 
 [tool.uv]
 # Rebuild the package when any rust files change
-cache-keys = [{ file = "pyproject.toml" }, { file = "Cargo.toml" }, { file = "**/*.rs" }, { file = "../logring_export/**/*.rs" }, { file = "../logring/**/*.rs" }]
+cache-keys = [{ file = "pyproject.toml" }, { file = "Cargo.toml" }, { file = "**/*.rs" }, { file = "../logring_py/**/*.rs" }, { file = "../logring_export/**/*.rs" }, { file = "../logring/**/*.rs" }]

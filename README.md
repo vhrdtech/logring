@@ -13,8 +13,10 @@ time; exports to MF4, MCAP and CSV. The card is formatted on the device: put in 
 |---|---|
 | [`crates/logring`](crates/logring) | the engine: format, writer, recovery, reader, `TrackStore`, the view model, media |
 | [`crates/logring_export`](crates/logring_export) | PC-side reader and exporter (CSV, MCAP, MF4) |
-| [`crates/logring_cli`](crates/logring_cli) | the `logring` command line tool |
-| [`crates/logring_py`](crates/logring_py) | the `logring` Python module (PyO3 + maturin) |
+| [`crates/logring_cli`](crates/logring_cli) | the `logring` command line tool, its commands as a library |
+| [`crates/logring_ww_cli`](crates/logring_ww_cli) | the same commands as `ww logring`, inside the `ww` binary |
+| [`crates/logring_py`](crates/logring_py) | the `logring` Python API (PyO3), also `wire_weaver.logring` in the `wire_weaver` wheel |
+| [`crates/logring_wheel`](crates/logring_wheel) | the `logring` Python wheel over it (maturin) |
 
 ```sh
 cargo install --path crates/logring_cli     # (or, from a checkout: `just install`)

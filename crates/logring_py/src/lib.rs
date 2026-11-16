@@ -1,5 +1,6 @@
-//! Python module for `logring` (`logring_export` underneath), built with PyO3 + maturin: `open()`, tracks,
-//! recordings, markers, `Track.rows()`/`to_numpy()`/`to_pandas()`. See `AGENTS.md` and `FEATURES.md` (PC-1).
+//! The `logring` Python API (`logring_export` underneath), on PyO3: `open()`, tracks, recordings, markers,
+//! `Track.rows()`/`to_numpy()`/`to_pandas()`. [init] fills a module with it: the `logring` wheel's
+//! (`logring_wheel`) and `wire_weaver.logring` in the `wire_weaver` wheel. See `AGENTS.md` and `FEATURES.md` (PC-1).
 
 mod convert;
 mod track;
@@ -108,13 +109,8 @@ fn open(path: &str) -> PyResult<PyLogFile> {
     })
 }
 
-/// The API snapshots of every crate in the build's lock: a bundle's skipped standard types resolve with nothing on
-/// disk and no network.
-static SNAPSHOTS: ww_snapshots::Set = include!(concat!(env!("OUT_DIR"), "/snapshot_set.rs"));
-
-#[pymodule]
-fn logring(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
-    ww_snapshots::embed(&SNAPSHOTS);
+/// Adds the `logring` API to `m`: `__version__`, `open()`, `LogFile`, `Track`.
+pub fn init(m: &Bound<'_, PyModule>) -> PyResult<()> {
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(open, m)?)?;
     m.add_class::<PyLogFile>()?;
