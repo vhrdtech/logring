@@ -14,7 +14,9 @@ crate-type = ["cdylib"]
 
 [dependencies]
 logring_py = { path = "../logring_py", version = "0.1.0" }
-pyo3.workspace = true
+# the stable ABI (one wheel for Python 3.9 and later) is the wheel's choice, not logring_py's: a wheel that links
+# logring_py (wire_weaver's) picks its own
+pyo3 = { workspace = true, features = ["abi3-py39"] }
 ww_snapshots.workspace = true
 
 [build-dependencies]
