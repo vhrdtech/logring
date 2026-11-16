@@ -1,16 +1,8 @@
-//! The `logring` command line tool: `info`, `export`, `cat`, `check`, `make-image`.
-//!
-//! See `AGENTS.md` and `FEATURES.md` (PC-1). `ls` (the USB view's tree) waits on VIEW-1;
-//! `prepare` on S2.
+//! The `logring` command line tool: the commands of the `logring_cli` library, shell completion and `--version`.
 
-use clap::{CommandFactory, Parser};
-use cli::{Cli, Command};
+use clap::{CommandFactory, Parser, Subcommand};
 
-mod cli;
-mod cmd;
-mod color;
 mod complete;
-mod make_image;
 
 fn version() -> &'static str {
     concat!(
@@ -23,6 +15,31 @@ fn version() -> &'static str {
     )
 }
 
+/// `logring <SUBCOMMAND>`: read a logring card, ring file, image or split file.
+#[derive(Parser)]
+#[command(
+    name = "logring",
+    version = version(),
+    color = clap::ColorChoice::Auto,
+    after_help = logring_cli::EXAMPLES,
+)]
+struct Cli {
+    #[command(subcommand)]
+    command: TopCommand,
+}
+
+#[derive(Subcommand)]
+enum TopCommand {
+    #[command(flatten)]
+    Logring(logring_cli::Command),
+    /// Print shell completion for the given shell (bash, zsh, fish, elvish, powershell): source the output, or
+    /// `source <(COMPLETE=bash logring)` for the live, dynamic form (`just install`'s README).
+    Completions {
+        #[arg(value_enum)]
+        shell: clap_complete::Shell,
+    },
+}
+
 /// The API snapshots of every crate in the build's lock: a bundle's skipped standard types resolve with nothing on
 /// disk and no network.
 static SNAPSHOTS: ww_snapshots::Set = include!(concat!(env!("OUT_DIR"), "/snapshot_set.rs"));
@@ -32,29 +49,15 @@ fn main() -> anyhow::Result<()> {
     // answers shell completion requests (COMPLETE=<shell> set) and exits, otherwise does nothing
     complete::complete(Cli::command);
 
-    let cli = Cli::parse();
-    match cli.command {
-        Command::Info { path } => cmd::info(&path),
-        Command::Export {
-            path,
-            track,
-            format,
-            out,
-        } => cmd::export(&path, track.as_deref(), format, out),
-        Command::Cat { path, track } => cmd::cat(&path, &track),
-        Command::Check { path } => {
-            if cmd::check(&path)? {
+    match Cli::parse().command {
+        TopCommand::Logring(command) => {
+            if logring_cli::run(command)? {
                 Ok(())
             } else {
                 std::process::exit(1)
             }
         }
-        Command::MakeImage {
-            path,
-            tracks,
-            records,
-        } => cmd::make_image(&path, tracks, records),
-        Command::Completions { shell } => {
+        TopCommand::Completions { shell } => {
             clap_complete::generate(
                 shell,
                 &mut Cli::command(),

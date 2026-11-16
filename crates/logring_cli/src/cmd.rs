@@ -32,7 +32,7 @@ fn find_track<'a, 'b>(tracks: &'a [Track<'b>], spec: &str) -> Result<&'a Track<'
     bail!("no track named or keyed {spec:?} (see `logring info`)");
 }
 
-pub fn info(path: &Path) -> Result<()> {
+pub(crate) fn info(path: &Path) -> Result<()> {
     let (log, bundles) = load(path)?;
     let tracks = decode::tracks(&log, &bundles);
     let events: Vec<SystemEvent<'_>> = decode::system_events(&log);
@@ -94,7 +94,7 @@ pub fn info(path: &Path) -> Result<()> {
     Ok(())
 }
 
-pub fn export(
+pub(crate) fn export(
     path: &Path,
     track: Option<&str>,
     format: Format,
@@ -176,7 +176,7 @@ fn sanitize(name: &str) -> String {
         .collect()
 }
 
-pub fn cat(path: &Path, track: &str) -> Result<()> {
+pub(crate) fn cat(path: &Path, track: &str) -> Result<()> {
     let (log, bundles) = load(path)?;
     let tracks = decode::tracks(&log, &bundles);
     let t = find_track(&tracks, track)?;
@@ -201,7 +201,7 @@ pub fn cat(path: &Path, track: &str) -> Result<()> {
 
 /// `true` when nothing is wrong (exit 0); `false` on torn blocks/records, a bundle that didn't decode, or an
 /// unresolved track (exit 1, like fsck).
-pub fn check(path: &Path) -> Result<bool> {
+pub(crate) fn check(path: &Path) -> Result<bool> {
     let (log, bundles) = load(path)?;
     let tracks = decode::tracks(&log, &bundles);
     let mut ok = true;
@@ -250,7 +250,7 @@ pub fn check(path: &Path) -> Result<bool> {
     Ok(ok)
 }
 
-pub fn make_image(path: &Path, n_tracks: u32, records: u64) -> Result<()> {
+pub(crate) fn make_image(path: &Path, n_tracks: u32, records: u64) -> Result<()> {
     crate::make_image::run(path, n_tracks, records)
 }
 

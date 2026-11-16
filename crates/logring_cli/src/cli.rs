@@ -1,29 +1,20 @@
-//! `logring`'s command line: `info`, `export`, `cat`, `check`, `make-image` (`ls` stays out until VIEW-1, the
-//! USB view's tree; `prepare` is S2's).
+//! The `logring` commands' arguments: `info`, `export`, `cat`, `check`, `make-image` (`ls` stays out until VIEW-1, the
+//! USB view's tree; `prepare` is S2's). The `logring` binary and `ww logring` parse the same ones.
 
-use clap::{Parser, Subcommand, ValueEnum, ValueHint};
+use clap::{Subcommand, ValueEnum, ValueHint};
 use std::path::PathBuf;
 
-/// `logring <SUBCOMMAND>`: read a logring card, ring file, image or split file.
-#[derive(Parser)]
-#[command(
-    name = "logring",
-    version = crate::version(),
-    color = clap::ColorChoice::Auto,
-    after_help = "\
+/// The examples of the whole command, as `logring` would run them.
+pub const EXAMPLES: &str = "\
 EXAMPLES:
     logring info recording.wlr
     logring export recording.wlr --track can.rx --format mf4 -o can.mf4
     logring export recording.wlr --format mcap -o recording.mcap
     logring cat recording.wlr --track system.markers
     logring check /media/card
-    logring make-image demo.wlr --tracks 3 --records 500"
-)]
-pub struct Cli {
-    #[command(subcommand)]
-    pub command: Command,
-}
+    logring make-image demo.wlr --tracks 3 --records 500";
 
+/// One `logring` command.
 #[derive(Subcommand)]
 pub enum Command {
     /// Card/image facts: sessions, bundles, tracks and their record counts.
@@ -86,12 +77,6 @@ EXAMPLES:
         /// Records pushed to each track.
         #[arg(long, default_value_t = 200)]
         records: u64,
-    },
-    /// Print shell completion for the given shell (bash, zsh, fish, elvish, powershell): source the output, or
-    /// `source <(COMPLETE=bash logring)` for the live, dynamic form (`just install`'s README).
-    Completions {
-        #[arg(value_enum)]
-        shell: clap_complete::Shell,
     },
 }
 

@@ -59,7 +59,7 @@ fn bundle(n_tracks: u32) -> ApiBundleOwned {
     }
 }
 
-pub fn run(path: &Path, n_tracks: u32, records: u64) -> Result<()> {
+pub(crate) fn run(path: &Path, n_tracks: u32, records: u64) -> Result<()> {
     if n_tracks == 0 || n_tracks as usize >= MAX_TRACKS {
         bail!("--tracks must be 1..{MAX_TRACKS}");
     }
