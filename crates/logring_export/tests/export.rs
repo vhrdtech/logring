@@ -43,6 +43,7 @@ fn one_u32_stream_bundle() -> ApiBundleOwned {
                 docs: vec![],
                 optional: None,
                 meta: Default::default(),
+                identity: None,
             }],
             compact_id: None,
             meta: Default::default(),
@@ -51,6 +52,8 @@ fn one_u32_stream_bundle() -> ApiBundleOwned {
         traits: vec![],
         ext_crates: vec![],
         root_omitted: None,
+        wire: None,
+        ext_wire: None,
     }
 }
 

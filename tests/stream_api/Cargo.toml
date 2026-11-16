@@ -8,6 +8,10 @@ authors.workspace = true
 license.workspace = true
 repository.workspace = true
 
+# the wire version of the API root (link setup decides on it)
+[package.metadata.wire_weaver]
+wire = "w1.0"
+
 [features]
 default = ["std"]
 std = []

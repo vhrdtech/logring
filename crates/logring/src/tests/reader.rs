@@ -398,6 +398,40 @@ fn time_cmp_orders_as_picoseconds_do() {
     );
 }
 
+/// A prefix that is no power of ten (`Pow2`, a binary one) orders by its magnitude.
+#[test]
+fn time_cmp_orders_a_power_of_two_prefix() {
+    use crate::Second;
+    use crate::reader::time_cmp;
+    use core::cmp::Ordering;
+    use ww_si::Prefix;
+    use ww_si::exact_units::Pow2Exp;
+    use ww_si::ww_numeric::NumericValue;
+    let s = Second::from_parts;
+    // 2^-10 s ticks: 1024 of them are one second
+    let tick = Prefix::Pow2(Pow2Exp::new(-10).expect("-10 is a Pow2 exponent"));
+    let one = s(Prefix::Unit, NumericValue::U32(1));
+    assert_eq!(
+        time_cmp(&s(tick, NumericValue::U32(1024)), &one),
+        Some(Ordering::Equal)
+    );
+    assert_eq!(
+        time_cmp(&s(tick, NumericValue::U32(1023)), &one),
+        Some(Ordering::Less)
+    );
+    assert_eq!(
+        time_cmp(
+            &s(Prefix::Milli, NumericValue::U32(999)),
+            &s(tick, NumericValue::U32(1024))
+        ),
+        Some(Ordering::Less)
+    );
+    assert_eq!(
+        time_ps(&s(tick, NumericValue::U32(512))),
+        Some(500_000_000_000)
+    );
+}
+
 /// A seek by position stays in the stream it is asked for: after a reset the track's
 /// positions restart at 0, and a seek for an older stream's position finds that stream's record, never a later
 /// stream's; the walker stops at the stream's end.

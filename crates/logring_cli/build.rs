@@ -1,6 +1,8 @@
 //! Sets `GIT_SHA` (short, `-dirty` with local changes) and `COMMIT_TIME` (UTC) for `logring --version`
 //! (both `unknown` without git). The commit's time, not the build's: a build time forces rebuilds when nothing
-//! changed and means nothing once builds are reproducible (our usual CLI-quality convention).
+//! changed and means nothing once builds are reproducible (our usual CLI-quality convention). Also writes the API
+//! snapshots of every crate in the lock that has them (`ww_snapshots::build`), embedded so a bundle's skipped
+//! standard types resolve offline.
 
 use std::process::Command;
 
@@ -13,6 +15,8 @@ fn main() {
     }
     println!("cargo:rustc-env=GIT_SHA={}", git_sha());
     println!("cargo:rustc-env=COMMIT_TIME={}", commit_time());
+    ww_snapshots::build::workspace_set("snapshot_set.rs")
+        .unwrap_or_else(|e| panic!("embedding API snapshots: {e:#}"));
 }
 
 fn git(args: &[&str]) -> Option<String> {

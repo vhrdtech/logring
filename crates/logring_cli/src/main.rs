@@ -23,7 +23,12 @@ fn version() -> &'static str {
     )
 }
 
+/// The API snapshots of every crate in the build's lock: a bundle's skipped standard types resolve with nothing on
+/// disk and no network.
+static SNAPSHOTS: ww_snapshots::Set = include!(concat!(env!("OUT_DIR"), "/snapshot_set.rs"));
+
 fn main() -> anyhow::Result<()> {
+    ww_snapshots::embed(&SNAPSHOTS);
     // answers shell completion requests (COMPLETE=<shell> set) and exits, otherwise does nothing
     complete::complete(Cli::command);
 

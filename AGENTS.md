@@ -55,7 +55,7 @@ instrument/tool repos (tools are a library first):
   (`logring_export`, the CLI, tests): no RAM/flash limits assumed.
 - `crates/logring_export` — PC: opens a mounted card, an image, a ring file or a split `.wlr` (through
   `logring`'s `std` feature, no raw device access, no root); decodes tracks dynamically from the stored API
-  bundle (plus `wire_weaver_snapshots` for stdlib types); exports CSV, MCAP (JSON + jsonschema from the `ww_self`
+  bundle (plus `ww_snapshots` for stdlib types); exports CSV, MCAP (JSON + jsonschema from the `ww_self`
   type), MF4 (numeric channels, CAN as ASAM bus logging). DBC is never stored; it applies only at export.
 - `crates/logring_cli`, binary **`logring`** — `info`, `ls` (the same tree as the USB view, via
   `logring::view`), `export`, `cat`, `check` (like fsck), `make-image`; `--version` with git SHA and commit
@@ -94,7 +94,7 @@ run against real hardware versus only against fixtures/images.
 
 ## Dependencies
 
-Pure Rust only. `wire_weaver` crates (`ww_stream`, `shrink_wrap`, `ww_self`, `wire_weaver_snapshots`) aren't on
+Pure Rust only. `wire_weaver` crates (`ww_stream`, `shrink_wrap`, `ww_self`, `ww_snapshots`) aren't on
 crates.io yet (wire_weaver 0.5 unreleased): depend on them by git, without `rev` (Cargo.lock pins the commit,
 `cargo update -p NAME` moves it); a commented-out `[patch]` next to them in each root manifest switches to the checkout
 `../wire_weaver/...` for local work (`just deps-pull` updates it);

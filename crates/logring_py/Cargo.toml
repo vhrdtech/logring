@@ -19,3 +19,7 @@ numpy = "0.29"
 pyo3.workspace = true
 pythonize = "0.29"
 serde_json.workspace = true
+ww_snapshots.workspace = true
+
+[build-dependencies]
+ww_snapshots.workspace = true

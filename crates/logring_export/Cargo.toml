@@ -17,10 +17,10 @@ mdf4-rs = { version = "0.3", features = ["can", "alloc", "std"] }
 serde_json.workspace = true
 thiserror.workspace = true
 wire_weaver = { workspace = true, features = ["std"] }
-wire_weaver_snapshots.workspace = true
 ww_global.workspace = true
 ww_numeric = { workspace = true, features = ["std"] }
 ww_self = { workspace = true, features = ["std"] }
+ww_snapshots.workspace = true
 ww_stream = { workspace = true, features = ["std"] }
 ww_version = { workspace = true, features = ["std"] }
 

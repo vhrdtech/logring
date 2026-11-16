@@ -60,7 +60,7 @@ impl Host {
         assert_eq!(head.after_previous(), *have, "{run:?} in order: {head:?}");
         *have = head.end();
         let value = u32::from_le_bytes(item.try_into().unwrap());
-        let epoch = head.ext.and_then(|e| e.clock_epoch).map(|e| e.0);
+        let epoch = head.ext.and_then(|e| e.clock_epoch).map(|e| e.index.0);
         self.got.push((head.pos, value, epoch));
     }
 
@@ -78,7 +78,7 @@ impl Host {
             let ack = StreamSideband::Ack {
                 have: UVlq64(self.live_have),
                 backfill: self.backfill_have.map(UVlq64),
-                grant: UVlq32(1 << 20),
+                grant: UVlq32(1 << 20).into(),
             };
             block_on(dev.on_sideband(&ack, 0)).unwrap();
             if !sent {

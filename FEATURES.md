@@ -102,8 +102,10 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   too, through the OS filesystem, no root: a directory holding `logring.wlr`) via `logring::scan::Scan` (`std`),
   splits its meta records into sessions and API bundles (`logring::system::MetaEvent`), and resolves a track's
   item type by walking its `path` from the bundle's API root (`schema::resolve_track_type`, `wire_weaver`
-  `docs/api/addressing.md`), filling in traits and types a device left out with `wire_weaver_snapshots`'
-  embedded stdlib snapshots and the local `~/.wire_weaver/definitions` cache. Decodes items dynamically
+  `docs/api/addressing.md`), filling in traits and types a device left out through `ww_snapshots`' resolver
+  (the snapshots of the crates in the build's lock, embedded; the `~/.wire_weaver` cache and definition cache;
+  Cargo's sources on this PC); a value of a type still left out is kept as its undecoded bytes (hex in CSV, an
+  `opaque` object in JSON). Decodes items dynamically
   (`ww_self::value::ValueOwned::des_shrink_wrap_dyn`, no generated code); `wire_weaver` folded the old
   `Delta`/`DeltaOfDelta`/`XorFloat` wire types into `Series<T>` (same codecs, chosen per column): the JSON Schema
   builder's `Series` arm already recurses into `T` the same way, and `Series` already decodes to `ValueOwned::Vec`
@@ -118,7 +120,7 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   `mcap::MessageStream` and the MF4 bytes reloaded by `mdf4_rs::MDF` (crate-level round trips; an `asammdf`
   check and CLI-driven end-to-end tests are the CLI's own work, below). Differences from the plan: traits/types
   a bundle leaves out under `Skipped*` (not a device's own, from a published crate) are only resolved through
-  `wire_weaver_snapshots`/the definition cache, not yet through a second bundle of the same session; a track
+  `ww_snapshots`/the definition cache, not yet through a second bundle of the same session; a track
   whose type can't be resolved is counted (`Track::decode_errors`) and left out of export rather than falling
   back to raw bytes. The `logring` CLI: `info` (sessions, bundles, tracks, system-track counters), `export`
   (one track, or every resolved one for MCAP), `cat` (decoded JSON lines of one track), `check` (torn

@@ -4,9 +4,8 @@
 //! id for each array resource on the way (the selected index).
 //!
 //! Traits and types a device left out of its own bundle because they come from a published crate (`Skipped*`
-//! locations) are filled back in from `wire_weaver_snapshots`' embedded snapshots of `ww_global`/`ww_stdlib`
-//! crates, and from the local `~/.wire_weaver/definitions` cache populated by `wire_weaver` codegen on this
-//! machine, before a track's type is resolved.
+//! locations) are filled back in through `ww_snapshots`' resolver (the snapshot sets the program embedded, the
+//! `~/.wire_weaver` cache and definition cache, Cargo's sources on this machine) before a track's type is resolved.
 
 use anyhow::{Result, anyhow, bail};
 use wire_weaver::shrink_wrap::DeserializeShrinkWrapOwned;
@@ -23,16 +22,14 @@ pub struct Bundle {
 }
 
 /// Parses an API bundle's raw bytes (the tail of a [BundleRecord](crate::meta::BundleRecord)) and fills in the
-/// traits and types it left out from `wire_weaver_snapshots`, never panicking on malformed bytes.
+/// traits and types it left out through `ww_snapshots`, never panicking on malformed bytes.
 pub fn parse(bytes: &[u8]) -> Result<Bundle> {
     let mut api = ApiBundleOwned::from_ww_bytes_owned(bytes)
         .map_err(|e| anyhow!("decoding the API bundle: {e:?}"))?;
-    let cache_dir = ww_self::definition_cache::default_dir();
-    let not_inlined =
-        wire_weaver_snapshots::inline_skipped_or_cached(&mut api, cache_dir.as_deref());
+    let inlined = ww_snapshots::Resolver::global().inline_skipped(&mut api);
     Ok(Bundle {
         api,
-        unresolved: not_inlined.not_inlined.len(),
+        unresolved: inlined.not_inlined.len(),
     })
 }
 
@@ -92,6 +89,29 @@ pub fn resolve_track_type<'b>(bundle: &'b ApiBundleOwned, path: &[u32]) -> Resul
                     name: names.join("."),
                 });
             }
+            ApiItemKindOwned::Keys { event_ty, .. } => {
+                // the key companion's fixed level (`ww_self::keys`): only its `keys` stream is one
+                let id = ids
+                    .next()
+                    .ok_or_else(|| anyhow!("path ran out at a key companion"))?;
+                if id != ww_self::keys::KEYS {
+                    bail!(
+                        "path leads to a key companion's method or property, not its keys stream"
+                    );
+                }
+                if ids.next().is_some() {
+                    bail!("path continues past a stream resource");
+                }
+                names.push(
+                    ww_self::keys::item_name(id)
+                        .expect("KEYS has a name")
+                        .to_owned(),
+                );
+                return Ok(Resolved {
+                    ty: event_ty,
+                    name: names.join("."),
+                });
+            }
             ApiItemKindOwned::Method { .. } | ApiItemKindOwned::Property { .. } => {
                 bail!("path leads to a method or property, not a stream")
             }
@@ -110,6 +130,27 @@ mod tests {
         let resolved = resolve_track_type(&bundle, &[1]).unwrap();
         assert!(matches!(resolved.ty, TypeOwned::NumericAny(_)));
         assert_eq!(resolved.name, "value");
+    }
+
+    /// A track on a key companion's `keys` stream (`keyed!(value by u32)`) has its key events as items; the
+    /// companion's method and property are no stream.
+    #[test]
+    fn resolves_a_key_companions_keys_stream() {
+        let mut bundle = one_stream_bundle();
+        let mut keys = bundle.root.items[0].clone();
+        keys.id = wire_weaver::shrink_wrap::UNib32(2);
+        keys.ident = "value_keys".to_owned();
+        keys.kind = ApiItemKindOwned::Keys {
+            of: wire_weaver::shrink_wrap::UNib32(1),
+            key: TypeOwned::Bool,
+            event_ty: TypeOwned::Bool,
+        };
+        bundle.root.items.push(keys);
+        let resolved = resolve_track_type(&bundle, &[2, ww_self::keys::KEYS]).unwrap();
+        assert!(matches!(resolved.ty, TypeOwned::Bool));
+        assert_eq!(resolved.name, "value_keys.keys");
+        assert!(resolve_track_type(&bundle, &[2, ww_self::keys::INDEX_OF]).is_err());
+        assert!(resolve_track_type(&bundle, &[2]).is_err());
     }
 
     #[test]

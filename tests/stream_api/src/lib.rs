@@ -2,7 +2,7 @@
 //! logring on a (simulated) card, and a method that makes the device log into it.
 use wire_weaver::prelude::*;
 
-#[ww_trait]
+#[ww_api_root]
 trait LogringStream {
     /// Samples logged on the device's card, kept until acknowledged; unit: sample
     #[stream(Sample, reliable)]

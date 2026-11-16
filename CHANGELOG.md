@@ -99,6 +99,10 @@
 
 ### Changed
 
+- Builds on wire_weaver's layered crates: skipped stdlib types resolve through `ww_snapshots`, embedded per build (PC-1).
+- `export`/`cat`: a value whose type stays unresolved shows as its raw bytes, not a decode error (PC-1).
+- A track on a keyed array's `keys` stream resolves to its key events (PC-1).
+- Device times with a binary or power-of-two prefix order and convert by their magnitude (LOG-1).
 - docs: internal references removed
 - `exfat_lite` and the wire_weaver crates (`wire_weaver`, `wire_weaver_client`, `wire_weaver_snapshots`, `tests_common`, `ww_*`) come from their repositories by git (no `rev`, Cargo.lock pins the commit) instead of the sibling paths, in the workspace, `fuzz/` and `size/`; a commented-out `[patch]` in each of those root manifests switches back to the sibling checkouts for local work
 - `just install` works anywhere: it builds with the new `deploy` profile (release, incremental) and installs through `tpm install` when tpm is there (the binary on PATH once, in the kept-releases stack in ~/.local/bin; a stale ~/.cargo/bin copy goes to the trash), else with `cargo install --locked`. `just deploy` checks `--version` against main's commit.

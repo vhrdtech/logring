@@ -36,6 +36,7 @@ fn bundle(n_tracks: u32) -> ApiBundleOwned {
             docs: vec![],
             optional: None,
             meta: Default::default(),
+            identity: None,
         })
         .collect();
     ApiBundleOwned {
@@ -53,6 +54,8 @@ fn bundle(n_tracks: u32) -> ApiBundleOwned {
         traits: vec![],
         ext_crates: vec![],
         root_omitted: None,
+        wire: None,
+        ext_wire: None,
     }
 }
 

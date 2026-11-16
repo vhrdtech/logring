@@ -414,7 +414,7 @@ mod tests {
             lost: None,
             t: Some(us(1600)),
             ext: Some(HeadExt {
-                clock_epoch: Some(wire_weaver::shrink_wrap::UVlq32(4)),
+                clock_epoch: Some(wire_weaver::shrink_wrap::UVlq32(4).into()),
                 codec_restart: false,
             }),
         };

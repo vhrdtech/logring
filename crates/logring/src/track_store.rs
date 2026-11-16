@@ -195,7 +195,7 @@ impl<'r, 'a, R: RawMutex, M: LogMedium, const BUF: usize, const TRACKS: usize> S
         let first = g.track_state(self.track).is_some_and(|t| t.records == 0);
         if first && !g.recovery().formatted && head.ext.is_none_or(|e| e.clock_epoch.is_none()) {
             let mut ext = head.ext.unwrap_or_default();
-            ext.clock_epoch = Some(UVlq32(g.session()));
+            ext.clock_epoch = Some(UVlq32(g.session()).into());
             head.ext = Some(ext);
         }
         let r = g.push_head(self.track, &head, item).await;

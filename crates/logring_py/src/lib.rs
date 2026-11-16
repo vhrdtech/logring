@@ -108,8 +108,13 @@ fn open(path: &str) -> PyResult<PyLogFile> {
     })
 }
 
+/// The API snapshots of every crate in the build's lock: a bundle's skipped standard types resolve with nothing on
+/// disk and no network.
+static SNAPSHOTS: ww_snapshots::Set = include!(concat!(env!("OUT_DIR"), "/snapshot_set.rs"));
+
 #[pymodule]
 fn logring(_py: Python<'_>, m: &Bound<'_, PyModule>) -> PyResult<()> {
+    ww_snapshots::embed(&SNAPSHOTS);
     m.add("__version__", env!("CARGO_PKG_VERSION"))?;
     m.add_function(wrap_pyfunction!(open, m)?)?;
     m.add_class::<PyLogFile>()?;

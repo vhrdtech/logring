@@ -60,6 +60,8 @@ pub fn flatten_numeric(prefix: &str, value: &ValueOwned, out: &mut Vec<(String, 
             out.push((format!("{prefix}.start"), r.start().to_f64()));
             out.push((format!("{prefix}.end"), r.end().to_f64()));
         }
+        // undecoded bytes have no numeric representation
+        ValueOwned::Opaque(_) => {}
     }
 }
 
@@ -106,6 +108,13 @@ pub fn value_to_json(value: &ValueOwned) -> Json {
         ValueOwned::RangeInclusive(r) => {
             json!({ "start": numeric_to_json(r.start()), "end": numeric_to_json(r.end()) })
         }
+        ValueOwned::Opaque(o) => json!({
+            "opaque": {
+                "crate": o.crate_version.crate_id,
+                "type": o.type_name,
+                "bytes": o.bytes,
+            }
+        }),
     }
 }
 
@@ -127,7 +136,7 @@ fn fields_value_to_json(fields: &FieldsValueOwned) -> Json {
 
 /// A JSON Schema (draft 2020-12) fragment describing `ty`, resolving [TypeOwned::OutOfLine] and
 /// [TypeOwned::Instance] against `bundle`'s `types` array; opaque (`true`, "anything") where the bundle doesn't
-/// have a type's definition (a `Skipped*` location `wire_weaver_snapshots` didn't fill in either).
+/// have a type's definition (a `Skipped*` location `ww_snapshots` didn't fill in either).
 pub fn jsonschema_of(ty: &TypeOwned, bundle: &ApiBundleOwned) -> Json {
     use ww_self::TypeLocationOwned;
     match ty {

@@ -2,7 +2,7 @@
 //!
 //! Opens a mounted card, a ring file copy, a raw image or a split `.wlr` file through `logring` (`std`
 //! feature, [open]), decodes tracks dynamically from the stored API bundle ([schema], [decode]; `ww_self` and
-//! `wire_weaver_snapshots`, no generated code), and exports CSV ([csv_export]), MCAP ([mcap_export]) and MF4
+//! `ww_snapshots`, no generated code), and exports CSV ([csv_export]), MCAP ([mcap_export]) and MF4
 //! ([mf4_export]). See `AGENTS.md` and `FEATURES.md` (PC-1).
 
 pub mod csv_export;

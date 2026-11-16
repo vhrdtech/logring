@@ -239,8 +239,8 @@ mod client {
             ClientConfig::default()
         }
 
-        fn from_cmd(cmd: Commander) -> Self {
-            Self { cmd }
+        fn try_from_cmd(cmd: Commander) -> Result<Self, wire_weaver_client::Error> {
+            Ok(Self { cmd })
         }
     }
 
@@ -260,6 +260,7 @@ fn start(path: &str, server: server::Server) -> TestDevice {
         path,
         server,
         logring_stream_api::LOGRING_STREAM_FULL_GID,
+        logring_stream_api::LOGRING_STREAM_WIRE_VERSION,
         server::api_impl::api_hash(),
     )
 }
@@ -316,7 +317,7 @@ async fn reliable_stream_backfills_from_the_card_across_reboots() {
             );
         }
         let device = start(&format!("logring_e2e/boot{boot}"), server);
-        let mut client = connect(&device).await;
+        let client = connect(&device).await;
         let mut samples = match cursor {
             None => client.samples().call().await.unwrap(),
             Some(c) => client.samples_resume(c).call().await.unwrap(),

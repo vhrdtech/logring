@@ -89,6 +89,11 @@ fn flatten(prefix: &str, value: &ValueOwned, out: &mut Vec<(String, String)>) {
             out.push((format!("{prefix}.start"), numeric_to_string(r.start())));
             out.push((format!("{prefix}.end"), numeric_to_string(r.end())));
         }
+        // a type this PC has no definition of: its payload undecoded, as hex
+        ValueOwned::Opaque(o) => {
+            let hex = o.bytes.iter().map(|b| format!("{b:02x}")).collect();
+            out.push((prefix.to_string(), hex));
+        }
     }
 }
 
@@ -105,5 +110,28 @@ fn flatten_fields(prefix: &str, fields: &FieldsValueOwned, out: &mut Vec<(String
             }
         }
         FieldsValueOwned::Unit => {}
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::flatten;
+    use ww_self::{OpaqueOwned, ValueOwned};
+
+    /// A value of a type no source resolved: its payload as hex, in one cell.
+    #[test]
+    fn opaque_value_is_one_hex_cell() {
+        let opaque = ValueOwned::Opaque(Box::new(OpaqueOwned {
+            crate_version: ww_version::FullVersionOwned::new(
+                "ww_can_bus".to_owned(),
+                ww_version::VersionOwned::new(0, 1, 0),
+            ),
+            type_name: "CanFrame".to_owned(),
+            signature: vec![0xab],
+            bytes: vec![0x01, 0xfe],
+        }));
+        let mut out = vec![];
+        flatten("rx", &opaque, &mut out);
+        assert_eq!(out, [("rx".to_owned(), "01fe".to_owned())]);
     }
 }

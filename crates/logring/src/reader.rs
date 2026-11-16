@@ -28,6 +28,7 @@ use crate::format::record::{Decoded, MAX_REC_HEADER, Skipped, TrackCodec, decode
 use crate::format::{BLOCK, BlockCheck, Dec, NONE, PAYLOAD, Role, Superblock, check_block};
 use crate::system::{MetaEvent, SystemEvent};
 use crate::writer::Geo;
+use ww_si::Prefix;
 use ww_si::ww_numeric::NumericValue;
 use ww_stream::store::LogMedium;
 use ww_stream::{Second, StreamHead};
@@ -673,10 +674,9 @@ pub fn time_cmp(a: &Second, b: &Second) -> Option<core::cmp::Ordering> {
         NumericValue::U64(v) => Some(v),
         _ => None,
     };
-    let (ea, eb): (i8, i8) = (a.prefix.into(), b.prefix.into());
-    match (int(a), int(b)) {
-        (Some(x), Some(y)) if ea == eb => Some(x.cmp(&y)),
-        (Some(x), Some(y)) => {
+    match (int(a), int(b), pow10(a), pow10(b)) {
+        (Some(x), Some(y), Some(ea), Some(eb)) if ea == eb => Some(x.cmp(&y)),
+        (Some(x), Some(y), Some(ea), Some(eb)) => {
             // `hi` has the larger exponent: hi * 10^d against lo
             let (hi, lo, swapped) = if ea > eb { (x, y, false) } else { (y, x, true) };
             let d = (ea as i32 - eb as i32).unsigned_abs();
@@ -686,12 +686,19 @@ pub fn time_cmp(a: &Second, b: &Second) -> Option<core::cmp::Ordering> {
             };
             Some(if swapped { o.reverse() } else { o })
         }
-        _ => {
-            let fa = a.value.to_f64() * libm_pow10(ea as i32);
-            let fb = b.value.to_f64() * libm_pow10(eb as i32);
-            fa.partial_cmp(&fb)
-        }
+        _ => time_f64(a).partial_cmp(&time_f64(b)),
     }
+}
+
+/// The power of ten of a time's prefix, `None` for a prefix that isn't one (binary, `Pow2`).
+fn pow10(t: &Second) -> Option<i8> {
+    t.prefix.ratio_to(Prefix::Unit)?.as_pow10()
+}
+
+/// A time in seconds as `f64`, NaN for a value that isn't a number or a prefix without a fixed magnitude.
+fn time_f64(t: &Second) -> f64 {
+    let scale = t.prefix.magnitude().map_or(f64::NAN, |m| m.to_f64());
+    t.value.to_f64() * scale
 }
 
 /// `t` is at or before `target`.
@@ -702,34 +709,24 @@ fn at_or_before(t: &Second, target: &Second) -> bool {
 /// A device time as picoseconds, for ordering; `None` for values that aren't numbers. The PC side's form;
 /// the device orders with [time_cmp].
 pub fn time_ps(t: &Second) -> Option<i128> {
-    let exp: i8 = t.prefix.into();
-    let shift = exp as i32 + 12;
+    let shift = pow10(t).map(|exp| exp as i32 + 12);
     let int = match t.value {
         NumericValue::U32(v) => Some(v as i128),
         NumericValue::U64(v) => Some(v as i128),
         _ => None,
     };
-    match int {
-        Some(v) if (0..=26).contains(&shift) => v.checked_mul(10i128.checked_pow(shift as u32)?),
-        Some(v) if (-38..0).contains(&shift) => Some(v / 10i128.pow((-shift) as u32)),
+    match (int, shift) {
+        (Some(v), Some(shift)) if (0..=26).contains(&shift) => {
+            v.checked_mul(10i128.checked_pow(shift as u32)?)
+        }
+        (Some(v), Some(shift)) if (-38..0).contains(&shift) => {
+            Some(v / 10i128.pow((-shift) as u32))
+        }
         _ => {
-            let f = t.value.to_f64() * libm_pow10(shift);
+            let f = time_f64(t) * 1e12;
             f.is_finite().then_some(f as i128)
         }
     }
-}
-
-fn libm_pow10(e: i32) -> f64 {
-    let mut r = 1.0f64;
-    let (mut b, mut n) = (if e < 0 { 0.1 } else { 10.0 }, e.unsigned_abs());
-    while n > 0 {
-        if n & 1 == 1 {
-            r *= b;
-        }
-        b *= b;
-        n >>= 1;
-    }
-    r
 }
 
 /// Per-track facts of one segment, [Reader::summary].
