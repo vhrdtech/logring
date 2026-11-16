@@ -82,7 +82,7 @@ jobs:
           path: wire_weaver
       - uses: dtolnay/rust-toolchain@stable
       - uses: astral-sh/setup-uv@v5
-      - working-directory: logring/crates/logring_py
+      - working-directory: logring/crates/logring_wheel
         run: uv run --group dev pytest -q
 
   cargo-sort:
