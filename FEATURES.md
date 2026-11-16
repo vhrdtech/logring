@@ -146,6 +146,12 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   for `ls`).
 - 💡 **PC-2 fuse-mount**: `logring mount` (FUSE), so a card or image shows as a normal read-only filesystem
   without the `logring` CLI's own subcommands.
+- 🧪 **PC-3 ww-logring**: the `logring` commands inside the one `ww` binary: `logring_cli` is a library
+  (arguments and `run()`), the `logring` binary a thin main over it (`--version`, completion), and
+  `logring_ww_cli` registers `ww logring info|export|cat|check|make-image` with `wire_weaver_cli`'s registry,
+  help examples naming `ww logring`; `check`'s trouble still exits 1. The `ww` binary of `ww_tools` links it:
+  no plugin on `PATH`. Tests: the registered commands,
+  the renamed examples, a run of `make-image`, `info`, `export`, `check` and a refused `cat` through `ww`'s parser.
 
 ## Hardware tests (`TEST`)
 

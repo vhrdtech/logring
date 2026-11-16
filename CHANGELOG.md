@@ -4,6 +4,7 @@
 
 ### Added
 
+- `ww logring info|export|cat|check|make-image`: the `logring` commands inside the `ww` binary, no plugin needed (PC-3).
 - Feature `tail-positions` (default on, S3): without it `Logring::mount` is the small mount (`mount_small`): no
   scan of the tail's last flush, every track starts at 0 in a new stream (`SEG_FRESH`, a bit-31 stream session)
   after each boot, torn records at the tail aren't counted (`Recovery::positions_restarted`), and `TrackStore`

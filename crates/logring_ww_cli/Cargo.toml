@@ -1,0 +1,20 @@
+[package]
+name = "logring_ww_cli"
+description = "ww logring: the logring commands registered with the ww command line (wire_weaver_cli's registry)"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+publish = false # linked into the ww binary (ww_tools) by git
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+inventory.workspace = true
+logring_cli = { path = "../logring_cli", version = "0.1.0" }
+wire_weaver_cli.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

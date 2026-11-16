@@ -57,9 +57,11 @@ instrument/tool repos (tools are a library first):
   `logring`'s `std` feature, no raw device access, no root); decodes tracks dynamically from the stored API
   bundle (plus `ww_snapshots` for stdlib types); exports CSV, MCAP (JSON + jsonschema from the `ww_self`
   type), MF4 (numeric channels, CAN as ASAM bus logging). DBC is never stored; it applies only at export.
-- `crates/logring_cli`, binary **`logring`** — `info`, `ls` (the same tree as the USB view, via
+- `crates/logring_cli`, library and binary **`logring`** — `info`, `ls` (the same tree as the USB view, via
   `logring::view`), `export`, `cat`, `check` (like fsck), `make-image`; `--version` with git SHA and commit
   time (`build.rs`, no extra crates), shell completions, colour, progress bars (our usual CLI-quality convention).
+- `crates/logring_ww_cli` — `ww logring`: the same commands registered with `wire_weaver_cli`'s command
+  registry; the `ww` binary (`ww_tools`) links it, so `ww logring ...` needs no plugin (PC-3).
 - `crates/logring_py` (PyO3 + maturin, package `logring`) — `open()`, tracks, recordings, markers,
   `track.to_pandas()`, built on `logring_export`.
 
