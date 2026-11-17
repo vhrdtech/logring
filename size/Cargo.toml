@@ -42,7 +42,7 @@ embassy-sync = "0.8"
 exfat_lite = { git = "https://github.com/vhrdtech/exfat_lite", default-features = false }
 logring = { path = "../crates/logring", default-features = false, features = ["exfat"] }
 wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
-ww_si = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["time", "u32", "u64"] }
+ww_si = { git = "https://github.com/vhrdtech/ww_base", default-features = false, features = ["time", "u32", "u64"] }
 ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["log-store"] }
 
 # For local work against the sibling checkouts next to this repo: uncomment

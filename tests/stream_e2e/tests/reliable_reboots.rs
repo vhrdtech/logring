@@ -261,7 +261,7 @@ fn start(path: &str, server: server::Server) -> TestDevice {
         server,
         logring_stream_api::LOGRING_STREAM_FULL_GID,
         logring_stream_api::LOGRING_STREAM_WIRE_VERSION,
-        server::api_impl::api_hash(),
+        tests_common::api!(server::api_impl),
     )
 }
 

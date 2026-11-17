@@ -49,13 +49,13 @@ wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver", default-feature
 wire_weaver_cli = { git = "https://github.com/vhrdtech/wire_weaver" }
 wire_weaver_client = { git = "https://github.com/vhrdtech/wire_weaver" }
 ww_client_server = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
-ww_global = { git = "https://github.com/vhrdtech/wire_weaver" }
-ww_numeric = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+ww_global = { git = "https://github.com/vhrdtech/ww_base" }
+ww_numeric = { git = "https://github.com/vhrdtech/ww_base", default-features = false }
 ww_self = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
-ww_si = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["time", "u32", "u64"] }
+ww_si = { git = "https://github.com/vhrdtech/ww_base", default-features = false, features = ["time", "u32", "u64"] }
 ww_snapshots = { git = "https://github.com/vhrdtech/wire_weaver" }
 ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["log-store"] }
-ww_version = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
+ww_version = { git = "https://github.com/vhrdtech/ww_base", default-features = false }
 
 # For local work against the sibling checkouts next to this repo: uncomment
 # [patch."https://github.com/vhrdtech/exfat_lite"]

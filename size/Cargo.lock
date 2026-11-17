@@ -151,7 +151,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "strsim",
- "syn",
+ "syn 3.0.9",
 ]
 
 [[package]]
@@ -162,7 +162,7 @@ checksum = "2ac7135c3ef02b2f7833bbeb1be5ba7f966dcde8a87c6b87f65a778d71a02785"
 dependencies = [
  "darling_core",
  "quote",
- "syn",
+ "syn 3.0.9",
 ]
 
 [[package]]
@@ -181,6 +181,15 @@ name = "either"
 version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0e9c71c2167ca323c882b99918929403426e2373ea17242ff5653e0d5e1058be"
+
+[[package]]
+name = "elsa"
+version = "1.11.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9abf33c656a7256451ebb7d0082c5a471820c31269e49d807c538c252352186e"
+dependencies = [
+ "stable_deref_trait",
+]
 
 [[package]]
 name = "embassy-sync"
@@ -218,8 +227,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "00d174d5400e5e8fd687ad1049e2f578285fa914201b1af7e8b112a4546bd826"
 
 [[package]]
+name = "exact_units"
+version = "0.1.0"
+source = "git+https://github.com/romixlab/exact_units#6f582740fe94185277d36e4718b2dd45be33ebf5"
+dependencies = [
+ "libm",
+ "serde",
+ "shrink_wrap",
+]
+
+[[package]]
 name = "exfat_lite"
 version = "0.1.0"
+source = "git+https://github.com/vhrdtech/exfat_lite#c84517447311cd2b92516ba0b1418d06aa84b1d2"
 
 [[package]]
 name = "find-msvc-tools"
@@ -308,6 +328,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "65cd87c9a6d60536580b316ad985726104730a5151c99845f2490428ef91240a"
 
 [[package]]
+name = "libm"
+version = "0.2.16"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b6d2cec3eae94f9f509c767b45932f1ada8350c4bdb85af2fcab4a3c14807981"
+
+[[package]]
 name = "logring"
 version = "0.1.0"
 dependencies = [
@@ -331,6 +357,12 @@ dependencies = [
  "ww_si",
  "ww_stream",
 ]
+
+[[package]]
+name = "lz4_flex"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ecbdfe44b1bd960b68170b417450a628c43f7cf56bb3c5317e61cb230ee7f226"
 
 [[package]]
 name = "memchr"
@@ -392,7 +424,7 @@ dependencies = [
  "pest_meta",
  "proc-macro2",
  "quote",
- "syn",
+ "syn 3.0.9",
 ]
 
 [[package]]
@@ -403,6 +435,12 @@ checksum = "b57f92f32b3dbce6598fd8f5cdf1f06a6072570b8103fa21728fa9036923e710"
 dependencies = [
  "pest",
 ]
+
+[[package]]
+name = "pin-project-lite"
+version = "0.2.17"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a89322df9ebe1c1578d689c92318e070967d1042b512afbe49518723f4e6d5cd"
 
 [[package]]
 name = "portable-atomic"
@@ -526,7 +564,7 @@ checksum = "e7a5d71263a5a7d47b41f6b3f06ba276f10cc18b0931f1799f710578e2309348"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn",
+ "syn 3.0.9",
 ]
 
 [[package]]
@@ -571,6 +609,7 @@ checksum = "f8fadd59c855ef2080decdef8ff161eb6661b86933c9d82e5ba29dc602a55aba"
 [[package]]
 name = "shrink_wrap"
 version = "0.2.0"
+source = "git+https://github.com/romixlab/shrink_wrap#26a7987c5aa9fa3c6a5c8fb2049b5aecbd162da1"
 dependencies = [
  "either",
  "paste",
@@ -581,11 +620,12 @@ dependencies = [
 [[package]]
 name = "shrink_wrap_derive"
 version = "0.2.0"
+source = "git+https://github.com/romixlab/shrink_wrap#26a7987c5aa9fa3c6a5c8fb2049b5aecbd162da1"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
  "quote",
- "syn",
+ "syn 3.0.9",
 ]
 
 [[package]]
@@ -625,6 +665,17 @@ dependencies = [
 
 [[package]]
 name = "syn"
+version = "2.0.119"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "872831b642d1a07999a962a351ed35b955ea2cfc8f3862091e2a240a84f17297"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "unicode-ident",
+]
+
+[[package]]
+name = "syn"
 version = "3.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d78c8dee4c7bf0e14673097256fed6142ce9d3b85a408189d07482442145823b"
@@ -651,7 +702,7 @@ checksum = "fe5197923287db20a58125f0bc85c062f7f2c892de97b18c356f9efb14b28524"
 dependencies = [
  "proc-macro2",
  "quote",
- "syn",
+ "syn 3.0.9",
 ]
 
 [[package]]
@@ -704,6 +755,37 @@ name = "toml_writer"
 version = "1.1.3+spec-1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06bdbd8cfc056b8d2e2e85f29b56a3bdbecb527cef81eb39e3e7b98af4652770"
+
+[[package]]
+name = "tracing"
+version = "0.1.44"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "63e71662fa4b2a2c3a26f570f037eb95bb1f85397f3cd8076caed2f026a6d100"
+dependencies = [
+ "pin-project-lite",
+ "tracing-attributes",
+ "tracing-core",
+]
+
+[[package]]
+name = "tracing-attributes"
+version = "0.1.31"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7490cfa5ec963746568740651ac6781f701c9c5ea257c58e057f3ba8cf69e8da"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.119",
+]
+
+[[package]]
+name = "tracing-core"
+version = "0.1.36"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "db97caf9d906fbde555dd62fa95ddba9eecfd14cb388e4f491a66d74cd5fb79a"
+dependencies = [
+ "once_cell",
+]
 
 [[package]]
 name = "typeid"
@@ -784,20 +866,23 @@ dependencies = [
 [[package]]
 name = "wire_weaver"
 version = "0.5.0"
+source = "git+https://github.com/vhrdtech/wire_weaver#eb8fb392d2b412a2535a43958240e89d36bd4437"
 dependencies = [
+ "exact_units",
  "shrink_wrap",
- "wire_weaver_derive",
- "ww_error",
+ "ww_api",
  "ww_version",
 ]
 
 [[package]]
 name = "wire_weaver_core"
 version = "0.5.0"
+source = "git+https://github.com/vhrdtech/wire_weaver#eb8fb392d2b412a2535a43958240e89d36bd4437"
 dependencies = [
  "anyhow",
  "cargo_toml",
  "convert_case",
+ "exact_units",
  "hex",
  "pest",
  "pest_derive",
@@ -806,68 +891,96 @@ dependencies = [
  "regex",
  "ron",
  "semver",
+ "serde",
  "shrink_wrap",
- "syn",
- "wire_weaver_snapshots",
+ "syn 3.0.9",
+ "toml",
  "ww_global",
  "ww_numeric",
  "ww_self",
+ "ww_snapshots",
  "ww_version",
 ]
 
 [[package]]
 name = "wire_weaver_derive"
 version = "0.5.0"
+source = "git+https://github.com/vhrdtech/wire_weaver#eb8fb392d2b412a2535a43958240e89d36bd4437"
 dependencies = [
+ "anyhow",
  "convert_case",
  "darling",
  "pathsearch",
+ "proc-macro-crate",
  "proc-macro2",
  "quote",
  "subprocess",
- "syn",
+ "syn 3.0.9",
  "wire_weaver_core",
  "ww_global",
 ]
 
 [[package]]
-name = "wire_weaver_snapshots"
+name = "ww_api"
 version = "0.5.0"
+source = "git+https://github.com/vhrdtech/wire_weaver#eb8fb392d2b412a2535a43958240e89d36bd4437"
 dependencies = [
- "ron",
- "ww_self",
+ "shrink_wrap",
+ "wire_weaver_derive",
+ "ww_error",
  "ww_version",
 ]
 
 [[package]]
 name = "ww_client_server"
 version = "0.2.0"
+source = "git+https://github.com/vhrdtech/wire_weaver#eb8fb392d2b412a2535a43958240e89d36bd4437"
 dependencies = [
  "wire_weaver",
+ "ww_error",
  "ww_global",
  "ww_si",
 ]
 
 [[package]]
+name = "ww_crc"
+version = "0.5.0"
+source = "git+https://github.com/vhrdtech/ww_base#fbddc7e13b577a6f876aa1e5a4698eafc85eba8c"
+dependencies = [
+ "crc",
+]
+
+[[package]]
 name = "ww_error"
 version = "0.1.0"
+source = "git+https://github.com/vhrdtech/ww_base#fbddc7e13b577a6f876aa1e5a4698eafc85eba8c"
 dependencies = [
  "shrink_wrap",
+ "ww_si",
 ]
 
 [[package]]
 name = "ww_global"
 version = "0.2.0"
+source = "git+https://github.com/vhrdtech/ww_base#fbddc7e13b577a6f876aa1e5a4698eafc85eba8c"
 dependencies = [
  "convert_case",
- "serde",
  "serde_json",
- "shrink_wrap",
+ "ww_version",
+]
+
+[[package]]
+name = "ww_lz4"
+version = "0.1.0"
+source = "git+https://github.com/vhrdtech/wire_weaver#eb8fb392d2b412a2535a43958240e89d36bd4437"
+dependencies = [
+ "lz4_flex",
 ]
 
 [[package]]
 name = "ww_numeric"
-version = "0.2.0"
+version = "0.3.0"
+source = "git+https://github.com/vhrdtech/ww_base#fbddc7e13b577a6f876aa1e5a4698eafc85eba8c"
 dependencies = [
  "serde",
  "shrink_wrap",
@@ -876,44 +989,67 @@ dependencies = [
 [[package]]
 name = "ww_self"
 version = "0.3.0"
+source = "git+https://github.com/vhrdtech/wire_weaver#eb8fb392d2b412a2535a43958240e89d36bd4437"
 dependencies = [
  "anyhow",
+ "exact_units",
  "serde",
  "sha2",
  "shrink_wrap",
+ "ww_error",
+ "ww_lz4",
  "ww_numeric",
  "ww_version",
 ]
 
 [[package]]
 name = "ww_si"
-version = "0.2.0"
+version = "0.5.0"
+source = "git+https://github.com/vhrdtech/ww_base#fbddc7e13b577a6f876aa1e5a4698eafc85eba8c"
 dependencies = [
+ "exact_units",
  "shrink_wrap",
  "ww_numeric",
 ]
 
 [[package]]
+name = "ww_snapshots"
+version = "0.5.0"
+source = "git+https://github.com/vhrdtech/wire_weaver#eb8fb392d2b412a2535a43958240e89d36bd4437"
+dependencies = [
+ "anyhow",
+ "elsa",
+ "ron",
+ "semver",
+ "serde",
+ "toml",
+ "tracing",
+ "ww_self",
+ "ww_version",
+]
+
+[[package]]
 name = "ww_stream"
 version = "0.5.0"
+source = "git+https://github.com/vhrdtech/wire_weaver#eb8fb392d2b412a2535a43958240e89d36bd4437"
 dependencies = [
  "atomic-waker",
- "crc",
  "portable-atomic",
  "wire_weaver",
  "ww_client_server",
+ "ww_crc",
  "ww_si",
 ]
 
 [[package]]
 name = "ww_version"
 version = "0.2.0"
+source = "git+https://github.com/vhrdtech/ww_base#fbddc7e13b577a6f876aa1e5a4698eafc85eba8c"
 dependencies = [
  "hex",
  "semver",
  "serde",
  "shrink_wrap",
- "ww_global",
 ]
 
 [[package]]
