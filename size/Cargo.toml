@@ -45,13 +45,6 @@ wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver", default-feature
 ww_si = { git = "https://github.com/vhrdtech/ww_base", default-features = false, features = ["time", "u32", "u64"] }
 ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["log-store"] }
 
-# For local work against the sibling checkouts next to this repo: uncomment
-# [patch."https://github.com/vhrdtech/exfat_lite"]
-# exfat_lite = { path = "../../exfat_lite" }
-# [patch."https://github.com/vhrdtech/wire_weaver"]
-# wire_weaver = { path = "../../wire_weaver/wire_weaver" }
-# ww_si = { path = "../../wire_weaver/ww_stdlib/ww_si" }
-# ww_stream = { path = "../../wire_weaver/ww_stream" }
 
 [profile.release]
 opt-level = "s"

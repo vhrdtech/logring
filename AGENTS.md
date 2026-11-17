@@ -97,11 +97,12 @@ run against real hardware versus only against fixtures/images.
 
 ## Dependencies
 
-Pure Rust only. `wire_weaver` crates (`ww_stream`, `shrink_wrap`, `ww_self`, `ww_snapshots`) aren't on
-crates.io yet (wire_weaver 0.5 unreleased): depend on them by git, without `rev` (Cargo.lock pins the commit,
-`cargo update -p NAME` moves it); a commented-out `[patch]` next to them in each root manifest switches to the checkout
-`../wire_weaver/...` for local work (`just deps-pull` updates it);
-move to crates.io versions once wire_weaver 0.5 ships (crates.io takes no path or git deps, so logring publishes after
+Pure Rust only. The `wire_weaver` crates aren't on crates.io yet (wire_weaver 0.5 unreleased): depend on them by
+git, without `rev`, each from its own repository (`wire_weaver`, `ww_stream`, `ww_self`, `ww_snapshots` from
+vhrdtech/wire_weaver; `ww_si`, `ww_numeric`, `ww_version`, `ww_global` from vhrdtech/ww_base). Cargo.lock pins the
+commits, one copy of each crate (`cargo tree -d`); `just deps-pull` moves them to each repository's main. For local
+work against sibling checkouts, an uncommitted `.cargo/config.toml` with a `[patch."URL"]` per repository; never
+commit it, nor a lock made with it. Move to crates.io versions once wire_weaver 0.5 ships (crates.io takes no path or git deps, so logring publishes after
 it). Same for `exfat_lite` and `usb_msc_device`
 until they are published. Check new dependencies with `cargo tree` for `-sys` crates and `cc`/`bindgen` build
 deps: pure Rust only, no C bindings. `logring_export`'s `mcap` dependency is

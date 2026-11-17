@@ -57,24 +57,6 @@ ww_snapshots = { git = "https://github.com/vhrdtech/wire_weaver" }
 ww_stream = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false, features = ["log-store"] }
 ww_version = { git = "https://github.com/vhrdtech/ww_base", default-features = false }
 
-# For local work against the sibling checkouts next to this repo: uncomment
-# [patch."https://github.com/vhrdtech/exfat_lite"]
-# exfat_lite = { path = "../exfat_lite" }
-# [patch."https://github.com/vhrdtech/wire_weaver"]
-# wire_weaver = { path = "../wire_weaver/wire_weaver" }
-# wire_weaver_cli = { path = "../wire_weaver/wire_weaver_cli" }
-# wire_weaver_client = { path = "../wire_weaver/wire_weaver_client" }
-# tests_common = { path = "../wire_weaver/tests/tests_common" }
-# ww_client_server = { path = "../wire_weaver/ww_client_server" }
-# ww_global = { path = "../wire_weaver/ww_global" }
-# ww_numeric = { path = "../wire_weaver/ww_stdlib/ww_numeric" }
-# ww_self = { path = "../wire_weaver/ww_self" }
-# ww_si = { path = "../wire_weaver/ww_stdlib/ww_si" }
-# ww_snapshots = { path = "../wire_weaver/ww_snapshots" }
-# ww_stream = { path = "../wire_weaver/ww_stream" }
-# ww_version = { path = "../wire_weaver/ww_stdlib/ww_version" }
-# exact_units takes shrink_wrap by git: the same one as wire_weaver's
-# shrink_wrap = { path = "../wire_weaver/shrink_wrap/shrink_wrap" }
 
 # `just install`: a release build that rebuilds incrementally, installed through `tpm install`
 [profile.deploy]

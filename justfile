@@ -63,12 +63,12 @@ install:
     cargo build --profile deploy --locked -p logring_cli
     if command -v tpm >/dev/null; then tpm install target/deploy/logring; else cargo install --locked --path crates/logring_cli; fi
 
-# Pull the sibling checkouts this repo builds against by path
+# Move every git dependency to its repository's main in Cargo.lock (commit the lock)
 deps-pull:
-    git -C ../wire_weaver pull --ff-only
+    cargo update -p wire_weaver -p ww_si -p shrink_wrap -p ww_tape -p exfat_lite
 
 # Bring this PC up to main: pull, install, check --version against main
-deploy: deps-pull
+deploy:
     if command -v tpm >/dev/null; then tpm repos pull logring; else git pull --ff-only; fi
     just install
     logring --version | grep -q "($(git rev-parse --short HEAD)" || { echo "logring --version does not show $(git rev-parse --short HEAD)"; logring --version; exit 1; }
