@@ -11,7 +11,7 @@ extension `.wlr`), with sessions, recordings and markers, read back over `wire_w
 eMMC behind the same `LogMedium` trait later).
 
 This is one of three repos split out of a larger internal project (design notes stay out of code repos, kept
-in our internal design notes instead):
+in internal design notes instead):
 
 - **`logring`** (this repo): the engine and the PC tools.
 - [`exfat_lite`](https://github.com/vhrdtech/exfat_lite): no-alloc exFAT for SD cards, knows nothing of logring.
@@ -59,7 +59,7 @@ instrument/tool repos (tools are a library first):
   type), MF4 (numeric channels, CAN as ASAM bus logging). DBC is never stored; it applies only at export.
 - `crates/logring_cli`, library and binary **`logring`** — `info`, `ls` (the same tree as the USB view, via
   `logring::view`), `export`, `cat`, `check` (like fsck), `make-image`; `--version` with git SHA and commit
-  time (`build.rs`, no extra crates), shell completions, colour, progress bars (our usual CLI-quality convention).
+  time (`build.rs`, no extra crates), shell completions, colour, progress bars (the usual CLI-quality convention).
 - `crates/logring_ww_cli` — `ww logring`: the same commands registered with `wire_weaver_cli`'s command
   registry; the `ww` binary (`ww_tools`) links it, so `ww logring ...` needs no plugin (PC-3).
 - `crates/logring_py` (PyO3, library) — `open()`, tracks, recordings, markers, `track.to_pandas()`, built on
@@ -75,7 +75,7 @@ end to end, a generated server and the real host event loop (`wire_weaver`'s `te
 `docs/` is logring's book, built with Zensical (`zensical.toml`, `just book`, LOG-11): an introduction, the related
 WireWeaver and ww_tape books, Tapes and logring, and [docs/format.md](docs/format.md), the on-medium format as it is
 (LOG-1). The WireWeaver and ww_tape books are separate sites, linked by URL, never included; `fuzz/` holds the cargo-fuzz
-targets (`just fuzz`, nightly) with seed images; the design history and open questions live in our internal
+targets (`just fuzz`, nightly) with seed images; the design history and open questions live in internal
 design notes, kept outside this repo.
 
 ## Commands
