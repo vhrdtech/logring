@@ -86,7 +86,7 @@ The superblock holds hints and counters only. A mount recovers the state of the 
 | 104 | u64 | `bytes_written`: data and meta bytes written in all |
 | 112 | u64 | `segments_reused`: data segments the ring went round and overwrote |
 | 120 | u32 | `meta_reused`: meta segments reused |
-| 124 | u32 | `flush_bytes`: the best flush size the card check measured at format (0: not measured; LOG-3) |
+| 124 | u32 | `flush_bytes`: the best flush size the card check measured at format (0: not measured) |
 | 128 | u64 | `meta_next`: the position the next meta record gets, as of this write (§7) |
 | 136..508 | | reserved, zero |
 | 508 | u32 | CRC-32C of bytes 0..508 |
