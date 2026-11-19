@@ -1,3 +1,5 @@
 [toolchain]
 channel = "1.100.0"
 components = ["clippy", "rustfmt"]
+# the firmware target of the no_std checks and the size build; CI's toolchain step installs targets for another name
+targets = ["thumbv8m.main-none-eabihf"]
