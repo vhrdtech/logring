@@ -18,6 +18,7 @@ edition = "2024"
 authors = ["Roman Isaikin <roman@vhrd.tech>"]
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/vhrdtech/logring"
+homepage = "https://lr.vhrd.tech/"
 rust-version = "1.88"
 
 [workspace.dependencies]

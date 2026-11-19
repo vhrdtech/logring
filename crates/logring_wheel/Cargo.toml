@@ -5,6 +5,7 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 rust-version.workspace = true
 description = "The logring Python wheel: the extension module of logring_py, built by maturin"
 publish = false # distributed as a Python wheel, see pyproject.toml

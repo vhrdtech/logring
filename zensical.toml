@@ -1,7 +1,7 @@
 # The logring book: the pages in docs/, built with Zensical (`just book`, `just book-serve`, `just book-check`).
 # It stands on its own: the WireWeaver and ww_tape books are separate sites, linked by their URLs.
 [project]
-site_url = "https://vhrdtech.github.io/logring/"
+site_url = "https://lr.vhrd.tech/"
 site_name = "logring"
 site_description = "A power-cut-safe log store for embedded devices"
 site_author = "Roman Isaikin"

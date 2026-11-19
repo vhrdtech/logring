@@ -26,7 +26,7 @@ its Python API as `wire_weaver.logring`.
 
 ## ww_tape: recordings on a host
 
-[ww_tape](https://vhrdtech.github.io/ww_tape/) is the recording format of WireWeaver. A **tape** holds tracks of typed
+[ww_tape](https://tape.vhrd.tech/) is the recording format of WireWeaver. A **tape** holds tracks of typed
 items over time, like a logring.
 
 Unlike a logring, a tape lives on a host. It grows by appending and never drops data by itself.

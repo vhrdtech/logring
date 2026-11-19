@@ -5,6 +5,7 @@ edition.workspace = true
 authors.workspace = true
 license.workspace = true
 repository.workspace = true
+homepage.workspace = true
 rust-version.workspace = true
 description = "The logring Python API on PyO3: open, tracks, recordings, markers, to_pandas()"
 publish = false # in the logring and wire_weaver wheels

@@ -1,5 +1,8 @@
 # logring
 
+[![CI](https://github.com/vhrdtech/logring/actions/workflows/ci.yml/badge.svg)](https://github.com/vhrdtech/logring/actions/workflows/ci.yml)
+[![Book](https://img.shields.io/badge/book-lr.vhrd.tech-blue)](https://lr.vhrd.tech/)
+
 logring is a power-cut-safe log store for embedded devices, written in Rust (`no_std`, no `alloc`, embassy-friendly).
 Firmware writes many tracks of any [shrink_wrap](https://github.com/vhrdtech/wire_weaver) type at once into a ring,
 with sessions, recordings and markers.
