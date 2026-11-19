@@ -1,22 +1,31 @@
 # Tapes and logring
 
-A **tape** is the recording format of [ww_tape](https://vhrdtech.github.io/ww_tape/), and it records WireWeaver
-items too. Both a logring and a tape store tracks of shrink_wrap items with times, so a reader new to both may wonder
-which to pick. They solve different problems: a logring keeps the newest data on a device's own storage, and a tape
-keeps a whole recording, mostly on a host. This page compares them on the points that decide the choice and says when
-to use which. The ww_tape book explains the terms of tapes in [Tape concepts](https://vhrdtech.github.io/ww_tape/concepts/).
+A **logring** is a log store that keeps the newest data on a device's own storage. A **tape** is the recording format
+of [ww_tape](https://vhrdtech.github.io/ww_tape/), and it keeps a whole recording, mostly on a host.
+
+Both store tracks of WireWeaver's shrink_wrap items with times, so a reader new to both may wonder which to pick. This
+page compares them on the points that decide the choice and says when to use which.
+
+The ww_tape book explains the terms of tapes in [Tape concepts](https://vhrdtech.github.io/ww_tape/concepts/).
 
 ## What each is for
 
-**logring** runs on the device. It is a power-cut-safe ring on an SD card or a flash chip, written by firmware with no
-heap (`no_std`, no `alloc`). The ring has a fixed size, chosen when the card is formatted. When the ring is full, the
-newest data overwrites the oldest, so a device that stays in the field for months always holds its most recent hours or
-days. A host reads the ring over WireWeaver, as a USB disk, or from a card image with the `logring` tool, and exports
-CSV, MCAP or MF4.
+A logring runs on the device. It is a power-cut-safe ring on a Secure Digital (SD) card or a flash chip, and firmware
+with no heap writes it (`no_std`, no `alloc`).
 
-**A tape** runs mostly on the host. It is an append-only recording that never drops data by itself: a capture of a link,
-a test run, an analysis result. A file grows until the producer stops or the writer cuts a piece. Its index, summaries
-and column-coded chunks are built for reading one track out of thousands, or an overview of a week, in a few reads.
+The ring has a fixed size, chosen when the card is formatted. When the ring is full, the newest data overwrites the
+oldest.
+
+A device that stays in the field for months therefore always holds its most recent hours or days.
+
+A host reads the ring over WireWeaver, as a USB disk, or from a card image with the `logring` tool. The tool exports
+CSV, MCAP (a container format for robotics logs) or MF4 (Measurement Data Format version 4).
+
+A tape runs mostly on the host. It is an append-only recording that never drops data by itself: a capture of a link, a
+test run, an analysis result.
+
+A tape file grows until the producer stops or the writer cuts a piece. The tape's index, summaries and column-coded
+chunks let a reader reach one track among thousands, or a week's overview, in a few reads.
 
 <figure class="ww-figure" markdown="0">
 --8<-- "docs/figures/logring.svg"
@@ -48,7 +57,7 @@ Use **logring** when the device itself must keep data:
 - Storage is an SD card or flash chip that the firmware writes directly, and power can fail at any moment.
 - The firmware has no heap and little RAM.
 
-Use **a tape** when a host records or keeps data:
+Use a **tape** when a host records or keeps data:
 
 - A host captures a link, a test bench or a simulation, and nothing may be dropped.
 - Readers need to reach one track, one time range or an overview fast, from a file or over HTTP.
@@ -56,7 +65,9 @@ Use **a tape** when a host records or keeps data:
 - High-rate series need compact columns and summaries.
 
 A system often uses both. A logger keeps its recent history in a logring, and the host turns what it reads into tapes
-for analysis and archiving. An importer that does this is not built yet.
+for analysis and archiving.
+
+An importer that does this does not exist yet.
 
 ## What the two formats share
 
@@ -64,7 +75,10 @@ The formats are separate, and a logring block is not a tape block. They share a 
 
 - **Varints.** Both code unsigned numbers as LEB128 (7 bits per byte, low bits first) and signed numbers zigzag first.
 - **Checksums.** Both use CRC-32C, over different spans.
-- **Track keys.** Both build stable track keys with 64-bit FNV-1a, but over different inputs. logring hashes the API
-  root (the crate's name and major version) and the path's numeric ids. `ww_tape` hashes the crate's name and the path's names, indices and keys, so its key survives renumbered ids. The same track therefore has different keys in the two formats.
+- **Track keys.** Both build stable track keys with 64-bit FNV-1a, but over different inputs.
+    - logring hashes the API root (the crate's name and major version) and the path's numeric ids.
+    - `ww_tape` hashes the crate's name and the path's names, indices and keys, so its key survives renumbered ids.
+
+The same track therefore has different keys in the two formats.
 
 Everything else differs: blocks, record heads, what track 0 means, how time is stored, and how a reader finds data.

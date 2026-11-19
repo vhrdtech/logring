@@ -1,13 +1,22 @@
 # logring
 
-A power-cut-safe log store for embedded devices in Rust (`no_std`, no `alloc`, embassy-friendly): many tracks of
-any [shrink_wrap](https://github.com/vhrdtech/wire_weaver) type written at once into a ring, with sessions,
-recordings and markers, read back over `wire_weaver`, as a USB disk, or with the `logring` PC tool.
+logring is a power-cut-safe log store for embedded devices, written in Rust (`no_std`, no `alloc`, embassy-friendly).
+Firmware writes many tracks of any [shrink_wrap](https://github.com/vhrdtech/wire_weaver) type at once into a ring,
+with sessions, recordings and markers.
 
-Its main medium is an SD card: a small normal exFAT region (128 MB by default, configurable) for files that can
-be read and written as usual, and the rest is a preallocated ring file (`logring.wlr`). Over USB the device shows
-up as a normal disk: the rw files work as usual, and the log appears as read-only files split by recording and by
-time; exports to MF4, MCAP and CSV. The card is formatted on the device: put in a new card, say yes, done.
+A host reads the ring back in three ways: over `wire_weaver`, as a USB disk, or with the `logring` tool on a personal
+computer (PC).
+
+Its main medium is a Secure Digital (SD) card. The card holds a small normal exFAT region (128 MB by default,
+configurable) for files that a host reads and writes as usual.
+
+The rest of the card is a preallocated ring file (`logring.wlr`).
+
+Over USB the device shows up as a normal disk. The read-write files work as usual, and the log appears as read-only
+files split by recording and by time.
+
+The log exports to MF4 (Measurement Data Format version 4), MCAP (a container format for robotics logs) and CSV. The
+device formats the card itself: put in a new card, say yes, done.
 
 | crate | what |
 |---|---|
@@ -31,11 +40,13 @@ card = logring.open("card.img")
 df = card.track("can1_rx").to_pandas()
 ```
 
-The medium is a trait (`LogMedium`, from `wire_weaver`'s `ww_stream`), so storage other than SD (SPI/QSPI flash,
-eMMC) can follow. Not tied to one product: rePort is the first user, and this is meant
-to be the base for every logging device built after it.
+The medium is a trait, `LogMedium`, from the `ww_stream` crate of WireWeaver. Other storage than SD cards can
+therefore follow, such as eMMC or flash chips on a Serial Peripheral Interface (SPI) or quad SPI (QSPI) bus.
 
-See [AGENTS.md](AGENTS.md) for how the repo is laid out, [FEATURES.md](FEATURES.md) for what is implemented,
-planned and still an idea, and [CHANGELOG.md](CHANGELOG.md) for the history.
+logring serves more than one product. rePort is its first user, and logring aims to be the base for every logging
+device after it.
 
-Licensed under MIT OR Apache-2.0.
+[AGENTS.md](AGENTS.md) describes the layout of the repo. [FEATURES.md](FEATURES.md) lists what is implemented,
+planned and still an idea, and [CHANGELOG.md](CHANGELOG.md) holds the history.
+
+Licensed under `MIT OR Apache-2.0`.
