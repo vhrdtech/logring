@@ -76,7 +76,8 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   `-Zprint-type-sizes`). Measured on built ELFs, not on hardware.
 - ✅ **LOG-11 book**: the pages in `docs/` build as a site of their own with Zensical (`zensical.toml`; `just book`,
   `just book-serve`, `just book-check`, which fails on a broken link or anchor and runs in CI): an introduction, the
-  related WireWeaver and ww_tape books, [Tapes and logring](docs/tapes_and_logring.md) and the format reference.
+  related WireWeaver and ww_tape books, [Tapes and logring](docs/tapes_and_logring.md) and the format reference. The
+  `Book` workflow publishes it from main to https://lr.vhrd.tech/ only after the whole CI passes on that commit.
 - 💡 **LOG-4 merge-logstore**: whether `ww_stream`'s `LogStore` (one track, raw NOR/SD) could become a one-track
   logring later; decided after the logring ships.
 - 💡 **LOG-5 pinned-recordings-keep-ring**: pinned recordings the ring skips when wrapping, or a second small

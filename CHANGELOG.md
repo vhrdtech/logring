@@ -5,6 +5,7 @@
 ### Added
 
 - A book of its own (`just book`, `just book-check`): an introduction, Tapes and logring, the format reference (LOG-11).
+- The book is published at https://lr.vhrd.tech/ from main by the `Book` workflow, after CI passes (LOG-11).
 - `ww logring info|export|cat|check|make-image`: the `logring` commands inside the `ww` binary, no plugin needed (PC-3).
 - Feature `tail-positions` (default on, S3): without it `Logring::mount` is the small mount (`mount_small`): no
   scan of the tail's last flush, every track starts at 0 in a new stream (`SEG_FRESH`, a bit-31 stream session)
