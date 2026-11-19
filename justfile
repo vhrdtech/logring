@@ -47,6 +47,21 @@ lint:
 size *args="all":
     cargo run --quiet --release --manifest-path size/report/Cargo.toml -- {{args}}
 
+# Build the book (docs/, zensical.toml) into site/ with Zensical
+[group('book')]
+book:
+    uv run --with zensical zensical build --clean
+
+# Serve the book at http://localhost:8000 and rebuild it on every change
+[group('book')]
+book-serve:
+    uv run --with zensical zensical serve
+
+# Build the book with warnings as errors: a link to a missing page, anchor or figure fails; links to other sites are not fetched
+[group('book')]
+book-check:
+    uv run --with zensical zensical build --clean --strict
+
 # Fuzz the mount on garbage and damaged rings (nightly, cargo install cargo-fuzz); seeds: fuzz/seeds
 [working-directory('fuzz')]
 fuzz:

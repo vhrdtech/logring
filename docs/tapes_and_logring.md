@@ -1,14 +1,10 @@
----
-level: basic
----
-
 # Tapes and logring
 
-[logring](https://github.com/vhrdtech/logring) is a log store for embedded devices, and it records WireWeaver items too.
-Both store tracks of shrink_wrap items with times, so a reader new to both may wonder which to pick. They solve
-different problems: logring keeps the newest data on a device's own storage, and a tape keeps a whole recording, mostly
-on a host. This page compares them on the points that decide the choice and says when to use which. It assumes [Tape
-concepts](concepts.md).
+A **tape** is the recording format of [ww_tape](https://vhrdtech.github.io/ww_tape/), and it records WireWeaver
+items too. Both a logring and a tape store tracks of shrink_wrap items with times, so a reader new to both may wonder
+which to pick. They solve different problems: a logring keeps the newest data on a device's own storage, and a tape
+keeps a whole recording, mostly on a host. This page compares them on the points that decide the choice and says when
+to use which. The ww_tape book explains the terms of tapes in [Tape concepts](https://vhrdtech.github.io/ww_tape/concepts/).
 
 ## What each is for
 
@@ -37,7 +33,7 @@ A tape grows by appending pieces, and a piece goes only when someone deletes it.
 | Power loss | loses what the stage buffer held since the last flush: at most 64 KB (or the size measured when the card is formatted) or 1 s of data by default | loses what wasn't synced yet: about 1 s by default; a reader rescans at most about 4 MiB after the newest checkpoint |
 | Wear and erase | 512-byte blocks written once per lap of the ring; segments match the card's allocation unit | blocks are appended and never rewritten; a raw NAND writer pads a page at each sync; erase and wear are left to the medium |
 | Unit of writing | a flush: whole 512-byte blocks, each with an 8-byte trailer | a block of any length: 32-byte header, body, CRC-32C |
-| Per-record overhead | a record head delta-coded per flush: about 4 bytes for a small item on a busy track | record blocks: track, time delta and length as varints; chunks: columns per track, 0.022 to 3.84 bytes per event start ([Numbers](numbers.md#event-times)) |
+| Per-record overhead | a record head delta-coded per flush: about 4 bytes for a small item on a busy track | record blocks: track, time delta and length as varints; chunks: columns per track, 0.022 to 3.84 bytes per event start ([Numbers](https://vhrdtech.github.io/ww_tape/numbers/#event-times) in the ww_tape book) |
 | Time | the device's own time as a `ww_si::Second`; no wall clock or real-time clock needed; a clock that wraps inside a session breaks reads by time | ticks of defined clocks with exact rates and origins; clock maps relate them, including to wall time |
 | Finding data | from what the ring's segments carry, without a scan | an index written every 4 MiB and at the finish, per-track directories, summary trees written with the data |
 | Large tracks | records one after another | column-coded chunks read in place, sample codecs, summaries |
