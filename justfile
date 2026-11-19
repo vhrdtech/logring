@@ -1,6 +1,8 @@
 # logring: logring (no_std, no alloc engine), logring_export/cli/py (PC).
 
 py_venv := "/tmp/logring_py-venv"
+# The Zensical release the book is built with, so a new release cannot break the build unseen
+zensical := "zensical==0.1.2"
 
 default:
     @just --list
@@ -50,17 +52,17 @@ size *args="all":
 # Build the book (docs/, zensical.toml) into site/ with Zensical
 [group('book')]
 book:
-    uv run --with zensical zensical build --clean
+    uv run --with {{ zensical }} zensical build --clean
 
 # Serve the book at http://localhost:8000 and rebuild it on every change
 [group('book')]
 book-serve:
-    uv run --with zensical zensical serve
+    uv run --with {{ zensical }} zensical serve
 
 # Build the book with warnings as errors: a link to a missing page, anchor or figure fails; links to other sites are not fetched
 [group('book')]
 book-check:
-    uv run --with zensical zensical build --clean --strict
+    uv run --with {{ zensical }} zensical build --clean --strict
 
 # Fuzz the mount on garbage and damaged rings (nightly, cargo install cargo-fuzz); seeds: fuzz/seeds
 [working-directory('fuzz')]
