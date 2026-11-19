@@ -6,3 +6,79 @@ extends = ["medium", "ai"]
 # level = "deny"
 # reason = "why"
 # expires = "2027-06-30"
+
+# The book's pages, the READMEs and the crate docs read by people. The feature tracker, the changelog and the agents'
+# guide are records, not pages a reader reads through: spl's own [docs] defaults leave them out.
+[docs]
+skip = ["CHANGELOG.md", "FEATURES.md", "AGENTS.md", "CLAUDE.md", "**/CHANGELOG.md", "**/tests/**"]
+# The format reference is looked up block by block, not read front to back.
+reference = ["docs/format.md"]
+
+# The book and the READMEs are read by newcomers: every prose lint denies, so a long page or sentence cannot land.
+[lints.prose-run-words]
+level = "deny"
+reason = "a wall of prose loses the reader; a heading, table or figure every 250 words gives a place to rest"
+
+[lints.page-reading-time]
+level = "deny"
+reason = "a guide page is read in one sitting; a longer one is split where its purpose changes"
+
+[lints.heading-words]
+level = "deny"
+reason = "a heading is a short name the reader scans for"
+
+[lints.code-wall]
+level = "deny"
+reason = "code on a page comes with the prose that explains it"
+
+[lints.code-block-language]
+level = "deny"
+reason = "every block names its language, so it is highlighted and checked as what it is"
+
+[lints.passive-voice]
+level = "deny"
+reason = "the pages say who does what: the writer, the reader or the application"
+
+[lints.reading-ease]
+level = "deny"
+reason = "the book is read by newcomers to the format: short sentences of short words"
+
+[lints.orphan-pages]
+level = "deny"
+reason = "every page of the book is reached from the navigation"
+
+[lints.page-title]
+level = "deny"
+reason = "every page has one title"
+
+[lints.abbreviation-first-use]
+level = "deny"
+reason = "a newcomer meets each abbreviation spelled out once per page"
+known = ["API", "ASCII", "CI", "CLI", "CPU", "CSS", "CSV", "DNS", "GPU", "HTML", "HTTP", "HTTPS", "ID", "IDE", "IP", "JSON", "OK", "OS", "PCB", "PDF", "PNG", "PR", "RAM", "README", "SDK", "SQL", "SSH", "SVG", "TCP", "TLS", "TOML", "UDP", "UI", "URL", "USB", "UTF", "XML", "YAML", "KB", "MB", "GB", "TB", "KiB", "MiB", "GiB", "TiB"]
+
+[lints.term-before-definition]
+level = "deny"
+reason = "a page defines a term before it uses it, or links where it is defined"
+
+[lints.paragraph-sentences]
+level = "deny"
+reason = "short paragraphs are read once and understood"
+skip = ["CHANGELOG.md", "FEATURES.md", "AGENTS.md", "CLAUDE.md", "**/CHANGELOG.md", "**/tests/**"]
+
+[lints.sentence-words]
+level = "deny"
+reason = "short sentences are read once and understood"
+skip = ["CHANGELOG.md", "FEATURES.md", "AGENTS.md", "CLAUDE.md", "**/CHANGELOG.md", "**/tests/**"]
+
+[lints.emoji]
+level = "deny"
+reason = "the pages carry words, not pictures of feelings; the tracker's status marks are the lint's allowed set"
+skip = ["CHANGELOG.md", "FEATURES.md", "AGENTS.md", "CLAUDE.md", "**/CHANGELOG.md", "**/tests/**"]
+
+[lints.page-links]
+level = "deny"
+reason = "a link between pages leads somewhere"
+
+[lints.nav-entries]
+level = "deny"
+reason = "the navigation names pages that exist"

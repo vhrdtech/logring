@@ -210,7 +210,7 @@ This reader ignores fields that a later version appends inside the entry.
 The device has numbers at hand, not names. A track is its path of ids and its item type's signature and global id.
 
 A personal computer (PC) builds the names (`can[1].rx`, `ww_can_bus::Frame` 0.3) from the API bundle stored with the
-session, in the meta `Bundle` record (§6). The path leads to the stream in the bundle, and the stream to its item
+session, in the meta `Bundle` record (§7). The path leads to the stream in the bundle, and the stream to its item
 type with crate, version and type path.
 
 Exporters recognise kinds of data by the signature and global id, never by the path. Examples are a Controller Area
