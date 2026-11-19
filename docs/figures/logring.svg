@@ -1,0 +1,29 @@
+<svg class="ww-svg" viewBox="0 0 680 230" width="680" height="230" role="img" aria-label="logring keeps a fixed ring on the device and overwrites its oldest segment; a tape grows by appending pieces and drops nothing by itself" xmlns="http://www.w3.org/2000/svg">
+  <path d="M131.9 46.0 A72 72 0 0 1 179.6 65.8 L161.7 84.6 A46 46 0 0 0 131.2 72.0 Z" class="tint-accent"/>
+  <path d="M182.2 68.4 A72 72 0 0 1 202.0 116.1 L176.0 116.8 A46 46 0 0 0 163.4 86.3 Z" class="tint-ink"/>
+  <path d="M202.0 119.9 A72 72 0 0 1 182.2 167.6 L163.4 149.7 A46 46 0 0 0 176.0 119.2 Z" class="tint-ink"/>
+  <path d="M179.6 170.2 A72 72 0 0 1 131.9 190.0 L131.2 164.0 A46 46 0 0 0 161.7 151.4 Z" class="tint-ink"/>
+  <path d="M128.1 190.0 A72 72 0 0 1 80.4 170.2 L98.3 151.4 A46 46 0 0 0 128.8 164.0 Z" class="tint-ink"/>
+  <path d="M77.8 167.6 A72 72 0 0 1 58.0 119.9 L84.0 119.2 A46 46 0 0 0 96.6 149.7 Z" class="tint-ink"/>
+  <path d="M58.0 116.1 A72 72 0 0 1 77.8 68.4 L96.6 86.3 A46 46 0 0 0 84.0 116.8 Z" class="tint-blue"/>
+  <path d="M80.4 65.8 A72 72 0 0 1 128.1 46.0 L128.8 72.0 A46 46 0 0 0 98.3 84.6 Z" class="tint-blue"/>
+  <text x="130" y="122" text-anchor="middle" class="small">ring</text>
+  <path d="M100 32 Q124 20 148 32" class="accent-line"/>
+  <path d="M148.0 32.0 L140.2 32.0 L143.3 25.7 Z" class="accent-line head"/>
+  <text x="200" y="52" text-anchor="start" class="accent small">newest overwrites</text>
+  <text x="200" y="66" text-anchor="start" class="accent small">the oldest</text>
+  <text x="130" y="214" text-anchor="middle" class="small">logring: a fixed ring on the device</text>
+  <rect x="330.5" y="100" width="70" height="34" rx="2" class="tint-blue"/>
+  <text x="365" y="121" text-anchor="middle" class="small">piece 0</text>
+  <rect x="404.5" y="100" width="70" height="34" rx="2" class="tint-blue"/>
+  <text x="439" y="121" text-anchor="middle" class="small">piece 1</text>
+  <rect x="478.5" y="100" width="70" height="34" rx="2" class="tint-blue"/>
+  <text x="513" y="121" text-anchor="middle" class="small">piece 2</text>
+  <rect x="552.5" y="100" width="70" height="34" rx="2" class="tint-green"/>
+  <path d="M623 100 v34" class="thin dash"/>
+  <text x="587" y="121" text-anchor="middle" class="small">piece 3</text>
+  <line x1="630" y1="117" x2="666" y2="117" class="accent-line"/>
+  <path d="M666.0 117.0 L659.0 120.5 L659.0 113.5 Z" class="accent-line head"/>
+  <text x="648" y="105" text-anchor="middle" class="accent small">appends</text>
+  <text x="490" y="214" text-anchor="middle" class="small">tape: pieces appended; nothing dropped unless a person deletes a piece</text>
+</svg>
