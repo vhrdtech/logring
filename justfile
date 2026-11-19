@@ -3,6 +3,8 @@
 py_venv := "/tmp/logring_py-venv"
 # The Zensical release the book is built with, so a new release cannot break the build unseen
 zensical := "zensical==0.1.2"
+# The prose lints book-check runs: at deny in spirit_level.toml
+prose_lints := "--only prose-run-words --only page-reading-time --only heading-words --only code-wall --only code-block-language --only passive-voice --only reading-ease --only orphan-pages --only page-title --only abbreviation-first-use --only term-before-definition --only paragraph-sentences --only sentence-words --only emoji --only page-links --only nav-entries"
 
 default:
     @just --list
@@ -59,9 +61,13 @@ book:
 book-serve:
     uv run --with {{ zensical }} zensical serve
 
+# The book's checks: the strict build, then the prose lints, so a broken link or a long page cannot land
+[group('book')]
+book-check: book-strict book-prose
+
 # Build the book with warnings as errors: a link to a missing page, anchor or figure fails; links to other sites are not fetched
 [group('book')]
-book-check:
+book-strict:
     uv run --with {{ zensical }} zensical build --clean --strict
 
 # Fuzz the mount on garbage and damaged rings (nightly, cargo install cargo-fuzz); seeds: fuzz/seeds
@@ -90,3 +96,19 @@ deploy:
     just install
     logring --version | grep -q "($(git rev-parse --short HEAD)" || { echo "logring --version does not show $(git rev-parse --short HEAD)"; logring --version; exit 1; }
     logring --version
+
+# The book's prose lints of spirit_level.toml (sentence and paragraph length, reading time, terms). Without spl it fails
+# in CI and is skipped elsewhere
+[group('book')]
+book-prose:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v spl >/dev/null 2>&1; then
+        if [ -n "${CI:-}" ]; then
+            echo "error: spl is missing in CI; install it as ci.yml does"
+            exit 1
+        fi
+        echo "skipped: spl check of the book's prose, spl missing (install spirit_level's spl)"
+        exit 0
+    fi
+    spl check --progress never {{ prose_lints }}

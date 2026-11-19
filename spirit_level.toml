@@ -11,7 +11,8 @@ extends = ["medium", "ai"]
 # guide are records, not pages a reader reads through: spl's own [docs] defaults leave them out.
 [docs]
 skip = ["CHANGELOG.md", "FEATURES.md", "AGENTS.md", "CLAUDE.md", "**/CHANGELOG.md", "**/tests/**"]
-# The format reference is looked up block by block, not read front to back.
+# The format reference is looked up section by section, not read front to back, so the reading-time budget of a guide
+# does not apply. It stays one page because code comments and the tracker cite its numbered sections (§4, §9, §10).
 reference = ["docs/format.md"]
 
 # The book and the READMEs are read by newcomers: every prose lint denies, so a long page or sentence cannot land.
