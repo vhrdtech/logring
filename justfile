@@ -21,7 +21,7 @@ test-all: test-py
     cargo test -p logring --features std,block-device-driver --quiet
     # without tail-positions (S3): the small build's mount, its power-cut, round-trip and cross-build tests
     cargo test -p logring --no-default-features --features std,block-device-driver,card-check,crc-hw --quiet
-    cargo test -p logring --no-default-features --features std --quiet check_value
+    cargo test -p logring --no-default-features --features std --quiet
     cargo check -p logring --no-default-features --target thumbv8m.main-none-eabihf
     cargo check -p logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf
     cargo build --quiet --manifest-path size/Cargo.toml --release --target thumbv8m.main-none-eabihf
@@ -39,6 +39,8 @@ lint:
     cargo clippy --workspace --all-targets -- -D warnings
     cargo clippy -p logring --all-targets --features std,block-device-driver -- -D warnings
     cargo clippy -p logring --all-targets --no-default-features --features std,block-device-driver,card-check,crc-table -- -D warnings
+    cargo clippy -p logring --all-targets --no-default-features --features std,card-check,crc-table -- -D warnings
+    cargo check -p logring --no-default-features --target thumbv8m.main-none-eabihf
     cargo clippy -p logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf -- -D warnings
     cargo clippy -p logring --no-default-features --features block-device-driver,card-check,crc-hw --target thumbv8m.main-none-eabihf -- -D warnings
     cargo fmt --manifest-path size/Cargo.toml --check
