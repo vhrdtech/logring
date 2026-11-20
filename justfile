@@ -13,7 +13,7 @@ default:
 # the workspace crates changed against main and the crates that depend on them, what to run locally before
 # calling a change ready.
 test *flags:
-    if [ "{{flags}}" = "--changed" ]; then if command -v changedtests >/dev/null 2>&1; then f=$(changedtests) && if [ -n "$f" ]; then cargo nextest run --workspace -E "$f"; fi; else echo "changedtests not found; running the full test suite instead" >&2; {{just_executable()}} test-all; fi; else {{just_executable()}} test-all {{flags}}; fi
+    {{ if flags == "--changed" { "changedtests run" } else { just_executable() + " test-all " + flags } }}
 
 # Tests (host, no card or image needed), Rust and Python, plus a no_std build check for the engine
 test-all: test-py
