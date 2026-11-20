@@ -97,8 +97,8 @@ torn block and what came after it. Everything before it stayed. Drawn by <code>l
 example's power cut. Its segments are the simulated card's 64 KiB, not a real card's 4 MiB.</figcaption>
 </figure>
 
-The firmware had pushed 37 046 frames when the power went. After the next mount the card holds 37 016 of them, so the
-cut cost 30 frames. Both changes of mode are on the card, since the `mode` track is Immediate. The next mount counts
+The firmware had pushed 37 046 frames when the power went. After the next mount the card holds 36 958 of them, so the
+cut cost 88 frames. Both changes of mode are on the card, since the `mode` track is Immediate. The next mount counts
 1 torn block and 1 torn record and writes both counts into the new session's first record.
 
 The cut cost fewer frames than the 238 that the stage buffer can hold. It came while the stage buffer was on its way to

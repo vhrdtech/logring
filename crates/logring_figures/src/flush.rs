@@ -42,15 +42,6 @@ const TRAILER_W: f64 = BLOCK_W * 8.0 / BLOCK as f64 * 4.0;
 /// The tint of flush `k`.
 const TINTS: [&str; 3] = ["tint-blue", "tint-teal", "tint-amber"];
 
-/// A flush as the blocks show it.
-struct Flush {
-    first_block: u32,
-    blocks: u32,
-    records: usize,
-    /// Payload bytes of its last block that hold data; the rest is padding.
-    last_used: usize,
-}
-
 /// The ring on a simulated card after the bench, and its scan; `trailer.svg` reads a block's trailer from the
 /// same ring.
 pub(crate) fn written() -> anyhow::Result<(Vec<u8>, Scan)> {

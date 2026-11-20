@@ -1,6 +1,6 @@
 //! [Drive]: the drive's logger, a [Logring] with one call per track of the drive's API.
 
-use crate::api::{CanFrame, DRIVE_FULL_GID, Level, LogLine, Mode, Vbat};
+use crate::api::{CanFrame, DRIVE_BUNDLE, DRIVE_FULL_GID, Level, LogLine, Mode, Vbat};
 use logring::{Buffers, Config, Durability, LogMedium, Logring, SessionInfo, TrackDesc, UNib32};
 use ww_api::shrink_wrap::{RefVec, SerializeShrinkWrap};
 use ww_si::ww_numeric::NumericValue;
@@ -51,7 +51,7 @@ pub fn session() -> SessionInfo<'static> {
         fw: "drive fw 1.4.0",
         hw: "drive rev C",
         tracks: &TRACK_DESCS,
-        bundle: None,
+        bundle: Some(DRIVE_BUNDLE),
     }
 }
 

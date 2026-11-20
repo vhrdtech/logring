@@ -56,3 +56,7 @@ pub struct CanFrame<'i> {
 pub struct Vbat {
     pub mv: u16,
 }
+
+/// The drive's own API bundle, written by `build.rs` from this file's `trait Drive`: a session that stores it
+/// lets a host decode every track without the firmware's source, as real firmware that keeps one does.
+pub const DRIVE_BUNDLE: &[u8] = include_bytes!(concat!(env!("OUT_DIR"), "/drive_bundle.bin"));
