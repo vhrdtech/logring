@@ -1,0 +1,94 @@
+<svg class="ww-svg" viewBox="0 0 816 212" width="816" height="212" role="img" aria-label="The first data segment of the drive's ring: 7 flushes in 16 of its 16 blocks, each padded to its last block's end" xmlns="http://www.w3.org/2000/svg">
+<rect x="8.0" y="8.0" width="32.0" height="34.0" rx="0" class="tint-blue"/>
+<rect x="40.0" y="8.0" width="58.0" height="34.0" rx="0" class="faint hatch"/>
+<rect x="98.0" y="8.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="8.0" y="8.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="12.0" y="20.0" text-anchor="start" class="mono">0</text>
+<path d="M8.0 46.0 v4 H104.0 v-4" class="line"/>
+<text x="56.0" y="64.0" text-anchor="middle">head, 1 record</text>
+<rect x="108.0" y="8.0" width="9.5" height="34.0" rx="0" class="tint-teal"/>
+<rect x="117.5" y="8.0" width="80.5" height="34.0" rx="0" class="faint hatch"/>
+<rect x="198.0" y="8.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="108.0" y="8.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="112.0" y="20.0" text-anchor="start" class="mono">1</text>
+<path d="M108.0 46.0 v4 H204.0 v-4" class="line"/>
+<text x="156.0" y="64.0" text-anchor="middle">2 records</text>
+<rect x="208.0" y="8.0" width="90.0" height="34.0" rx="0" class="tint-amber"/>
+<rect x="298.0" y="8.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="208.0" y="8.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="212.0" y="20.0" text-anchor="start" class="mono">2</text>
+<rect x="308.0" y="8.0" width="90.0" height="34.0" rx="0" class="tint-amber"/>
+<rect x="398.0" y="8.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="308.0" y="8.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="312.0" y="20.0" text-anchor="start" class="mono">3</text>
+<rect x="408.0" y="8.0" width="3.0" height="34.0" rx="0" class="tint-amber"/>
+<rect x="411.0" y="8.0" width="87.0" height="34.0" rx="0" class="faint hatch"/>
+<rect x="498.0" y="8.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="408.0" y="8.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="412.0" y="20.0" text-anchor="start" class="mono">4</text>
+<path d="M208.0 46.0 v4 H504.0 v-4" class="line"/>
+<text x="356.0" y="64.0" text-anchor="middle">55 records</text>
+<rect x="508.0" y="8.0" width="90.0" height="34.0" rx="0" class="tint-blue"/>
+<rect x="598.0" y="8.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="508.0" y="8.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="512.0" y="20.0" text-anchor="start" class="mono">5</text>
+<rect x="608.0" y="8.0" width="69.3" height="34.0" rx="0" class="tint-blue"/>
+<rect x="677.3" y="8.0" width="20.7" height="34.0" rx="0" class="faint hatch"/>
+<rect x="698.0" y="8.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="608.0" y="8.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="612.0" y="20.0" text-anchor="start" class="mono">6</text>
+<path d="M508.0 46.0 v4 H704.0 v-4" class="line"/>
+<text x="606.0" y="64.0" text-anchor="middle">48 records</text>
+<rect x="708.0" y="8.0" width="90.0" height="34.0" rx="0" class="tint-teal"/>
+<rect x="798.0" y="8.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="708.0" y="8.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="712.0" y="20.0" text-anchor="start" class="mono">7</text>
+<rect x="8.0" y="82.0" width="90.0" height="34.0" rx="0" class="tint-teal"/>
+<rect x="98.0" y="82.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="8.0" y="82.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="12.0" y="94.0" text-anchor="start" class="mono">8</text>
+<rect x="108.0" y="82.0" width="4.1" height="34.0" rx="0" class="tint-teal"/>
+<rect x="112.1" y="82.0" width="85.9" height="34.0" rx="0" class="faint hatch"/>
+<rect x="198.0" y="82.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="108.0" y="82.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="112.0" y="94.0" text-anchor="start" class="mono">9</text>
+<path d="M708.0 46.0 v4 H804.0 v-4" class="line"/>
+<text x="712.0" y="64.0" text-anchor="start">56 records</text>
+<path d="M8.0 120.0 v4 H204.0 v-4" class="line"/>
+<rect x="208.0" y="82.0" width="90.0" height="34.0" rx="0" class="tint-amber"/>
+<rect x="298.0" y="82.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="208.0" y="82.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="212.0" y="94.0" text-anchor="start" class="mono">10</text>
+<rect x="308.0" y="82.0" width="90.0" height="34.0" rx="0" class="tint-amber"/>
+<rect x="398.0" y="82.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="308.0" y="82.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="312.0" y="94.0" text-anchor="start" class="mono">11</text>
+<rect x="408.0" y="82.0" width="4.5" height="34.0" rx="0" class="tint-amber"/>
+<rect x="412.5" y="82.0" width="85.5" height="34.0" rx="0" class="faint hatch"/>
+<rect x="498.0" y="82.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="408.0" y="82.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="412.0" y="94.0" text-anchor="start" class="mono">12</text>
+<path d="M208.0 120.0 v4 H504.0 v-4" class="line"/>
+<text x="356.0" y="138.0" text-anchor="middle">55 records</text>
+<rect x="508.0" y="82.0" width="90.0" height="34.0" rx="0" class="tint-blue"/>
+<rect x="598.0" y="82.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="508.0" y="82.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="512.0" y="94.0" text-anchor="start" class="mono">13</text>
+<rect x="608.0" y="82.0" width="90.0" height="34.0" rx="0" class="tint-blue"/>
+<rect x="698.0" y="82.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="608.0" y="82.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="612.0" y="94.0" text-anchor="start" class="mono">14</text>
+<rect x="708.0" y="82.0" width="5.2" height="34.0" rx="0" class="tint-blue"/>
+<rect x="713.2" y="82.0" width="84.8" height="34.0" rx="0" class="faint hatch"/>
+<rect x="798.0" y="82.0" width="6.0" height="34.0" rx="0" class="tint-ink"/>
+<rect x="708.0" y="82.0" width="96.0" height="34.0" rx="0" class="thin"/>
+<text x="712.0" y="94.0" text-anchor="start" class="mono">15</text>
+<path d="M508.0 120.0 v4 H804.0 v-4" class="line"/>
+<text x="656.0" y="138.0" text-anchor="middle">56 records</text>
+<rect x="8.0" y="162.0" width="14.0" height="12.0" rx="0" class="tint-blue"/>
+<text x="28.0" y="172.0" text-anchor="start">a flush: its head and records</text>
+<rect x="230.0" y="162.0" width="14.0" height="12.0" rx="0" class="faint hatch"/>
+<text x="250.0" y="172.0" text-anchor="start">padding</text>
+<rect x="330.0" y="162.0" width="6.0" height="12.0" rx="0" class="tint-ink"/>
+<text x="342.0" y="172.0" text-anchor="start">trailer, 8 bytes (drawn 4 times wider)</text>
+</svg>

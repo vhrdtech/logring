@@ -6,6 +6,7 @@ members = [
     "crates/logring_cli",
     "crates/logring_example",
     "crates/logring_export",
+    "crates/logring_figures",
     "crates/logring_py",
     "crates/logring_wheel",
     "crates/logring_ww_cli",
@@ -24,6 +25,7 @@ rust-version = "1.88"
 
 [workspace.dependencies]
 logring = { path = "crates/logring", version = "0.1.0", default-features = false }
+logring_example = { path = "crates/logring_example" }
 
 aligned = "0.4"
 anyhow = "1"

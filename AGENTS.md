@@ -65,8 +65,8 @@ instrument/tool repos (tools are a library first):
 - `crates/logring_py` (PyO3, library) — `open()`, tracks, recordings, markers, `track.to_pandas()`, built on
   `logring_export`; `init()` fills a module with it. `crates/logring_wheel` (maturin, package `logring`) is the
   wheel over it; the `wire_weaver` wheel has it as `wire_weaver.logring` (PC-3).
-- `crates/logring_example` (not published) — the book's running example: the drive's firmware logging to a ring on a
-  simulated card, `no_std`, built for the host and for `thumbv8m.main-none-eabihf`.
+- `crates/logring_example`, `crates/logring_figures` (not published) — the book's drive firmware on a simulated card
+  (`no_std`, built for thumbv8m too) and the figures drawn from its rings (`just book-figures`, `docs/plots`).
 
 `tests/stream_api` and `tests/stream_e2e` (not published): a reliable `wire_weaver` stream on a `TrackStore`
 end to end, a generated server and the real host event loop (`wire_weaver`'s `tests_common`) across reboots.

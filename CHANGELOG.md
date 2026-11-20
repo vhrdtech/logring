@@ -5,6 +5,7 @@
 ### Added
 
 - A book of its own (`just book`, `just book-check`): an introduction, Tapes and logring, the format reference (LOG-11).
+- `logring_figures` draws the book's byte-level figures from the drive example; a test keeps `docs/plots` current (LOG-11).
 - `logring_example`: the book's drive firmware on a simulated card, built for the host and thumbv8m in CI (LOG-11).
 - The book is published at https://lr.vhrd.tech/ from main by the `Book` workflow, after CI passes (LOG-11).
 - `ww logring info|export|cat|check|make-image`: the `logring` commands inside the `ww` binary, no plugin needed (PC-3).

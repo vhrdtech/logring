@@ -1,0 +1,16 @@
+[package]
+name = "logring_figures"
+description = "The figures of logring's book pages that hold bytes or numbers, drawn as SVG from rings the drive example writes"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+publish = false
+
+[dependencies]
+anyhow.workspace = true
+logring = { workspace = true, features = ["std", "crc-table", "tail-positions"] }
+logring_example.workspace = true

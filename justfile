@@ -75,6 +75,12 @@ book-check: book-strict book-prose
 book-strict:
     uv run --with {{ zensical }} zensical build --clean --strict
 
+# Rewrite the figures of the book pages drawn from the format (docs/plots/*.svg, logring_figures); a test fails until
+# they match what it draws
+[group('book')]
+book-figures:
+    cargo run -q -p logring_figures -- docs/plots
+
 # Fuzz the mount on garbage and damaged rings (nightly, cargo install cargo-fuzz); seeds: fuzz/seeds
 [working-directory('fuzz')]
 fuzz:

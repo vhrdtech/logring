@@ -1522,6 +1522,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "logring_figures"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "logring",
+ "logring_example",
+]
+
+[[package]]
 name = "logring_py"
 version = "0.1.0"
 dependencies = [
