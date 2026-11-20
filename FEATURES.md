@@ -80,7 +80,8 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   carry a reading level; glossary terms (`docs/glossary.toml`) and code links show cards on hover (`spl book refs`);
   [For writers](docs/writers.md) sets the style. The running example is `logring_example`, the drive's firmware on a
   simulated card (host and thumbv8m); `logring_figures` draws the byte-level figures, kept current by a test. Guide
-  chapters 2 to 8 are stubs until written. The
+  chapters 2 to 6 (a first log, tracks and recordings, flushes and power cuts, the SD card, a full ring) quote only
+  numbers the example's `story` prints, checked by a test; chapters 7 and 8 are stubs until written. The
   `Book` workflow publishes it from main to https://lr.vhrd.tech/ only after the whole CI passes on that commit.
 - 💡 **LOG-4 merge-logstore**: whether `ww_stream`'s `LogStore` (one track, raw NOR/SD) could become a one-track
   logring later; decided after the logring ships.

@@ -42,7 +42,9 @@ length, on a card simulated in RAM. It builds for a personal computer (PC) and f
 drive, `thumbv8m.main-none-eabihf`. The code a chapter shows is thus code a firmware runs.
 
 A number in the story comes from running code, never from a hand calculation. The records in a flush and the bytes a
-power cut costs are such numbers.
+power cut costs are such numbers. The example's `story` module runs the guide's scenes and prints every number they
+give (`cargo run -p logring_example --features std --example story`). A test in `logring_figures` finds each number on
+its page, so a change to the example fails until the page says the new number.
 
 ## Reading levels
 

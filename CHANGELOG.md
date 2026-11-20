@@ -10,6 +10,8 @@
 - `logring_example`: the book's drive firmware on a simulated card, built for the host and thumbv8m in CI (LOG-11).
 - `logring_example`: recordings, a marker, a power cut, the ring on an exFAT card; `story` prints the guide's numbers (LOG-11).
 - `logring_figures` draws `power_cut.svg`, `card_layout.svg` and `ring_laps.svg` from the drive example's runs (LOG-11).
+- The book's guide: A first log, Tracks and recordings, Flushes and power cuts, The SD card, When the ring is full (LOG-11).
+- A test checks that every number the guide quotes is the one the drive example's story prints (LOG-11).
 - The book is published at https://lr.vhrd.tech/ from main by the `Book` workflow, after CI passes (LOG-11).
 - `ww logring info|export|cat|check|make-image`: the `logring` commands inside the `ww` binary, no plugin needed (PC-3).
 - Feature `tail-positions` (default on, S3): without it `Logring::mount` is the small mount (`mount_small`): no
