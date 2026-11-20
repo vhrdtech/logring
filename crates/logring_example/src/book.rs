@@ -12,5 +12,6 @@ macro_rules! pages {
 }
 
 pages! {
+    FirstLog = "first_log.md";
     Writers = "writers.md";
 }

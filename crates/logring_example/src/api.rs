@@ -2,6 +2,7 @@
 
 use ww_api::prelude::*;
 
+// --8<-- [start:api]
 #[ww_api_root]
 pub trait Drive {
     /// The firmware's log lines, a few per second.
@@ -13,6 +14,7 @@ pub trait Drive {
     /// The battery voltage, once a second.
     stream!(vbat: Vbat);
 }
+// --8<-- [end:api]
 
 /// One line of the firmware's log.
 #[derive_shrink_wrap(derive(Debug, PartialEq, Eq, Clone, Copy))]

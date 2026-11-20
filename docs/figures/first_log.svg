@@ -1,0 +1,46 @@
+<svg class="ww-svg" viewBox="0 0 720 250" width="720" height="250" role="img" aria-label="The drive's four tracks feed the stage buffer in RAM; a flush writes it to the card in whole blocks; the mode track, Immediate, is flushed at once" xmlns="http://www.w3.org/2000/svg">
+  <text x="10" y="14" text-anchor="start" class="strong">the drive's calls</text>
+  <rect x="10" y="34" width="150" height="30" rx="3" class="tint-blue"/>
+  <text x="20" y="54" text-anchor="start" class="mono small">log(t, level, text)</text>
+  <rect x="10" y="74" width="150" height="30" rx="3" class="tint-amber"/>
+  <text x="20" y="94" text-anchor="start" class="mono small">mode(t, mode)</text>
+  <rect x="10" y="114" width="150" height="30" rx="3" class="tint-teal"/>
+  <text x="20" y="134" text-anchor="start" class="mono small">can_frame(t, id, data)</text>
+  <rect x="10" y="154" width="150" height="30" rx="3" class="tint-purple"/>
+  <text x="20" y="174" text-anchor="start" class="mono small">vbat(t, mv)</text>
+  <path d="M160 49 C200 49 200 100 238 100" class="line"/>
+  <path d="M160 89 C200 89 200 104 238 104" class="line"/>
+  <path d="M160 129 C200 129 200 110 238 110" class="line"/>
+  <path d="M160 169 C200 169 200 114 238 114" class="line"/>
+  <path d="M238.0 107.0 L230.0 103.0 L230.0 111.0 Z" class="line head"/>
+  <text x="198" y="214" text-anchor="middle" class="small soft">each call encodes one item</text>
+  <text x="198" y="230" text-anchor="middle" class="small soft">and pushes it to its track</text>
+  <text x="250" y="14" text-anchor="start" class="strong">RAM</text>
+  <rect x="250" y="60" width="200" height="94" rx="3" class="thin"/>
+  <text x="350" y="80" text-anchor="middle" class="">stage buffer</text>
+  <rect x="262" y="94" width="40" height="20" class="tint-blue"/>
+  <rect x="302" y="94" width="58" height="20" class="tint-teal"/>
+  <rect x="360" y="94" width="14" height="20" class="tint-purple"/>
+  <rect x="374" y="94" width="50" height="20" class="tint-teal"/>
+  <rect x="262" y="94" width="176" height="20" class="thin"/>
+  <text x="350" y="138" text-anchor="middle" class="small soft">records of every track, in order</text>
+  <path d="M450 107 H548" class="accent-line"/>
+  <path d="M556.0 107.0 L548.0 103.0 L548.0 111.0 Z" class="accent-line head"/>
+  <text x="503" y="96" text-anchor="middle" class="accent small">a flush</text>
+  <text x="503" y="128" text-anchor="middle" class="small soft">full, or the interval</text>
+  <text x="503" y="143" text-anchor="middle" class="small soft">is up, or a sync</text>
+  <path d="M160 82 C300 42 470 42 556 70" class="accent-line dash"/>
+  <path d="M556.0 70.0 L547.4 70.2 L550.6 63.0 Z" class="accent-line head"/>
+  <text x="360" y="30" text-anchor="middle" class="accent small">Immediate: flushed with the record</text>
+  <text x="560" y="14" text-anchor="start" class="strong">the card</text>
+  <rect x="560" y="60" width="150" height="94" rx="3" class="thin"/>
+  <rect x="572" y="72" width="30" height="20" class="tint-ink"/>
+  <rect x="604" y="72" width="30" height="20" class="tint-ink"/>
+  <rect x="636" y="72" width="30" height="20" class="tint-ink"/>
+  <rect x="668" y="72" width="30" height="20" class="tint-ink"/>
+  <rect x="572" y="96" width="30" height="20" class="tint-ink"/>
+  <rect x="604" y="96" width="30" height="20" class="tint-ink"/>
+  <rect x="636" y="96" width="30" height="20" class="thin"/>
+  <rect x="668" y="96" width="30" height="20" class="thin"/>
+  <text x="635" y="138" text-anchor="middle" class="small soft">whole 512-byte blocks</text>
+</svg>

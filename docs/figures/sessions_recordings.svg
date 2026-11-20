@@ -1,0 +1,29 @@
+<svg class="ww-svg" viewBox="0 0 720 250" width="720" height="250" role="img" aria-label="Two sessions on one time line, a reset between them; a recording in each, the first stopped by a fault with a marker at that moment; a track's positions go on across the reset" xmlns="http://www.w3.org/2000/svg">
+  <text x="10" y="42" text-anchor="start" class="soft">sessions</text>
+  <rect x="110" y="26" width="250" height="26" rx="3" class="tint-blue"/>
+  <text x="235" y="44" text-anchor="middle" class="">session 1: boot to reset</text>
+  <rect x="400" y="26" width="300" height="26" rx="3" class="tint-blue"/>
+  <text x="550" y="44" text-anchor="middle" class="">session 2: the next boot</text>
+  <path d="M380 18 V200" class="thin dash"/>
+  <text x="380" y="14" text-anchor="middle" class="small soft">reset</text>
+  <text x="10" y="92" text-anchor="start" class="soft">recordings</text>
+  <rect x="130" y="76" width="170" height="26" rx="3" class="tint-green"/>
+  <text x="215" y="94" text-anchor="middle" class="">recording 1</text>
+  <rect x="420" y="76" width="250" height="26" rx="3" class="tint-green"/>
+  <text x="545" y="94" text-anchor="middle" class="">recording 2</text>
+  <text x="130" y="118" text-anchor="start" class="small soft">motor start</text>
+  <text x="300" y="118" text-anchor="end" class="small soft">fault</text>
+  <text x="420" y="118" text-anchor="start" class="small soft">motor start</text>
+  <text x="670" y="118" text-anchor="end" class="small soft">motor stop</text>
+  <text x="10" y="148" text-anchor="start" class="soft">markers</text>
+  <path d="M300 134 L308 144 L300 154 L292 144 Z" class="accent"/>
+  <text x="316" y="149" text-anchor="start" class="accent small">overcurrent</text>
+  <text x="10" y="192" text-anchor="start" class="soft">track can0</text>
+  <path d="M110 186 H300" class="line"/>
+  <path d="M420 186 H700" class="line"/>
+  <text x="205" y="178" text-anchor="middle" class="small soft">positions from 0</text>
+  <text x="560" y="178" text-anchor="middle" class="small soft">positions go on where session 1 left them</text>
+  <path d="M110 224 H700" class="thin"/>
+  <path d="M708.0 224.0 L700.0 220.0 L700.0 228.0 Z" class="thin head"/>
+  <text x="704" y="242" text-anchor="end" class="small soft">time</text>
+</svg>
