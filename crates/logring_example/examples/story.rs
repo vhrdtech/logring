@@ -12,6 +12,11 @@ fn main() {
         t.log, t.mode, t.can0, t.vbat, t.recordings
     );
     println!(
+        "stage buffer {} bytes; at most {} frames waited in RAM at once",
+        logring_example::drive::BUF,
+        t.frames_in_ram_max
+    );
+    println!(
         "{} data segments of {} KiB, {} flushes, {} KiB of the data ring, a frame item of {} bytes",
         m.segments,
         m.segment_bytes >> 10,
@@ -32,15 +37,18 @@ fn main() {
     }
 
     println!("\n# Flushes and power cuts (flushes.md)");
-    println!("| flush_bytes | flushes | by the tick | data KiB | padding KiB |");
+    println!(
+        "| flush_bytes | flushes | by the tick | data KiB | padding KiB | most frames in RAM |"
+    );
     for r in story::flush_sizes() {
         println!(
-            "| {} KiB | {} | {} | {} | {} |",
+            "| {} KiB | {} | {} | {} | {} | {} |",
             r.flush_bytes >> 10,
             r.flushes,
             r.ticked,
             r.data_bytes >> 10,
-            r.padding_bytes >> 10
+            r.padding_bytes >> 10,
+            r.frames_in_ram_max
         );
     }
     let c = story::power_cut();
@@ -101,7 +109,7 @@ fn main() {
         f.superblock_writes
     );
     println!(
-        "drop newest: refused at {} ms of the bench, {} frames kept",
-        f.refused_at_ms, f.kept_frames
+        "drop newest: refused at {} ms of the bench, {} frames kept; its mount on the full ring: {:?}",
+        f.refused_at_ms, f.kept_frames, f.switched_mount
     );
 }

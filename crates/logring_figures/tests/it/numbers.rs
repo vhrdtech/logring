@@ -2,7 +2,7 @@
 // each number, in its sentence, on its page. A change to the example that moves a number fails here until the page
 // says the new one.
 
-use logring_example::drive;
+use logring_example::drive::{self, Error};
 use logring_example::sd::Mounted;
 use logring_example::story::{self, SystemRecord};
 use std::path::Path;
@@ -115,7 +115,7 @@ fn tracks_quotes_the_two_boots() {
         p,
         &t,
         &format!(
-            "first boot runs for {} seconds and wrote {} segments",
+            "first boot runs for {} seconds and writes {} segments",
             story::BOOT_1.seconds,
             segments(1)
         ),
@@ -124,7 +124,7 @@ fn tracks_quotes_the_two_boots() {
         p,
         &t,
         &format!(
-            "{} seconds long, wrote {} segments",
+            "{} seconds long, writes {} segments",
             story::BOOT_2.seconds,
             segments(2)
         ),
@@ -159,15 +159,31 @@ fn flushes_quotes_the_flush_sizes_and_the_power_cut() {
             p,
             &t,
             &format!(
-                "| {} KiB | {} | {} | {} KiB | {} KiB |",
+                "| {} KiB | {} | {} | {} KiB | {} KiB | {} |",
                 r.flush_bytes >> 10,
                 r.flushes,
                 r.ticked,
                 r.data_bytes >> 10,
-                r.padding_bytes >> 10
+                r.padding_bytes >> 10,
+                r.frames_in_ram_max
             ),
         );
     }
+    let first = story::first_minute();
+    has(p, &t, &format!("stage buffer holds {} bytes", drive::BUF));
+    has(
+        p,
+        &t,
+        &format!(
+            "than the {} that the stage buffer can hold",
+            first.totals.frames_in_ram_max
+        ),
+    );
+    // the drive's flush is larger than its stage buffer: the stage buffer bounds the loss
+    assert!(
+        drive::config().flush_bytes as usize > drive::BUF,
+        "the page says a flush is larger"
+    );
     let c = story::power_cut();
     has(p, &t, &format!("has written {} bytes", num(c.budget)));
     has(
@@ -199,7 +215,7 @@ fn flushes_quotes_the_flush_sizes_and_the_power_cut() {
         p,
         &t,
         &format!(
-            "counted {} torn block and {} torn record",
+            "counts {} torn block and {} torn record",
             c.recovery.torn_blocks, c.recovery.torn_records
         ),
     );
@@ -323,6 +339,11 @@ fn ring_full_quotes_the_ten_minutes() {
         p,
         &t,
         &format!("the first {} frames", num(f.kept_frames.into())),
+    );
+    assert_eq!(
+        f.switched_mount,
+        Error::Ring(logring::Error::Full),
+        "the page says the mount gets Full"
     );
     assert_eq!(story::FULL_RUN.seconds, 600, "the page says ten minutes");
 }

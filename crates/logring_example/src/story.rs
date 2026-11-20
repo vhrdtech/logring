@@ -173,6 +173,8 @@ pub struct FlushRow {
     pub data_bytes: u64,
     /// Bytes of padding in them: the rest of a flush's last block.
     pub padding_bytes: u64,
+    /// The most frames that waited in RAM at once: what a power cut at the worst moment costs `can0`.
+    pub frames_in_ram_max: u32,
 }
 
 /// The flush sizes the table of "Flushes and power cuts" compares.
@@ -204,6 +206,7 @@ pub fn flush_sizes() -> Vec<FlushRow> {
                 ticked: totals.ticked,
                 data_bytes: blocks * BLOCK as u64,
                 padding_bytes: padding,
+                frames_in_ram_max: totals.frames_in_ram_max,
             }
         })
         .collect()
@@ -437,7 +440,7 @@ pub struct SdCard {
     pub data_segments: u32,
     /// The data ring's bytes the first minute wrote.
     pub minute_bytes: u64,
-    /// Days of the bench the data ring holds, tenths.
+    /// Days of the bench the data ring holds, in tenths, rounded.
     pub days_tenths: u64,
 }
 
@@ -500,7 +503,7 @@ pub fn sd_card() -> SdCard {
         meta_segments: sb.meta_segments,
         data_segments: sb.data_segments,
         minute_bytes,
-        days_tenths: data_bytes * 10 / (minute_bytes * 60 * 24),
+        days_tenths: (data_bytes * 10 + minute_bytes * 60 * 12) / (minute_bytes * 60 * 24),
     }
 }
 
@@ -517,6 +520,8 @@ pub struct RingFull {
     /// Bench time, ms, at which the same run with drop newest stopped, and the frames it kept.
     pub refused_at_ms: u64,
     pub kept_frames: u32,
+    /// What a mount with drop newest says on the card the ten minutes with drop oldest left.
+    pub switched_mount: Error<CardError>,
 }
 
 /// The bench run of [ring_full]: ten minutes.
@@ -548,6 +553,10 @@ pub fn ring_full() -> RingFull {
         full: FullPolicy::DropNewest,
         ..cfg
     };
+    let mut bufs = Buffers::new();
+    let switched = block_on(Drive::mount(SimCard::new(&mut bytes), &mut bufs, newest))
+        .err()
+        .expect("drop newest does not mount a ring that went round");
     let mut bytes = vec![0u8; SIM_CARD_BYTES];
     let (refused, err) = boot(SimCard::new(&mut bytes), newest, FULL_RUN);
     assert_eq!(
@@ -564,5 +573,6 @@ pub fn ring_full() -> RingFull {
         superblock_writes: sb.write_seq + 1,
         refused_at_ms: refused.t_ms,
         kept_frames: kept.can0,
+        switched_mount: switched,
     }
 }

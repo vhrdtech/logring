@@ -12,7 +12,7 @@ boots and a [[session]] per boot. It also keeps the [[recordings|recording]] the
 
 ## A track and its path
 
-A track is one stream of items of one type, such as the drive's `can0`. The firmware names a track by its path in
+A [[track]] is one stream of items of one type, such as the drive's `can0`. The firmware names a track by its path in
 the device's API, a list of small numbers, and never by a string. The device has those numbers at hand, and a string
 on every segment of the card would cost room for nothing.
 
@@ -38,8 +38,8 @@ first frame gets position 12 000, as if nothing had happened in between.
 
 ## Sessions
 
-A session is everything one mount writes, from a boot to the next. Each mount starts its session in a new segment, and
-the session's first record on the system track says which session it is. A reset, a crash and a power cut therefore
+A [[session]] is everything one mount writes, from a boot to the next. Each mount starts its session in a new segment,
+and the session's first record on the system track says which session it is. A reset, a crash and a power cut therefore
 all end a session in the same way. A reader sees where each boot began without the firmware having to say so.
 
 <figure class="ww-figure" markdown="0">
@@ -48,14 +48,14 @@ all end a session in the same way. A reader sees where each boot began without t
 marker. A track's positions go on across the reset.</figcaption>
 </figure>
 
-The drive's first boot runs for 20 seconds and wrote 4 segments. The second boot, 30 seconds long, wrote 9 segments
+The drive's first boot runs for 20 seconds and writes 4 segments. The second boot, 30 seconds long, writes 9 segments
 after them. The sessions are numbered from 1 for the life of the card, so session 2 is the second boot since the card
 was formatted.
 
 ## Recordings
 
 A session is often too coarse. The drive boots once in the morning and runs many tests a day, and a reader wants one
-of them. A recording marks such a stretch: the firmware starts it and stops it, each time with a reason of its own.
+of them. A [[recording]] marks such a stretch: the firmware starts it and stops it, each time with a reason of its own.
 
 ```rs
 --8<-- "crates/logring_example/src/drive.rs:recording"
@@ -67,12 +67,11 @@ recording when the motor stops as asked, with the reason [`reason::MOTOR_STOP`],
 
 [`Logring::recording_start`] returns the recording's id, one more than the last for the life of the card. Starting
 a recording while one runs stops the running one first. logring keeps every start and stop in the system track and
-in the [[meta area]], so a reader lists the recordings without reading the data. It also keeps the running recording
-in the [[superblock]], so a recording survives a reboot in its middle.
+in the [[meta area]], so a reader lists the recordings without reading the data.
 
 ## Markers
 
-A marker is a labelled moment with an optional value, written to the card at once. The drive marks the overcurrent
+A [[marker]] is a labelled moment with an optional value, written to the card at once. The drive marks the overcurrent
 fault with its kind [`marker::OVERCURRENT`], the label `phase a` and the phase current in mA as its value. A reader
 lists markers like recordings and jumps to the moment.
 
@@ -94,6 +93,6 @@ track of the two boots, as the example reads it back from the card:
 | recording start | id 2, trigger 1 |
 | recording stop | id 2, reason 1 |
 
-A session start also carries what the mount found at the end of the last session. It counts the [[torn
-blocks|torn block]] and the torn records there. [Flushes and power cuts](flushes.md) explains where those come from. [The format
+A session start also carries what the mount found at the end of the last session. It counts the [[torn blocks|torn
+block]] and the torn records there. [Flushes and power cuts](flushes.md) explains where those come from. [The format
 reference](format.md#7-system-track-and-meta-records) lists every kind of system record with its fields.

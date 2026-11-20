@@ -215,6 +215,13 @@ impl<'a, M: LogMedium> Drive<'a, M> {
         Ok(self.lr.sync().await?)
     }
 
+    /// Frames pushed to `can0` that are not on the card yet: they wait in the stage buffer.
+    pub fn frames_in_ram(&self) -> u32 {
+        let next = self.lr.track_state(track::CAN0).map_or(0, |t| t.next);
+        let durable = self.lr.durable(track::CAN0).unwrap_or(0);
+        u32::try_from(next.saturating_sub(durable)).unwrap_or(u32::MAX)
+    }
+
     /// The ring under the logger.
     pub fn logring(&self) -> &Logring<'a, M, BUF, TRACKS> {
         &self.lr

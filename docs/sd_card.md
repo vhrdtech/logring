@@ -11,14 +11,15 @@ drive writes the log at the speed of raw sectors. This chapter shows how the dri
 
 ## The ring as a file
 
-The card carries an [[exFAT]] volume, the file system of SD cards over 32 GB, which the drive uses on smaller cards
-too. The ring lives in one file of it, `logring.wlr`, the [[ring file]]. The drive creates the file once, at its full size and in one piece, and then
-writes the ring into its sectors directly. It never touches the file system while it logs, so a power cut cannot
-damage the file system.
+The card carries an [[exFAT]] volume, the file system of SD cards over 32 GB, which the drive uses on smaller cards too.
+The ring lives in one file of it, `logring.wlr`, the [[ring file]]. The drive creates the file once, at its full size
+and in one piece, and then writes the ring into its sectors directly. It never touches the file system while it logs, so
+a power cut cannot damage the file system.
 
 The rest of the card stays an ordinary volume. It holds a `README.txt` that says what the ring file is, and 128 MiB of
-free room for files the drive or a person puts there. A laptop reads the ring file like any other file: the `logring`
-tool and the Python package read it from the mounted card.
+free room for files the drive or a person puts there. The field `rw_bytes` of [`FormatOptions`] sets that room, and
+the ring file gets the rest in whole segments. A laptop reads the ring file like any other file: the `logring` tool
+and the Python package read it from the mounted card.
 
 <figure class="ww-figure" markdown="0">
 --8<-- "docs/plots/card_layout.svg"
@@ -34,14 +35,14 @@ then the [[data ring]] with 7589 segments.
 
 ## Segments match the allocation unit
 
-An SD card does not write single sectors in place. Its controller erases and programs flash in large units, and it
-tracks a few units at a time that a host fills in order. The SD specification calls such a unit the allocation unit
-and lets the card report its size. A card writes fastest, and wears least, when a host fills one allocation unit
-from start to end before it moves to the next.
+An SD card does not write single sectors in place: its controller erases and programs flash in large units. The SD
+specification calls such a unit the [[allocation unit]] and lets the card report its size. The speed a card's class
+promises holds for a host that fills one allocation unit from start to end before it moves to the next.
 
-logring makes a segment exactly that size and starts the ring file on an allocation unit boundary. The writer fills
-each segment from its first block to its last, in flushes, and only then opens the next one. The drive's card reports
-4 MiB, so its segments are 4 MiB. A card that reports nothing gets 4 MiB too, the size most cards use.
+logring therefore makes a segment the allocation unit, or a multiple of it when the unit is under 4 MiB. It also
+starts the ring file on an allocation unit boundary. The writer fills each segment from its first block to its last, in
+flushes, and only then opens the next one. The drive's card reports 4 MiB, so its segments are 4 MiB. A card that
+reports nothing gets 4 MiB segments.
 
 The segment size is fixed at the format and kept in the superblock. Each later mount reads it from there, so the
 firmware never needs to know it.
@@ -57,17 +58,26 @@ by sector address into a file that moved would destroy other files. The drive's 
 ```
 
 The function [`exfat::open`] mounts the volume, finds the ring file and compares it with the superblock's
-[[binding]]. The binding holds the volume's serial number, the file's first cluster, its length and its first sector. A ring file that matches is bound, and the
-drive mounts the ring in it as on a raw card. Anything else is unbound, and [`exfat::Unbound`] says why:
+[[binding]]. The binding holds the volume's serial number, the file's first cluster, its length and its first
+sector. A ring file that matches is bound, and the drive mounts the ring in it as on a raw card. Anything else is
+unbound, and [`exfat::Unbound`] says why:
 
-| Reason | What happened on the laptop |
+| Reason | What the drive finds |
 |---|---|
-| `Missing` | `logring.wlr` was deleted or renamed |
-| `NotContiguous` | the file was rewritten and may lie anywhere now |
-| `Moved` | the file was copied elsewhere and the original deleted |
-| `OtherCard` | the file came from another card |
-| `Resized` | the file was cut short or extended |
-| `Volume` | the card has no exFAT volume the drive accepts |
+| `Volume` | no exFAT volume it accepts: a camera's card, a damaged volume |
+| `Missing` | no `logring.wlr` in the root directory: deleted, renamed or moved into a folder |
+| `NotAFile` | `logring.wlr` is a directory |
+| `NotContiguous` | the file has a cluster chain: a laptop rewrote or defragmented it |
+| `Size` | the file is empty, not whole sectors, or its valid length differs from its length |
+| `NotAllocated` | some of the file's clusters are free in the allocation bitmap |
+| `NoHeader` | neither superblock slot decodes: another file took the place |
+| `OtherCard` | the binding names another volume: the file came from another card |
+| `Moved` | the file is not where the binding says: copied elsewhere, or replaced by a copy |
+| `Resized` | the file's length differs from the binding's |
+| `Geometry` | the superblock's layout does not fit the file |
+
+A file that a laptop cut short or extended usually shows as `Size`. `Resized` catches one whose lengths still agree
+with each other but not with the binding.
 
 The drive answers an unbound ring file by making it anew with [`recreate_ring`]. That loses the log in it but keeps
 every other file. A card without a usable volume gets a full format with [`format_card`]. A new card in the drive is
@@ -79,13 +89,13 @@ A format starts with a check of the card, because some cards lie. A fake card re
 its writes past the real size wrap round onto earlier sectors. The aliasing test writes marks across the whole card
 and reads them back. The format thus refuses such a card before a single record goes to it.
 
-The second part of the check measures how fast the card writes flushes of 16 KiB to 1 MiB. The smallest size within
-90 % of the fastest becomes the card's `flush_bytes`, kept in the superblock for every later mount. [The format
-reference](format.md#card-check) gives the exact steps. The drive example's simulated card takes no time to write, so
-the example turns this measurement off and keeps the drive's own 16 KiB.
+The second part of the check measures how fast the card writes flushes of every power of two from 16 KiB to 1 MiB. The
+smallest size within 90 % of the fastest becomes the card's `flush_bytes`, kept in the superblock for every later mount.
+[The format reference](format.md#card-check) gives the exact steps. The drive example's simulated card takes no time to
+write, so the example turns this measurement off and keeps the drive's own 16 KiB.
 
 ## How long the card holds
 
 A minute of the drive's bench takes 1033 KiB of the card's data ring. The 7589 segments of 4 MiB therefore hold the
-last 20.8 days of the bench. After that the ring goes round, and [When the ring is full](ring_full.md) says what
+last 20.9 days of the bench. After that the ring goes round, and [When the ring is full](ring_full.md) says what
 happens then.

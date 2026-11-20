@@ -1,4 +1,4 @@
-<svg class="ww-svg" viewBox="0 0 720 250" width="720" height="250" role="img" aria-label="The drive's four tracks feed the stage buffer in RAM; a flush writes it to the card in whole blocks; the mode track, Immediate, is flushed at once" xmlns="http://www.w3.org/2000/svg">
+<svg class="ww-svg" viewBox="0 0 720 250" width="720" height="250" role="img" aria-label="The drive's four tracks feed the stage buffer in RAM; the writer writes it to the card in whole blocks each time it fills and at a flush's end; the mode track, Immediate, ends a flush at once" xmlns="http://www.w3.org/2000/svg">
   <text x="10" y="14" text-anchor="start" class="strong">the drive's calls</text>
   <rect x="10" y="34" width="150" height="30" rx="3" class="tint-blue"/>
   <text x="20" y="54" text-anchor="start" class="mono small">log(t, level, text)</text>
@@ -26,9 +26,9 @@
   <text x="350" y="138" text-anchor="middle" class="small soft">records of every track, in order</text>
   <path d="M450 107 H548" class="accent-line"/>
   <path d="M556.0 107.0 L548.0 103.0 L548.0 111.0 Z" class="accent-line head"/>
-  <text x="503" y="96" text-anchor="middle" class="accent small">a flush</text>
-  <text x="503" y="128" text-anchor="middle" class="small soft">full, or the interval</text>
-  <text x="503" y="143" text-anchor="middle" class="small soft">is up, or a sync</text>
+  <text x="503" y="96" text-anchor="middle" class="accent small">a write</text>
+  <text x="503" y="128" text-anchor="middle" class="small soft">each time it fills,</text>
+  <text x="503" y="143" text-anchor="middle" class="small soft">and at a flush's end</text>
   <path d="M160 82 C300 42 470 42 556 70" class="accent-line dash"/>
   <path d="M556.0 70.0 L547.4 70.2 L550.6 63.0 Z" class="accent-line head"/>
   <text x="360" y="30" text-anchor="middle" class="accent small">Immediate: flushed with the record</text>
@@ -42,5 +42,5 @@
   <rect x="604" y="96" width="30" height="20" class="tint-ink"/>
   <rect x="636" y="96" width="30" height="20" class="thin"/>
   <rect x="668" y="96" width="30" height="20" class="thin"/>
-  <text x="635" y="138" text-anchor="middle" class="small soft">whole 512-byte blocks</text>
+  <text x="635" y="138" text-anchor="middle" class="small soft">whole blocks</text>
 </svg>

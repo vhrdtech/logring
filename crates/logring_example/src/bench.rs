@@ -41,6 +41,9 @@ pub struct Totals {
     pub markers: u32,
     /// Flushes the tick wrote; flushes the stage buffer or an `Immediate` track forced are not counted.
     pub ticked: u32,
+    /// The most frames that waited in RAM at once, pushed but not on the card yet: what a power cut at the worst
+    /// moment would have cost the track `can0`.
+    pub frames_in_ram_max: u32,
     /// The bench time the run reached, in ms since boot.
     pub t_ms: u64,
 }
@@ -120,6 +123,7 @@ pub async fn run_counting<M: LogMedium>(
                 drive.can_frame(t_us, 0x101, &frame(frames)).await?;
                 frames += 1;
                 n.can0 += 1;
+                n.frames_in_ram_max = n.frames_in_ram_max.max(drive.frames_in_ram());
             }
         }
         if drive.tick(t_ms).await? {

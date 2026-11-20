@@ -66,13 +66,14 @@ the item to its track with the time it happened, in microseconds since boot:
 ```
 
 [`Logring::push`] turns the item into a [[record]]: the item's bytes with its track, its position and its time. The
-record goes into the stage buffer, and the call returns at once. The card sees nothing yet.
+record goes into the stage buffer in RAM. Most pushes return at once. The push that fills the stage buffer also writes
+it to the card.
 
 ## The tick
 
-The stage buffer goes to the card in a [[flush]]. A flush starts once the buffer holds 16 KiB for the card, or once
-the oldest record in it has waited a second. The first case needs no help, but the second needs a clock. The
-firmware therefore calls a tick with its millisecond clock about every 100 ms:
+The records reach the card in a [[flush]], which the stage buffer builds a piece at a time. The drive ends a flush
+once it holds 16 KiB, or once it has been open for a second. The first case needs no help, but the second needs a
+clock. The firmware therefore calls a tick with its millisecond clock about every 100 ms:
 
 ```rs
 --8<-- "crates/logring_example/src/drive.rs:tick"
@@ -80,15 +81,15 @@ firmware therefore calls a tick with its millisecond clock about every 100 ms:
 
 <figure class="ww-figure" markdown="0">
 --8<-- "docs/figures/first_log.svg"
-<figcaption>The drive's calls fill the stage buffer in RAM, and a flush writes it to the card in whole blocks. The
-mode track is Immediate: its record goes to the card at once.</figcaption>
+<figcaption>The drive's calls fill the stage buffer in RAM. The writer writes it to the card in whole blocks each time
+it fills and when a flush ends. The mode track is Immediate: its record goes to the card at once.</figcaption>
 </figure>
 
 ## The first minute
 
 The bench run [`bench::run`] drives the logger as the drive does on its endurance bench. It boots and runs the motor
-from the first second on. It records a frame a millisecond, a voltage a second and a log line every two seconds. This block
-mounts a ring on a new simulated card and runs the first minute:
+from the first second on. It records a frame a millisecond, a voltage a second and a log line every two seconds. This
+block mounts a ring on a new simulated card and runs the first minute:
 
 ```rust
 use logring::Buffers;
@@ -108,9 +109,10 @@ assert_eq!(totals.can0, 60_000);
 assert_eq!(totals.vbat, 60);
 ```
 
-The minute holds 60 000 frames, 60 voltages, 31 log lines and 3 changes of mode. The ring took them in 70 flushes,
-which filled 17 segments of 64 KiB. They take 1032 KiB of the card. A frame's item is 13 bytes, and its record adds its track, position and time. The example's `story` prints these numbers (`cargo run -p logring_example --features
-std --example story`).
+The minute holds 60 000 frames, 60 voltages, 31 log lines and 3 changes of mode. The ring took them in 70 flushes, which
+filled 17 segments of 64 KiB. They take 1032 KiB of the card. A frame's item is 13 bytes, and its record adds its track,
+position and time. The example's `story` prints these numbers (`cargo run -p logring_example --features std --example
+story`).
 
 The drive logs now, but a reader of its card still wants to know which boot and which test run a record belongs to.
 [Tracks, sessions and recordings](tracks.md) is about that.
