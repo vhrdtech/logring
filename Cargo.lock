@@ -1495,6 +1495,7 @@ dependencies = [
 name = "logring_example"
 version = "0.1.0"
 dependencies = [
+ "exfat_lite",
  "logring",
  "ww_api",
  "ww_si",

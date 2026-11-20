@@ -4,8 +4,11 @@
 //! - [api]: the drive's WireWeaver API, whose streams are the ring's tracks, and their item types.
 //! - [card]: [SimCard], a simulated SD card in RAM, so the example runs on a PC and builds for any MCU.
 //! - [drive]: [Drive], the firmware's logger: the session it mounts with, one call per track, the flush tick.
+//! - [sd]: [sd::mount_sd], the ring as the file `logring.wlr` of the card's exFAT volume: mounted, re-created or
+//!   formatted.
 //! - [bench]: [bench::run], a deterministic stretch of the endurance bench at any length, which the book's tests and
 //!   figures replay.
+//! - `story` (feature `std`): the runs behind every number of the book's guide.
 //!
 //! The crate is `no_std` and allocates nothing: the same code builds for the host and for an MCU target such as
 //! `thumbv8m.main-none-eabihf`.
@@ -18,6 +21,9 @@ pub mod bench;
 mod book;
 pub mod card;
 pub mod drive;
+pub mod sd;
+#[cfg(feature = "std")]
+pub mod story;
 
 pub use card::SimCard;
 pub use drive::Drive;

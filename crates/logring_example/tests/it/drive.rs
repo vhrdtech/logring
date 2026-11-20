@@ -43,7 +43,8 @@ fn a_minute_of_the_bench_is_on_the_card() {
     let totals = boot_and_run(&mut bytes, Bench::FIRST_MINUTE);
     assert_eq!(totals.can0, 60_000);
     assert_eq!(totals.vbat, 60);
-    assert_eq!(totals.mode, 2);
+    assert_eq!(totals.mode, 3);
+    assert_eq!(totals.recordings, 1);
 
     let scan = scan(&mut bytes);
     assert!(scan.data.len() > 1, "a minute fills more than one segment");

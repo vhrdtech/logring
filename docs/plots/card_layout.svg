@@ -1,0 +1,52 @@
+<svg class="ww-svg" viewBox="0 0 816 250" width="816" height="250" role="img" aria-label="A 32 GB card: the exFAT region and 128 MiB left free for files, then the ring file of 30376 MiB: the superblock segment, 4 meta segments and 7589 data segments of 4 MiB" xmlns="http://www.w3.org/2000/svg">
+<text x="8.0" y="20.0" text-anchor="start" class="strong">the card, 32000000000 bytes, to scale</text>
+<rect x="8.0" y="30.0" width="3.7" height="30.0" rx="0" class="tint-green"/>
+<rect x="11.7" y="30.0" width="796.3" height="30.0" rx="0" class="tint-blue"/>
+<rect x="8.0" y="30.0" width="800.0" height="30.0" rx="0" class="thin"/>
+<text x="409.8" y="49.0" text-anchor="middle">logring.wlr: 30376 MiB from byte 146800640 on</text>
+<path d="M9.0 62.0 v12" class="line"/>
+<text x="8.0" y="88.0" text-anchor="start" class="small">first 140 MiB: partition table, exFAT, README.txt and 128 MiB free for files</text>
+<text x="8.0" y="120.0" text-anchor="start" class="strong">the ring file's first 12 segments of 4 MiB</text>
+<rect x="8.0" y="130.0" width="66.7" height="30.0" rx="0" class="faint"/>
+<rect x="8.0" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="41.3" y="149.0" text-anchor="middle" class="small">superblock</text>
+<rect x="74.7" y="130.0" width="66.7" height="30.0" rx="0" class="tint-amber"/>
+<rect x="74.7" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="108.0" y="149.0" text-anchor="middle" class="small">meta 0</text>
+<rect x="141.3" y="130.0" width="66.7" height="30.0" rx="0" class="tint-amber"/>
+<rect x="141.3" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="174.7" y="149.0" text-anchor="middle" class="small">meta 1</text>
+<rect x="208.0" y="130.0" width="66.7" height="30.0" rx="0" class="tint-amber"/>
+<rect x="208.0" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="241.3" y="149.0" text-anchor="middle" class="small">meta 2</text>
+<rect x="274.7" y="130.0" width="66.7" height="30.0" rx="0" class="tint-amber"/>
+<rect x="274.7" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="308.0" y="149.0" text-anchor="middle" class="small">meta 3</text>
+<rect x="341.3" y="130.0" width="66.7" height="30.0" rx="0" class="tint-blue"/>
+<rect x="341.3" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="374.7" y="149.0" text-anchor="middle" class="small">data 0</text>
+<rect x="408.0" y="130.0" width="66.7" height="30.0" rx="0" class="tint-blue"/>
+<rect x="408.0" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="441.3" y="149.0" text-anchor="middle" class="small">data 1</text>
+<rect x="474.7" y="130.0" width="66.7" height="30.0" rx="0" class="tint-blue"/>
+<rect x="474.7" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="508.0" y="149.0" text-anchor="middle" class="small">data 2</text>
+<rect x="541.3" y="130.0" width="66.7" height="30.0" rx="0" class="tint-blue"/>
+<rect x="541.3" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="574.7" y="149.0" text-anchor="middle" class="small">data 3</text>
+<rect x="608.0" y="130.0" width="66.7" height="30.0" rx="0" class="tint-blue"/>
+<rect x="608.0" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="641.3" y="149.0" text-anchor="middle" class="small">data 4</text>
+<rect x="674.7" y="130.0" width="66.7" height="30.0" rx="0" class="tint-blue"/>
+<rect x="674.7" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="708.0" y="149.0" text-anchor="middle" class="small">data 5</text>
+<rect x="741.3" y="130.0" width="66.7" height="30.0" rx="0" class="tint-blue"/>
+<rect x="741.3" y="130.0" width="66.7" height="30.0" rx="0" class="thin"/>
+<text x="774.7" y="149.0" text-anchor="middle" class="small">data 6</text>
+<rect x="8.0" y="130.0" width="3.0" height="30.0" rx="0" class="tint-accent"/>
+<text x="10.0" y="176.0" text-anchor="start" class="accent small">slot A</text>
+<rect x="41.3" y="130.0" width="3.0" height="30.0" rx="0" class="tint-accent"/>
+<text x="43.3" y="176.0" text-anchor="start" class="accent small">slot B</text>
+<path d="M341.3 186.0 v4 H808.0 v-4" class="line"/>
+<text x="345.3" y="206.0" text-anchor="start" class="small">the data ring: 7589 segments, data 0 to data 7588</text>
+</svg>

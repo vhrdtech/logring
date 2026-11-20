@@ -2,13 +2,14 @@
 //! belongs to a flush, which its trailer's `flush_off` says; a flush's records end inside its last block and padding
 //! fills the rest of it.
 
-use anyhow::{Context, ensure};
+use anyhow::Context;
+use logring::Config;
 use logring::format::{BLOCK, PAYLOAD};
-use logring::scan::{Scan, SegmentScan};
+use logring::scan::Scan;
 use logring::tests_support::block_on;
-use logring::{Buffers, Config};
-use logring_example::bench::{self, Bench};
-use logring_example::{Drive, SimCard};
+use logring_example::SimCard;
+use logring_example::bench::Bench;
+use logring_example::story;
 
 use crate::OrDebug;
 use crate::svg::Svg;
@@ -41,79 +42,22 @@ const TRAILER_W: f64 = BLOCK_W * 8.0 / BLOCK as f64 * 4.0;
 /// The tint of flush `k`.
 const TINTS: [&str; 3] = ["tint-blue", "tint-teal", "tint-amber"];
 
-/// A flush as the blocks show it.
-struct Flush {
-    first_block: u32,
-    blocks: u32,
-    records: usize,
-    /// Payload bytes of its last block that hold data; the rest is padding.
-    last_used: usize,
-}
-
 /// The ring on a simulated card after the bench, and its scan.
 fn written() -> anyhow::Result<(Vec<u8>, Scan)> {
     let mut card = vec![0u8; 8 * SEGMENT as usize];
-    let mut bufs = Buffers::new();
-    block_on(async {
-        let mut drive = Drive::mount(SimCard::new(&mut card), &mut bufs, config())
-            .await
-            .or_debug()?;
-        bench::run(&mut drive, BENCH).await.or_debug()?;
-        anyhow::Ok(())
-    })?;
+    let (_, err) = story::boot(SimCard::new(&mut card), config(), BENCH);
+    if let Some(e) = err {
+        anyhow::bail!("the bench: {e:?}");
+    }
     let scan = block_on(Scan::open(&mut SimCard::new(&mut card), Some(SEGMENT))).or_debug()?;
     Ok((card, scan))
-}
-
-/// The flushes of `seg`, from the trailers of its blocks in `card` and the records the scan found in them.
-fn flushes(card: &[u8], scan: &Scan, seg: &SegmentScan) -> anyhow::Result<Vec<Flush>> {
-    let sb = &scan.superblock;
-    let slot = 1 + u64::from(sb.meta_segments) + seg.seq % u64::from(sb.data_segments);
-    let base = usize::try_from(slot * u64::from(sb.segment_size))?;
-    let mut out: Vec<Flush> = Vec::new();
-    for b in 0..seg.blocks {
-        let at = base + b as usize * BLOCK + PAYLOAD + 2;
-        let off = card
-            .get(at..at + 2)
-            .context("the trailer inside the card")?;
-        let flush_off = u16::from_le_bytes([off[0], off[1]]);
-        if flush_off == 0 {
-            out.push(Flush {
-                first_block: b,
-                blocks: 0,
-                records: 0,
-                last_used: 0,
-            });
-        }
-        let f = out.last_mut().context("block 0 starts a flush")?;
-        ensure!(
-            u32::from(flush_off) == b - f.first_block,
-            "block {b}: flush_off {flush_off}"
-        );
-        f.blocks += 1;
-    }
-    ensure!(
-        out.len() == seg.flushes as usize,
-        "{} flushes by trailers, {} by the scan",
-        out.len(),
-        seg.flushes
-    );
-    for r in &seg.records {
-        let f = out.get_mut(r.flush as usize).context("a record's flush")?;
-        f.records += 1;
-        let end = r.at.0 as usize * PAYLOAD + r.at.1 + r.item.len();
-        let last = (f.first_block + f.blocks - 1) as usize;
-        ensure!(end <= (last + 1) * PAYLOAD, "record past its flush");
-        f.last_used = f.last_used.max(end.saturating_sub(last * PAYLOAD));
-    }
-    Ok(out)
 }
 
 /// The figure.
 pub fn flush() -> anyhow::Result<String> {
     let (card, scan) = written()?;
     let seg = scan.data.first().context("a data segment")?;
-    let flushes = flushes(&card, &scan, seg)?;
+    let flushes = story::flushes(&card, &scan, seg);
     let total = SEGMENT / BLOCK as u32;
     let rows = total.div_ceil(PER_ROW);
     let width = f64::from(PER_ROW) * (BLOCK_W + GAP) + 16.0;

@@ -1,0 +1,71 @@
+<svg class="ww-svg" viewBox="0 0 660 216" width="660" height="216" role="img" aria-label="Segment seqs 0 to 16 of a ring of 6 data segments: seq s in slot s mod 6; the card holds seqs 11 to 16" xmlns="http://www.w3.org/2000/svg">
+<text x="110.0" y="28.0" text-anchor="middle" class="soft">slot 0</text>
+<text x="208.0" y="28.0" text-anchor="middle" class="soft">slot 1</text>
+<text x="306.0" y="28.0" text-anchor="middle" class="soft">slot 2</text>
+<text x="404.0" y="28.0" text-anchor="middle" class="soft">slot 3</text>
+<text x="502.0" y="28.0" text-anchor="middle" class="soft">slot 4</text>
+<text x="600.0" y="28.0" text-anchor="middle" class="soft">slot 5</text>
+<text x="54.0" y="61.0" text-anchor="end" class="soft">lap 0</text>
+<rect x="64.0" y="40.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="64.0" y="40.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="110.0" y="61.0" text-anchor="middle" class="soft">seq 0</text>
+<rect x="162.0" y="40.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="162.0" y="40.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="208.0" y="61.0" text-anchor="middle" class="soft">seq 1</text>
+<rect x="260.0" y="40.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="260.0" y="40.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="306.0" y="61.0" text-anchor="middle" class="soft">seq 2</text>
+<rect x="358.0" y="40.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="358.0" y="40.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="404.0" y="61.0" text-anchor="middle" class="soft">seq 3</text>
+<rect x="456.0" y="40.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="456.0" y="40.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="502.0" y="61.0" text-anchor="middle" class="soft">seq 4</text>
+<rect x="554.0" y="40.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="554.0" y="40.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="600.0" y="61.0" text-anchor="middle" class="soft">seq 5</text>
+<text x="54.0" y="101.0" text-anchor="end" class="soft">lap 1</text>
+<rect x="64.0" y="80.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="64.0" y="80.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="110.0" y="101.0" text-anchor="middle" class="soft">seq 6</text>
+<rect x="162.0" y="80.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="162.0" y="80.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="208.0" y="101.0" text-anchor="middle" class="soft">seq 7</text>
+<rect x="260.0" y="80.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="260.0" y="80.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="306.0" y="101.0" text-anchor="middle" class="soft">seq 8</text>
+<rect x="358.0" y="80.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="358.0" y="80.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="404.0" y="101.0" text-anchor="middle" class="soft">seq 9</text>
+<rect x="456.0" y="80.0" width="92.0" height="34.0" rx="2" class="faint"/>
+<rect x="456.0" y="80.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="502.0" y="101.0" text-anchor="middle" class="soft">seq 10</text>
+<rect x="554.0" y="80.0" width="92.0" height="34.0" rx="2" class="tint-blue"/>
+<rect x="554.0" y="80.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="600.0" y="101.0" text-anchor="middle">seq 11</text>
+<text x="54.0" y="141.0" text-anchor="end" class="soft">lap 2</text>
+<rect x="64.0" y="120.0" width="92.0" height="34.0" rx="2" class="tint-blue"/>
+<rect x="64.0" y="120.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="110.0" y="141.0" text-anchor="middle">seq 12</text>
+<rect x="162.0" y="120.0" width="92.0" height="34.0" rx="2" class="tint-blue"/>
+<rect x="162.0" y="120.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="208.0" y="141.0" text-anchor="middle">seq 13</text>
+<rect x="260.0" y="120.0" width="92.0" height="34.0" rx="2" class="tint-blue"/>
+<rect x="260.0" y="120.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="306.0" y="141.0" text-anchor="middle">seq 14</text>
+<rect x="358.0" y="120.0" width="92.0" height="34.0" rx="2" class="tint-blue"/>
+<rect x="358.0" y="120.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="404.0" y="141.0" text-anchor="middle">seq 15</text>
+<rect x="456.0" y="120.0" width="92.0" height="34.0" rx="2" class="tint-accent"/>
+<rect x="456.0" y="120.0" width="92.0" height="34.0" rx="2" class="thin"/>
+<text x="502.0" y="141.0" text-anchor="middle" class="strong">seq 16</text>
+<rect x="64.0" y="172.0" width="14.0" height="12.0" rx="0" class="faint"/>
+<rect x="64.0" y="172.0" width="14.0" height="12.0" rx="0" class="thin"/>
+<text x="84.0" y="182.0" text-anchor="start">overwritten</text>
+<rect x="189.0" y="172.0" width="14.0" height="12.0" rx="0" class="tint-blue"/>
+<rect x="189.0" y="172.0" width="14.0" height="12.0" rx="0" class="thin"/>
+<text x="209.0" y="182.0" text-anchor="start">on the card</text>
+<rect x="314.0" y="172.0" width="14.0" height="12.0" rx="0" class="tint-accent"/>
+<rect x="314.0" y="172.0" width="14.0" height="12.0" rx="0" class="thin"/>
+<text x="334.0" y="182.0" text-anchor="start">being written</text>
+</svg>

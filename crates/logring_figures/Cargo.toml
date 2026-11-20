@@ -13,4 +13,4 @@ publish = false
 [dependencies]
 anyhow.workspace = true
 logring = { workspace = true, features = ["std", "crc-table", "tail-positions"] }
-logring_example.workspace = true
+logring_example = { workspace = true, features = ["std"] }

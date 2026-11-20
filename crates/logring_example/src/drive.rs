@@ -66,6 +66,26 @@ pub fn config() -> Config {
     }
 }
 
+/// Why a recording starts: the drive's own codes, stored with the recording for a reader to show.
+pub mod trigger {
+    /// The motor started.
+    pub const MOTOR_START: u8 = 1;
+}
+
+/// Why a recording stops.
+pub mod reason {
+    /// The motor stopped as asked.
+    pub const MOTOR_STOP: u8 = 1;
+    /// A fault stopped the motor.
+    pub const FAULT: u8 = 2;
+}
+
+/// The kinds of the drive's markers.
+pub mod marker {
+    /// The phase current went over its limit; the value is the current in mA.
+    pub const OVERCURRENT: u8 = 1;
+}
+
 /// Errors of a [Drive].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Error<E> {
@@ -108,6 +128,21 @@ impl<'a, M: LogMedium> Drive<'a, M> {
         })
     }
     // --8<-- [end:mount]
+
+    /// Start a new, empty log on `card`, whatever it holds, in a new session: after a card was formatted or its
+    /// ring file re-created.
+    pub async fn format(
+        card: M,
+        bufs: &'a mut Buffers<BUF, TRACKS>,
+        cfg: Config,
+    ) -> Result<Self, Error<M::Error>> {
+        let mut lr = Logring::new(card, bufs, cfg, session())?;
+        lr.format().await?;
+        Ok(Drive {
+            lr,
+            item: [0; ITEM_MAX],
+        })
+    }
 
     /// Log a line of text at `t_us`.
     pub async fn log(
@@ -152,6 +187,28 @@ impl<'a, M: LogMedium> Drive<'a, M> {
         Ok(self.lr.flush_if_due(now_ms).await?)
     }
     // --8<-- [end:tick]
+
+    // --8<-- [start:recording]
+    /// Start a recording for `trigger`; returns its id, one more than the card's last.
+    pub async fn recording_start(&mut self, trigger: u8) -> Result<u32, Error<M::Error>> {
+        Ok(self.lr.recording_start(trigger).await?)
+    }
+
+    /// Stop the recording running, for `reason`.
+    pub async fn recording_stop(&mut self, reason: u8) -> Result<(), Error<M::Error>> {
+        Ok(self.lr.recording_stop(reason).await?)
+    }
+
+    /// Mark a moment of `kind`, with a label and a value; it is on the card when this returns.
+    pub async fn marker(
+        &mut self,
+        kind: u8,
+        label: &str,
+        value: Option<i64>,
+    ) -> Result<(), Error<M::Error>> {
+        Ok(self.lr.marker(kind, label, value).await?)
+    }
+    // --8<-- [end:recording]
 
     /// Write everything recorded so far to the card.
     pub async fn sync(&mut self) -> Result<(), Error<M::Error>> {
