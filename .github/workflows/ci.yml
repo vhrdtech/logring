@@ -48,6 +48,9 @@ jobs:
           targets: thumbv8m.main-none-eabihf
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo check -p logring --no-default-features --target thumbv8m.main-none-eabihf
+      # the book's drive example as firmware for the RP2350's core
+      - run: cargo clippy -p logring_example --target thumbv8m.main-none-eabihf -- -D warnings
+      - run: cargo build -p logring_example --target thumbv8m.main-none-eabihf
       - run: cargo clippy -p logring --all-targets --no-default-features --features std,card-check,crc-table -- -D warnings
 
   test:

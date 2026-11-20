@@ -1,0 +1,24 @@
+[package]
+name = "logring_example"
+description = "The book's running example: the drive's firmware logging to a ring on a simulated SD card, no_std, no alloc"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+publish = false
+
+# the wire version of the drive's API root (link setup decides on it)
+[package.metadata.wire_weaver]
+wire = "w1.0"
+
+[dependencies]
+logring = { workspace = true, features = ["crc-table", "tail-positions"] }
+ww_api.workspace = true
+ww_si.workspace = true
+
+# the tests read the ring back with logring's sequential scan
+[dev-dependencies]
+logring = { workspace = true, features = ["std", "crc-table", "tail-positions"] }

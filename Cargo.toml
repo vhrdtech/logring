@@ -4,6 +4,7 @@ exclude = ["fuzz"]
 members = [
     "crates/logring",
     "crates/logring_cli",
+    "crates/logring_example",
     "crates/logring_export",
     "crates/logring_py",
     "crates/logring_wheel",
@@ -49,6 +50,7 @@ tests_common = { git = "https://github.com/vhrdtech/wire_weaver" }
 wire_weaver = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
 wire_weaver_cli = { git = "https://github.com/vhrdtech/wire_weaver" }
 wire_weaver_client = { git = "https://github.com/vhrdtech/wire_weaver" }
+ww_api = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
 ww_client_server = { git = "https://github.com/vhrdtech/wire_weaver", default-features = false }
 ww_global = { git = "https://github.com/vhrdtech/ww_base" }
 ww_numeric = { git = "https://github.com/vhrdtech/ww_base", default-features = false }

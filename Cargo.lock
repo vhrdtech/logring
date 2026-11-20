@@ -1492,6 +1492,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "logring_example"
+version = "0.1.0"
+dependencies = [
+ "logring",
+ "ww_api",
+ "ww_si",
+]
+
+[[package]]
 name = "logring_export"
 version = "0.1.0"
 dependencies = [

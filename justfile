@@ -24,6 +24,8 @@ test-all: test-py
     cargo test -p logring --no-default-features --features std --quiet
     cargo check -p logring --no-default-features --target thumbv8m.main-none-eabihf
     cargo check -p logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf
+    # the book's drive example as firmware for the RP2350's core
+    cargo build --quiet -p logring_example --target thumbv8m.main-none-eabihf
     cargo build --quiet --manifest-path size/Cargo.toml --release --target thumbv8m.main-none-eabihf
 
 # Build the Python module (crates/logring_wheel over logring_py) into a venv under /tmp and run its pytest smoke test
@@ -43,6 +45,7 @@ lint:
     cargo check -p logring --no-default-features --target thumbv8m.main-none-eabihf
     cargo clippy -p logring --no-default-features --features block-device-driver --target thumbv8m.main-none-eabihf -- -D warnings
     cargo clippy -p logring --no-default-features --features block-device-driver,card-check,crc-hw --target thumbv8m.main-none-eabihf -- -D warnings
+    cargo clippy -p logring_example --target thumbv8m.main-none-eabihf -- -D warnings
     cargo fmt --manifest-path size/Cargo.toml --check
     cargo fmt --manifest-path size/report/Cargo.toml --check
     cargo sort --grouped --check size size/report
