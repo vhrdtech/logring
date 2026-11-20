@@ -1,5 +1,12 @@
 # logring: logring (no_std, no alloc engine), logring_export/cli/py (PC).
 
+# `just jobs=N <recipe>` caps build and test parallelism for that run (test, lint, size, fuzz, install and anything
+# they call); unset (the default) leaves CARGO_BUILD_JOBS / NEXTEST_TEST_THREADS as inherited, or at cargo's default
+# (the CPU count)
+jobs := ""
+export CARGO_BUILD_JOBS := if jobs != "" { jobs } else { env_var_or_default('CARGO_BUILD_JOBS', num_cpus()) }
+export NEXTEST_TEST_THREADS := if jobs != "" { jobs } else { env_var_or_default('NEXTEST_TEST_THREADS', 'num-cpus') }
+
 py_venv := "/tmp/logring_py-venv"
 # The Zensical release the book is built with, so a new release cannot break the build unseen
 zensical := "zensical==0.1.2"
