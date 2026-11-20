@@ -1,0 +1,215 @@
+# The book's glossary, one entry per term, read by spl_book_ext (spirit_level's book page "References in prose").
+# `[[term]]` in a page links the term to its entry on glossary.md and shows `short` on hover; `forms` are the other
+# words the term takes in prose; `long` is an abbreviation's long form; `chapter` is the page that explains the term.
+
+[[term]]
+name = "allocation unit"
+forms = ["allocation units", "AU"]
+short = "The stretch of an SD card that the card erases and rewrites as one, often 4 MiB; a segment matches it."
+chapter = "../sd_card/"
+
+[[term]]
+name = "API bundle"
+forms = ["API bundles", "bundle", "bundles"]
+short = "The WireWeaver description of the device's API, stored once in the meta area so that a PC decodes every track's items."
+chapter = "../reading/"
+
+[[term]]
+name = "binding"
+forms = ["bindings"]
+short = "The ring file's place on its card, kept in the superblock, so that a mount refuses a ring copied or moved elsewhere."
+chapter = "../sd_card/"
+
+[[term]]
+name = "block"
+forms = ["blocks"]
+short = "The unit logring writes: 512 bytes, of which 504 hold payload and 8 the trailer."
+chapter = "../flushes/"
+
+[[term]]
+name = "CAN"
+long = "Controller Area Network"
+short = "The vehicle bus whose frames the drive's track `can0` records, about a thousand per second."
+chapter = "../first_log/"
+
+[[term]]
+name = "card check"
+forms = ["card checks"]
+short = "The test a format runs on a new SD card: that it holds what it claims, and which flush size it writes fastest."
+chapter = "../sd_card/"
+
+[[term]]
+name = "CRC"
+long = "cyclic redundancy check"
+short = "A checksum over a block or a structure, so that a reader detects bytes that a power cut or the card damaged."
+chapter = "../flushes/"
+
+[[term]]
+name = "data ring"
+forms = ["data rings"]
+short = "The segments after the meta area that hold the tracks' records, reused in order once the ring goes round."
+chapter = "../ring_full/"
+
+[[term]]
+name = "drive"
+short = "The book's running example: a motor controller board that keeps its log, mode, CAN frames and battery voltage on an SD card."
+chapter = "../first_log/"
+
+[[term]]
+name = "durability"
+forms = ["Immediate", "Normal"]
+short = "A track's choice of when its records reach the card: with the next flush (Normal) or at once (Immediate)."
+chapter = "../flushes/"
+
+[[term]]
+name = "exFAT"
+short = "The file system of SD cards over 32 GB; logring keeps its ring as one preallocated file of it."
+chapter = "../sd_card/"
+
+[[term]]
+name = "flush"
+forms = ["flushes"]
+short = "What the writer puts on the card in one go: a head, the records since the last flush, and padding to the end of a block."
+chapter = "../flushes/"
+
+[[term]]
+name = "flush head"
+forms = ["flush heads", "full head", "full heads", "sparse head", "sparse heads"]
+short = "The start of a flush: the device time and the positions the flush's records count from, for all tracks or for the busy ones."
+chapter = "../format/"
+
+[[term]]
+name = "item"
+forms = ["items"]
+short = "One value of a track, encoded with shrink_wrap: a log line, a CAN frame, a voltage."
+chapter = "../first_log/"
+
+[[term]]
+name = "marker"
+forms = ["markers"]
+short = "A labelled point in time in the system track, such as a button press, written at once."
+chapter = "../tracks/"
+
+[[term]]
+name = "MCAP"
+short = "A container format for robotics logs that Foxglove reads; the `logring` tool exports tracks into it."
+chapter = "../reading/"
+
+[[term]]
+name = "meta area"
+forms = ["meta ring"]
+short = "The segments after the superblock that hold sessions, recordings and the API bundle, a ring of its own."
+chapter = "../format/"
+
+[[term]]
+name = "MF4"
+long = "Measurement Data Format version 4"
+short = "The ASAM file format of measurement tools; the `logring` tool exports numeric tracks and CAN frames into it."
+chapter = "../reading/"
+
+[[term]]
+name = "mount"
+forms = ["mounts", "mounted"]
+short = "What the firmware does at every boot: find the end of the log, recover the tracks' positions and open a new session."
+chapter = "../first_log/"
+
+[[term]]
+name = "position"
+forms = ["positions"]
+short = "The number of a record within its track, counting up across sessions, so that a reader asks for records by it."
+chapter = "../tracks/"
+
+[[term]]
+name = "record"
+forms = ["records"]
+short = "One item on the card with its track, its position and its device time."
+chapter = "../tracks/"
+
+[[term]]
+name = "recording"
+forms = ["recordings"]
+short = "A stretch of the log that the firmware started and stopped, such as one test run, kept in a table for a reader to select."
+chapter = "../tracks/"
+
+[[term]]
+name = "ring"
+forms = ["rings"]
+short = "A preallocated store that writes its newest data over its oldest, so that it never grows and always holds the latest days."
+chapter = "../"
+
+[[term]]
+name = "ring file"
+forms = ["logring.wlr"]
+short = "The ring as one preallocated file on an exFAT card, `logring.wlr`, written in place without the file system."
+chapter = "../sd_card/"
+
+[[term]]
+name = "SD"
+long = "Secure Digital"
+short = "The memory card the drive logs to, written in blocks of 512 bytes and erased by allocation unit."
+chapter = "../sd_card/"
+
+[[term]]
+name = "segment"
+forms = ["segments"]
+short = "A run of blocks, the size of the card's allocation unit, that holds one session's flushes and starts with the track table."
+chapter = "../flushes/"
+
+[[term]]
+name = "segment seq"
+forms = ["seq", "seqs"]
+short = "A segment's number for the life of the log; the segment with seq s sits in slot s mod n of its ring."
+chapter = "../ring_full/"
+
+[[term]]
+name = "session"
+forms = ["sessions"]
+short = "Everything one mount writes, from a boot to the next; a new session always starts a new segment."
+chapter = "../tracks/"
+
+[[term]]
+name = "stage buffer"
+forms = ["stage buffers"]
+short = "The RAM in which the writer builds a flush before it goes to the card."
+chapter = "../first_log/"
+
+[[term]]
+name = "superblock"
+forms = ["superblocks"]
+short = "The block at the start of the ring with the layout and counters, written in two slots in turn so that a power cut keeps one."
+chapter = "../format/"
+
+[[term]]
+name = "system track"
+short = "Track 0, which logring writes itself: session starts, recordings and markers."
+chapter = "../tracks/"
+
+[[term]]
+name = "torn block"
+forms = ["torn blocks", "torn"]
+short = "A block whose tag is the ring's but whose CRC fails: the write a power cut interrupted, or a block the card damaged."
+chapter = "../flushes/"
+
+[[term]]
+name = "track"
+forms = ["tracks"]
+short = "One stream of items in the ring, such as the drive's `can0`, named by its path in the device's API."
+chapter = "../tracks/"
+
+[[term]]
+name = "track key"
+forms = ["track keys", "stable key"]
+short = "A hash of the API root and a track's path, the same across sessions and firmware updates, so that a reader joins a track's records."
+chapter = "../format/"
+
+[[term]]
+name = "track table"
+forms = ["track tables"]
+short = "The list of a session's tracks at the start of every segment, so that any segment decodes on its own."
+chapter = "../tracks/"
+
+[[term]]
+name = "trailer"
+forms = ["trailers"]
+short = "The last 8 bytes of a block: a tag that says the block is the ring's, the distance to its flush's start, and a CRC."
+chapter = "../format/"

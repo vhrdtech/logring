@@ -1,3 +1,7 @@
+---
+level: basic
+---
+
 # Tapes and logring
 
 A **logring** is a log store that keeps the newest data on a device's own storage. A **tape** is the recording format

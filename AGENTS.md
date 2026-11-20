@@ -74,9 +74,9 @@ end to end, a generated server and the real host event loop (`wire_weaver`'s `te
 `size/` (not published, its own workspace): no_std size bins on a dummy card for the MCU targets and the host tool
 `size/report` behind `just size` (flash and RAM per target, crate, file, function and type, LOG-9).
 
-`docs/` is logring's book, built with Zensical (`zensical.toml`, `just book`, LOG-11): an introduction, the related
-WireWeaver and ww_tape books, Tapes and logring, and [docs/format.md](docs/format.md), the on-medium format as it is
-(LOG-1). The WireWeaver and ww_tape books are separate sites, linked by URL, never included; `fuzz/` holds the cargo-fuzz
+`docs/` is logring's book, built with Zensical (`zensical.toml`, `just book`, LOG-11); [docs/writers.md](docs/writers.md)
+says how a chapter reads, marks glossary terms (`docs/glossary.toml`) and code links, and includes code and figures;
+[docs/format.md](docs/format.md) is the on-medium format as it is (LOG-1). The WireWeaver and ww_tape books are separate sites, linked by URL, never included; `fuzz/` holds the cargo-fuzz
 targets (`just fuzz`, nightly) with seed images; the design history and open questions live in internal
 design notes, kept outside this repo.
 
@@ -90,7 +90,7 @@ just size      # flash and RAM of the device side per MCU target, crate, file, f
 just fuzz      # cargo-fuzz (nightly) on the mount target with the seed images in fuzz/seeds
 just install   # puts `logring` on PATH (with tpm: the release stack in ~/.local/bin; without: cargo install); completion: source <(COMPLETE=bash logring)
 just deploy    # bring this PC up to main
-just book-check  # the book with warnings as errors: a broken link or anchor fails (uv runs Zensical)
+just book-check  # the book strict (a broken link, anchor, term or code name fails) and its prose lints; needs spl
 ```
 
 Before declaring a change done: `just lint` and `just test`. Nothing here needs a real SD card or rePort to

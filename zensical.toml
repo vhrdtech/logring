@@ -12,10 +12,24 @@ repo_url = "https://github.com/vhrdtech/logring"
 repo_name = "vhrdtech/logring"
 edit_uri = "edit/main/docs/"
 
+# Five parts in the order a reader needs them; each part lists its basic chapters first, then the advanced and nomicon
+# ones (docs/levels.md). A chapter not yet written is a stub that links the pages holding its material.
 nav = [
-    { "Introduction" = [
+    { "Start" = [
             "index.md",
-            "related_books.md"
+            "first_log.md"
+        ]
+    },
+    { "Writing" = [
+            "tracks.md",
+            "flushes.md",
+            "sd_card.md",
+            "ring_full.md"
+        ]
+    },
+    { "Reading" = [
+            "reading.md",
+            "live_reading.md"
         ]
     },
     { "Choosing a store" = [
@@ -23,6 +37,10 @@ nav = [
         ]
     },
     { "Reference" = [
+            "glossary.md",
+            "related_books.md",
+            "levels.md",
+            "writers.md",
             "format.md",
             { "Features and roadmap" = "https://github.com/vhrdtech/logring/blob/main/FEATURES.md" },
             { "Changelog" = "https://github.com/vhrdtech/logring/blob/main/CHANGELOG.md" }
@@ -30,10 +48,14 @@ nav = [
     }
 ]
 
-# figures.css: the classes of the SVG figures the pages inline from docs/figures, light and dark
-extra_css = ["stylesheets/vhrd.css", "stylesheets/figures.css"]
+# figures.css: the classes of the SVG figures the pages inline from docs/figures and docs/plots, light and dark;
+# spl-refs.css and spl-refs.js: the cards of glossary terms and code links, written by `spl book refs` (`just book-refs`)
+extra_css = ["stylesheets/vhrd.css", "stylesheets/figures.css", "stylesheets/spl-refs.css"]
+extra_javascript = ["javascripts/spl-refs.js"]
 
 [project.theme]
+# overrides/main.html: the reading level badge above a page's title, from its `level:` front matter (docs/levels.md)
+custom_dir = "overrides"
 language = "en"
 features = [
   "content.code.annotate",
@@ -108,7 +130,8 @@ pymdownx.keys = {}
 pymdownx.magiclink = {}
 pymdownx.mark = {}
 pymdownx.smartsymbols = {}
-# Inlines the SVG figures (`--8<-- "docs/figures/logring.svg"`), paths from the repository root
+# Inlines the SVG figures (`--8<-- "docs/figures/logring.svg"`) and marked sections of code, paths from the repository
+# root
 pymdownx.snippets = {
   base_path = ["."],
   check_paths = true
@@ -122,3 +145,8 @@ pymdownx.tasklist = {
   custom_checkbox = true
 }
 pymdownx.tilde = {}
+# `[[term]]`: a glossary term from docs/glossary.toml, its entry on hover; glossary.md lists every entry
+"spl_book_ext.glossary" = {}
+# [`Name`], [`file.rs`], [`file.rs:section`]: an item or file of these crates, its code on hover, its lines on GitHub
+# on click; a name that matches nothing fails the build
+"spl_book_ext.code_refs" = { crates = ["logring", "logring_export", "logring_example"] }

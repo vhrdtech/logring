@@ -13,6 +13,9 @@
 
 pub mod api;
 pub mod bench;
+// the book's pages are doctests, built only when rustdoc runs them
+#[cfg(doctest)]
+mod book;
 pub mod card;
 pub mod drive;
 

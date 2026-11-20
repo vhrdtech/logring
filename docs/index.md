@@ -1,3 +1,7 @@
+---
+level: basic
+---
+
 # logring
 
 logring is a log store for embedded devices. Firmware writes many streams of typed items onto a Secure Digital (SD)

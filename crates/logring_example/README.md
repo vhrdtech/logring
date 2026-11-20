@@ -1,10 +1,11 @@
 # logring_example
 
-The running example of logring's book: the firmware side of the drive, a motor controller board that keeps the
-last days of its log lines, its mode, its CAN frames and its battery voltage on an SD card.
+This crate is the running example of logring's book: the firmware side of the drive, a motor controller board. The
+drive keeps the last days of four tracks on a Secure Digital (SD) card. They hold its log lines, its mode, its battery
+voltage and the frames of its Controller Area Network (CAN) bus.
 
-The crate is `no_std` and allocates nothing. It runs on a simulated card in RAM (`SimCard`), so the same code
-builds for a PC and for an MCU such as the RP2350 (`thumbv8m.main-none-eabihf`):
+The crate is `no_std` and allocates nothing. It runs on a simulated card in RAM (`SimCard`). The same code therefore
+builds for a personal computer (PC) and for a microcontroller (MCU) such as the RP2350 (`thumbv8m.main-none-eabihf`):
 
 - `api`: the drive's WireWeaver API; each of its four streams is a track of the ring.
 - `drive`: `Drive`, the logger a firmware keeps: mount, one call per track, the flush tick.

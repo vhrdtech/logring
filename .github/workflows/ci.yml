@@ -121,6 +121,7 @@ jobs:
       - uses: taiki-e/install-action@v2
         with:
           tool: just
-      # spl, spirit_level's CLI, at the commit the prose lints were set up with (0.5.4)
-      - run: cargo install --locked --git https://github.com/romixlab/spirit_level --rev a7fe9c6f8bd13f299c3091583846299fb00942b6 spirit_level_cli
+      # spl, spirit_level's CLI, at 0.7.5, the release of the justfile's `spl`: `just book-strict` runs `spl book refs`
+      # first, and the prose lints are its own
+      - run: cargo install --locked --git https://github.com/romixlab/spirit_level --rev 99d6d1632be6c6474645092061bee0d5ec8fe19d spirit_level_cli
       - run: just book-check

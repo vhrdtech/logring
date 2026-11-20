@@ -1,3 +1,7 @@
+---
+level: basic
+---
+
 # WireWeaver and ww_tape
 
 Two other books cover the projects that logring is used with. Each book stands on its own, so this page says what the

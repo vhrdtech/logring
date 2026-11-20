@@ -4,5 +4,7 @@ __pycache__
 .pytest_cache
 *.pyc
 
-# The book Zensical builds (`just book`)
+# The book Zensical builds (`just book`), and the cards' stylesheet and script `spl book refs` writes
 /site
+docs/stylesheets/spl-refs.css
+docs/javascripts/spl-refs.js

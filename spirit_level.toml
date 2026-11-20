@@ -18,7 +18,7 @@ reference = ["docs/format.md"]
 # The book and the READMEs are read by newcomers: every prose lint denies, so a long page or sentence cannot land.
 [lints.prose-run-words]
 level = "deny"
-reason = "a wall of prose loses the reader; a heading, table or figure every 250 words gives a place to rest"
+reason = "a wall of prose loses the reader; a heading, table or figure every 400 words gives a place to rest"
 
 [lints.page-reading-time]
 level = "deny"
@@ -75,6 +75,10 @@ skip = ["CHANGELOG.md", "FEATURES.md", "AGENTS.md", "CLAUDE.md", "**/CHANGELOG.m
 level = "deny"
 reason = "the pages carry words, not pictures of feelings; the tracker's status marks are the lint's allowed set"
 skip = ["CHANGELOG.md", "FEATURES.md", "AGENTS.md", "CLAUDE.md", "**/CHANGELOG.md", "**/tests/**"]
+
+[lints.glossary-terms]
+ignore = ["CAN", "drive"]
+reason = "the glossary's CAN, the vehicle bus, matches the everyday word \"can\", and its drive, the running example, the verb \"drive\""
 
 [lints.page-links]
 level = "deny"

@@ -3,6 +3,10 @@
 py_venv := "/tmp/logring_py-venv"
 # The Zensical release the book is built with, so a new release cannot break the build unseen
 zensical := "zensical==0.1.2"
+# The release of spirit_level's book extension (spl_book_ext): the same as the `spl` in use, since `spl book refs`
+# writes the code index the extension reads
+spl := "0.7.5"
+book_ext := "spl-book-ext @ git+https://github.com/romixlab/spirit_level@v" + spl + "#subdirectory=python/spl_book_ext"
 # The prose lints book-check runs: at deny in spirit_level.toml
 prose_lints := "--only prose-run-words --only page-reading-time --only heading-words --only code-wall --only code-block-language --only passive-voice --only reading-ease --only orphan-pages --only page-title --only abbreviation-first-use --only term-before-definition --only paragraph-sentences --only sentence-words --only emoji --only page-links --only nav-entries"
 
@@ -58,13 +62,13 @@ size *args="all":
 
 # Build the book (docs/, zensical.toml) into site/ with Zensical
 [group('book')]
-book:
-    uv run --with {{ zensical }} zensical build --clean
+book: book-refs
+    uv run --with {{ zensical }} --with "{{ book_ext }}" zensical build --clean
 
 # Serve the book at http://localhost:8000 and rebuild it on every change
 [group('book')]
-book-serve:
-    uv run --with {{ zensical }} zensical serve
+book-serve: book-refs
+    uv run --with {{ zensical }} --with "{{ book_ext }}" zensical serve
 
 # The book's checks: the strict build, then the prose lints, so a broken link or a long page cannot land
 [group('book')]
@@ -72,8 +76,14 @@ book-check: book-strict book-prose
 
 # Build the book with warnings as errors: a link to a missing page, anchor or figure fails; links to other sites are not fetched
 [group('book')]
-book-strict:
-    uv run --with {{ zensical }} zensical build --clean --strict
+book-strict: book-refs
+    uv run --with {{ zensical }} --with "{{ book_ext }}" zensical build --clean --strict
+
+# Check the glossary (docs/glossary.toml) and write what the book's references read: the index of the crates' public
+# items (target/spl-book/code_index.json) and the cards' stylesheet and script (not in git)
+[group('book')]
+book-refs:
+    spl book refs
 
 # Rewrite the figures of the book pages drawn from the format (docs/plots/*.svg, logring_figures); a test fails until
 # they match what it draws

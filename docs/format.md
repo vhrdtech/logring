@@ -1,3 +1,7 @@
+---
+level: nomicon
+---
+
 # The logring format (version 1)
 
 This page describes the on-medium layout that `logring` writes and reads, as it is. Every number is little endian

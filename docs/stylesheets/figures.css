@@ -1,6 +1,7 @@
-/* Figures: SVG drawings inlined into a page with --8<-- (docs/figures, drawn by hand). Elements carry classes, never
-   colours, so a figure takes the page's scheme: the tokens below, one set for light and one for dark. The palette and
-   the classes are those of the ww_tape and WireWeaver books, the accent the brand red. */
+/* Figures: SVG drawings inlined into a page with --8<-- (docs/figures, drawn by hand, and docs/plots, drawn by the
+   logring_figures crate from rings the drive example writes). Elements carry classes, never colours, so a figure
+   takes the page's scheme: the tokens below, one set for light and one for dark. The palette and the classes are
+   those of the ww_tape and WireWeaver books, the accent the brand red. */
 [data-md-color-scheme="default"] {
   --ww-fig-ink: #1a1a1a;
   --ww-fig-soft: #646a70;
