@@ -6,6 +6,7 @@
 
 - A book of its own (`just book`, `just book-check`): an introduction, Tapes and logring, the format reference (LOG-11).
 - The book: reading levels, a For writers page, a glossary shown on hover, code links to GitHub, chapter stubs (LOG-11).
+- The book: chapters 7 and 8, reading on a PC and over WireWeaver; a trailer figure in the reference (LOG-11).
 - `logring_figures` draws the book's byte-level figures from the drive example; a test keeps `docs/plots` current (LOG-11).
 - `logring_example`: the book's drive firmware on a simulated card, built for the host and thumbv8m in CI (LOG-11).
 - `logring_example`: recordings, a marker, a power cut, the ring on an exFAT card; `story` prints the guide's numbers (LOG-11).

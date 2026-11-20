@@ -4,6 +4,7 @@
 //!
 //! - `flush.svg`: the first blocks of a data segment, grouped into flushes, each flush padded to its last block's
 //!   end, every block ending in its 8-byte trailer.
+//! - `trailer.svg`: one block's trailer byte by byte, from the same ring: its tag, flush offset and CRC-32C.
 //! - `power_cut.svg`: the data segment a power cut tore, and the segment the next mount opened.
 //! - `card_layout.svg`: a 32 GB card after the format, to scale, and the start of its ring file.
 //! - `ring_laps.svg`: segment seqs of a ring that went round, each in its slot.
@@ -15,11 +16,13 @@ mod flush;
 mod power_cut;
 mod ring_laps;
 mod svg;
+mod trailer;
 
 /// Every figure: its file name and its SVG text.
 pub fn figures() -> anyhow::Result<Vec<(&'static str, String)>> {
     Ok(vec![
         ("flush.svg", flush::flush()?),
+        ("trailer.svg", trailer::trailer()?),
         ("power_cut.svg", power_cut::power_cut()?),
         ("card_layout.svg", card_layout::card_layout()?),
         ("ring_laps.svg", ring_laps::ring_laps()?),

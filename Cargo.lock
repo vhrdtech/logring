@@ -1495,10 +1495,14 @@ dependencies = [
 name = "logring_example"
 version = "0.1.0"
 dependencies = [
+ "embassy-sync",
  "exfat_lite",
  "logring",
+ "wire_weaver",
+ "wire_weaver_core",
  "ww_api",
  "ww_si",
+ "ww_stream",
 ]
 
 [[package]]

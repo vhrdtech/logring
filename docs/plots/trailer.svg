@@ -1,0 +1,32 @@
+<svg class="ww-svg" viewBox="0 0 472 92" width="472" height="92" role="img" aria-label="Block 4's trailer: tag 0x71e3, flush offset 2, CRC 0xb8ec35f4" xmlns="http://www.w3.org/2000/svg">
+<rect x="8.0" y="8.0" width="54.0" height="34.0" rx="0" class="tint-blue"/>
+<rect x="8.0" y="8.0" width="54.0" height="34.0" rx="0" class="thin"/>
+<text x="35.0" y="29.0" text-anchor="middle" class="mono">e3</text>
+<rect x="65.0" y="8.0" width="54.0" height="34.0" rx="0" class="tint-blue"/>
+<rect x="65.0" y="8.0" width="54.0" height="34.0" rx="0" class="thin"/>
+<text x="92.0" y="29.0" text-anchor="middle" class="mono">71</text>
+<rect x="122.0" y="8.0" width="54.0" height="34.0" rx="0" class="tint-amber"/>
+<rect x="122.0" y="8.0" width="54.0" height="34.0" rx="0" class="thin"/>
+<text x="149.0" y="29.0" text-anchor="middle" class="mono">02</text>
+<rect x="179.0" y="8.0" width="54.0" height="34.0" rx="0" class="tint-amber"/>
+<rect x="179.0" y="8.0" width="54.0" height="34.0" rx="0" class="thin"/>
+<text x="206.0" y="29.0" text-anchor="middle" class="mono">00</text>
+<rect x="236.0" y="8.0" width="54.0" height="34.0" rx="0" class="tint-teal"/>
+<rect x="236.0" y="8.0" width="54.0" height="34.0" rx="0" class="thin"/>
+<text x="263.0" y="29.0" text-anchor="middle" class="mono">f4</text>
+<rect x="293.0" y="8.0" width="54.0" height="34.0" rx="0" class="tint-teal"/>
+<rect x="293.0" y="8.0" width="54.0" height="34.0" rx="0" class="thin"/>
+<text x="320.0" y="29.0" text-anchor="middle" class="mono">35</text>
+<rect x="350.0" y="8.0" width="54.0" height="34.0" rx="0" class="tint-teal"/>
+<rect x="350.0" y="8.0" width="54.0" height="34.0" rx="0" class="thin"/>
+<text x="377.0" y="29.0" text-anchor="middle" class="mono">ec</text>
+<rect x="407.0" y="8.0" width="54.0" height="34.0" rx="0" class="tint-teal"/>
+<rect x="407.0" y="8.0" width="54.0" height="34.0" rx="0" class="thin"/>
+<text x="434.0" y="29.0" text-anchor="middle" class="mono">b8</text>
+<path d="M8.0 46.0 v4 H119.0 v-4" class="line"/>
+<text x="63.5" y="64.0" text-anchor="middle">tag: 0x71e3</text>
+<path d="M122.0 46.0 v4 H233.0 v-4" class="line"/>
+<text x="177.5" y="64.0" text-anchor="middle">flush offset: 2</text>
+<path d="M236.0 46.0 v4 H461.0 v-4" class="line"/>
+<text x="348.5" y="64.0" text-anchor="middle">CRC-32C: 0xb8ec35f4</text>
+</svg>

@@ -24,6 +24,13 @@ logring = { workspace = true, features = ["card-check", "crc-table", "exfat", "t
 ww_api.workspace = true
 ww_si.workspace = true
 
-# the tests read the ring back with logring's sequential scan
+# loads the Drive API's bundle from source and writes it, shrink_wrap-encoded, for build.rs to include
+[build-dependencies]
+wire_weaver = { workspace = true, features = ["std"] }
+wire_weaver_core.workspace = true
+
+# the tests read the ring back with logring's sequential scan, and live_reading.rs reads it through a TrackStore
 [dev-dependencies]
+embassy-sync.workspace = true
 logring = { workspace = true, features = ["std", "card-check", "crc-table", "exfat", "tail-positions"] }
+ww_stream = { workspace = true, features = ["std"] }

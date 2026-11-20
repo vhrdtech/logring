@@ -48,6 +48,12 @@ Trailer, at payload offset 504:
 | 506 | u16 | `flush_off`: blocks since the start of the flush this block belongs to (0: the flush starts here) |
 | 508 | u32 | `crc`: CRC-32C over `log_id` (u32), the ring role (u8, 0 data, 1 meta), `seq` (u64), the block's index in the segment (u32), the 504 payload bytes, `tag` and `flush_off` |
 
+<figure class="ww-figure" markdown="0">
+--8<-- "docs/plots/trailer.svg"
+<figcaption>A trailer from a ring `logring_figures` writes and reads back: the tag, the flush offset, and the
+CRC-32C over the fields above.</figcaption>
+</figure>
+
 `tag = ((seq ^ (log_id << 20) ^ (role << 60)) * 0x9e3779b97f4a7c15) >> 48`, with `0xffff` replaced by `0x5a5a` and
 `0x0000` by `0xa5a5` (never the erased pattern). A block whose tag matches but whose CRC doesn't is **torn**: the
 write a power cut interrupted, or a block the card damaged.

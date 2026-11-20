@@ -1,0 +1,29 @@
+<svg class="ww-svg" viewBox="0 0 460 170" width="460" height="170" role="img" aria-label="A card's ring, read on a PC and exported to CSV, MCAP and MF4" xmlns="http://www.w3.org/2000/svg">
+  <rect x="20" y="55" width="120" height="60" rx="4" class="tint-blue"/>
+  <rect x="20" y="55" width="120" height="60" rx="4" class="thin"/>
+  <text x="80" y="82" text-anchor="middle" class="strong">the ring</text>
+  <text x="80" y="99" text-anchor="middle" class="small soft">file, image or card</text>
+
+  <path d="M140 85 L292 35" class="line"/>
+  <path d="M292 35 L282 31 L282 39 Z" class="line head"/>
+  <rect x="300" y="15" width="120" height="40" rx="4" class="tint-teal"/>
+  <rect x="300" y="15" width="120" height="40" rx="4" class="thin"/>
+  <text x="360" y="32" text-anchor="middle" class="strong">CSV</text>
+  <text x="360" y="48" text-anchor="middle" class="small soft">one file per track</text>
+
+  <path d="M140 85 L292 85" class="line"/>
+  <path d="M292 85 L282 81 L282 89 Z" class="line head"/>
+  <rect x="300" y="65" width="120" height="40" rx="4" class="tint-amber"/>
+  <rect x="300" y="65" width="120" height="40" rx="4" class="thin"/>
+  <text x="360" y="82" text-anchor="middle" class="strong">MCAP</text>
+  <text x="360" y="98" text-anchor="middle" class="small soft">every resolved track</text>
+
+  <path d="M140 85 L292 135" class="line"/>
+  <path d="M292 135 L282 131 L282 139 Z" class="line head"/>
+  <rect x="300" y="115" width="120" height="40" rx="4" class="tint-purple"/>
+  <rect x="300" y="115" width="120" height="40" rx="4" class="thin"/>
+  <text x="360" y="132" text-anchor="middle" class="strong">MF4</text>
+  <text x="360" y="148" text-anchor="middle" class="small soft">numbers, or CAN frames</text>
+
+  <text x="215" y="60" text-anchor="middle" class="small soft">export</text>
+</svg>

@@ -79,9 +79,11 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   related WireWeaver and ww_tape books, [Tapes and logring](docs/tapes_and_logring.md) and the format reference. Pages
   carry a reading level; glossary terms (`docs/glossary.toml`) and code links show cards on hover (`spl book refs`);
   [For writers](docs/writers.md) sets the style. The running example is `logring_example`, the drive's firmware on a
-  simulated card (host and thumbv8m); `logring_figures` draws the byte-level figures, kept current by a test. Guide
-  chapters 2 to 6 (a first log, tracks and recordings, flushes and power cuts, the SD card, a full ring) quote only
-  numbers the example's `story` prints, checked by a test; chapters 7 and 8 are stubs until written. The
+  simulated card (host and thumbv8m), with its own API bundle built at build time from its trait
+  (`wire_weaver_core::load_own_with_paths`, `build.rs`); `logring_figures` draws the byte-level figures, kept
+  current by a test. Guide chapters 2 to 6 (a first log, tracks and recordings, flushes and power cuts, the SD
+  card, a full ring) quote only numbers the example's `story` prints, checked by a test; chapters 7 and 8 (reading
+  on a PC and over WireWeaver) are written too. The
   `Book` workflow publishes it from main to https://lr.vhrd.tech/ only after the whole CI passes on that commit.
 - 💡 **LOG-4 merge-logstore**: whether `ww_stream`'s `LogStore` (one track, raw NOR/SD) could become a one-track
   logring later; decided after the logring ships.
