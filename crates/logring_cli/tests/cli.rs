@@ -1,5 +1,8 @@
 //! Drives the `logring` binary end to end on an image `make-image` built, like a user would from a shell: the
-//! CLI's own "done when" alongside `logring_export`'s crate-level tests.
+//! CLI's own "done when" alongside `logring_export`'s crate-level tests. [reading_md_quotes_a_real_run] pins
+//! "Reading a log on a PC"'s CLI transcripts to a real run on the drive example's own card, so a change to its
+//! output fails here until the page says the new one (the same discipline as `logring_figures`' `numbers.rs`,
+//! for CLI text instead of numbers in prose).
 
 use assert_cmd::Command;
 use logring::format::header::{Durability, TrackDesc};
@@ -241,4 +244,132 @@ fn version_has_a_git_sha() {
         .assert()
         .success()
         .stdout(predicate::str::is_match(r"logring \d+\.\d+\.\d+ \([0-9a-f]{7,}").unwrap());
+}
+
+fn reading_md() -> String {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../docs/reading.md");
+    std::fs::read_to_string(&path).unwrap()
+}
+
+fn quotes(page: &str, line: &str) {
+    assert!(page.contains(line), "docs/reading.md does not say {line:?}");
+}
+
+/// "Reading a log on a PC" walks the drive's own card: every CLI block it quotes is a real run of
+/// `logring_example::story::minute_card()` through the real binary, checked here line by line.
+#[test]
+fn reading_md_quotes_a_real_run_on_the_drives_card() {
+    let page = reading_md();
+    let dir = tempfile::tempdir().unwrap();
+    let image = dir.path().join("drive.wlr");
+    std::fs::write(&image, logring_example::story::minute_card()).unwrap();
+
+    let info = logring()
+        .args(["info", image.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(info.status.success());
+    let info = String::from_utf8(info.stdout).unwrap();
+    for line in [
+        "17 data segments, 1 meta segments, 1 sessions, 1 bundles",
+        "session 1: drive-0042 (drive fw 1.4.0 drive rev C), bundle e0c891571a58ab4f",
+        "bundle e0c891571a58ab4f: 797 bytes, resolved",
+        "log                      key 3aa950c141a0a925  path [0]  31 record(s), 0 decode error(s)  [resolved]",
+        "can0                     key 7a9ea8d1ee0c2247  path [2]  60000 record(s), 0 decode error(s)  [resolved]",
+        "mode                     key 9aaea4b8eb6aec94  path [1]  3 record(s), 0 decode error(s)  [resolved]",
+        "vbat                     key daa3fcc997d665b6  path [3]  60 record(s), 0 decode error(s)  [resolved]",
+        "0 marker(s), 1 recording(s) started, 1 stopped, 0 drop event(s), 0 card event(s)",
+    ] {
+        assert!(
+            info.contains(line),
+            "`logring info` does not print {line:?}"
+        );
+        quotes(&page, line);
+    }
+
+    let export = logring()
+        .current_dir(dir.path())
+        .args([
+            "export",
+            image.to_str().unwrap(),
+            "--track",
+            "can0",
+            "--format",
+            "mf4",
+            "-o",
+            "can0.mf4",
+        ])
+        .output()
+        .unwrap();
+    assert!(export.status.success());
+    let export = String::from_utf8(export.stdout).unwrap();
+    let line = "can0 -> can0.mf4";
+    assert!(
+        export.contains(line),
+        "`logring export` does not print {line:?}"
+    );
+    quotes(&page, line);
+    assert!(
+        dir.path().join("can0.mf4").metadata().unwrap().len() > 0,
+        "can0 exports to MF4"
+    );
+
+    let cat = logring()
+        .args(["cat", image.to_str().unwrap(), "--track", "can0"])
+        .output()
+        .unwrap();
+    assert!(cat.status.success());
+    let cat = String::from_utf8(cat.stdout).unwrap();
+    for line in [
+        r#"{"pos":0,"t_ps":0,"value":{"data":[184,11,0,0,0,0,0,0],"id":257}}"#,
+        r#"{"pos":1,"t_ps":1000000000,"value":{"data":[185,11,1,0,0,0,0,0],"id":257}}"#,
+    ] {
+        assert!(
+            cat.lines().any(|l| l == line),
+            "`logring cat` does not print {line:?}"
+        );
+        quotes(&page, line);
+    }
+
+    let log = logring_export::open(&image).unwrap();
+    let recs = logring_export::events::recordings(&log);
+    let rec = recs.first().expect("one recording");
+    assert_eq!((rec.start_pos, rec.stop_pos), (1, Some(2)));
+    quotes(&page, "1 and 2 for this drive's");
+
+    let bundles = logring_export::parse_bundles(&log);
+    let tracks = logring_export::decode::tracks(&log, &bundles);
+    let can0 = tracks.iter().find(|t| t.name == "can0").unwrap();
+    assert_eq!(can0.items.len(), 60000);
+    let (start, stop) = (rec.start_t_ps.unwrap(), rec.stop_t_ps.unwrap());
+    let in_range = can0
+        .items
+        .iter()
+        .filter(|it| {
+            it.head
+                .t
+                .as_ref()
+                .and_then(logring::reader::time_ps)
+                .is_some_and(|ps| ps >= start && ps <= stop)
+        })
+        .count();
+    assert_eq!(in_range, 59000);
+    quotes(&page, "holds 60 000 records of its own");
+    quotes(&page, "`during` holds 59 000 of `can0`'s 60 000 rows");
+
+    let bundleless = write_bundle_less_ring(dir.path());
+    let check = logring()
+        .args(["check", bundleless.to_str().unwrap()])
+        .output()
+        .unwrap();
+    assert!(check.status.success());
+    let check = String::from_utf8(check.stdout).unwrap();
+    let line =
+        "warning track key.a8231e12f9543fab has no resolved type, 3 record(s) left undecoded";
+    assert!(
+        check.contains(line),
+        "`logring check` does not print {line:?}"
+    );
+    assert!(check.contains("clean"));
+    quotes(&page, line);
 }

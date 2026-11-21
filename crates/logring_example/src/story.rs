@@ -352,6 +352,17 @@ pub fn two_boots() -> TwoBoots {
     }
 }
 
+/// The drive's card after one minute on the bench, no fault: its raw bytes, the way a reader finds them. One
+/// recording runs from the motor's start to its stop; every record carries the drive's real device time; the
+/// drive's own bundle is stored, so every track resolves by name. Backs "Reading a log on a PC".
+pub fn minute_card() -> Vec<u8> {
+    let cfg = drive::config();
+    let mut bytes = vec![0u8; SIM_CARD_BYTES];
+    let (_, err) = boot(SimCard::new(&mut bytes), cfg, Bench::FIRST_MINUTE);
+    assert_eq!(err, None, "the first minute runs");
+    bytes
+}
+
 /// A card that keeps only the sectors written to it: an SD card of real size in little RAM.
 pub struct SparseCard {
     sectors: u64,

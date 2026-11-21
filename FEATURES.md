@@ -83,7 +83,10 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   (`wire_weaver_core::load_own_with_paths`, `build.rs`); `logring_figures` draws the byte-level figures, kept
   current by a test. Guide chapters 2 to 6 (a first log, tracks and recordings, flushes and power cuts, the SD
   card, a full ring) quote only numbers the example's `story` prints, checked by a test; chapters 7 and 8 (reading
-  on a PC and over WireWeaver) are written too. The
+  on a PC and over WireWeaver) are written too, walking the drive's own card (its bundle stored, one recording,
+  real device times) rather than a bundle-only demo; a `logring_cli` test runs the same commands on the same card
+  and checks every CLI transcript reading.md quotes against that run, the same discipline chapters 2 to 6 apply to
+  numbers in prose. The
   `Book` workflow publishes it from main to https://lr.vhrd.tech/ only after the whole CI passes on that commit.
 - 💡 **LOG-4 merge-logstore**: whether `ww_stream`'s `LogStore` (one track, raw NOR/SD) could become a one-track
   logring later; decided after the logring ships.

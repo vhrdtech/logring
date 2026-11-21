@@ -1,0 +1,3 @@
+[default.extend-identifiers]
+# the drive example's `vbat` track key (a stable hash, not a word): reads as "daa..." by chance
+daa3fcc997d665b6 = "daa3fcc997d665b6"
