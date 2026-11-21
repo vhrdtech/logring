@@ -10,8 +10,8 @@
 //!   starts the positions at 0 in a new data segment, and the reader only looks at that segment and after it.
 //! - **Only what is on the medium is read back** (and reported as `newest`): an event the sender could send from
 //!   the stage buffer would be lost by a power cut while the host has it, and the positions after the reboot would
-//!   be given to other events. So the live run follows the flushes (`flush_bytes`, `flush_interval`, `Immediate`
-//!   tracks, [Logring::sync]); the latency of a live view is the flush interval.
+//!   be given to other events. [Logring::durable] moves forward at every write of the stage buffer to the medium,
+//!   not only when a flush ends, so a live view's latency is closer to one stage write than to `flush_interval`.
 //! - **Clock epochs**: the first event of a track after a mount of an existing log gets `ext.clock_epoch` (the
 //!   logring's session) when the sender left it empty, so the host learns where the device's clock restarted.
 //! - **Full**: the ring goes round (drop oldest) unless [Config::full](crate::Config) says otherwise; the units

@@ -20,8 +20,13 @@ and `release` calls any stream server makes on any medium. A host that opens the
 
 A `` [`TrackStore`] `` read only returns what already reached the card. The test pushes a second frame without
 syncing: a read at its position comes back empty, because the frame still sits in the writer's `` [`Buffers`] ``
-stage. Once the next sync writes it, the same read returns it. A host watching live therefore lags the push rate
-by however long a frame waits in the stage buffer.
+stage. Once the next sync writes it, the same read returns it.
+
+`` [`Logring::durable`] `` moves forward at every write of the stage buffer to the card, not only when a [[flush]]
+ends. A host watching live therefore lags the push rate by about one stage write, not a whole flush interval.
+
+The drive's stage buffer is 4 KiB, a quarter of its 16 KiB flush. A frame reaches the card, and a live reader,
+well before its flush closes, not after a full second.
 
 `ww_stream`'s resend buffer wraps the same store for a host that reboots, or loses the link for a while. It resumes
 exactly where it left off: everything that reached the card since, once, in order, across [[sessions]] and power
