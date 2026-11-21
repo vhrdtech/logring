@@ -4,14 +4,15 @@ level: advanced
 
 # Reading over WireWeaver and USB
 
-After this chapter you can read a live device's ring over its API, and as files on a USB disk. The drive is still
-running: an engineer wants to watch `can0` right now, not after the next power cut.
+The drive is still running on the bench, pushing `can0` as fast as the bus delivers it. An engineer wants to
+watch it right now, not wait for the next power cut or carry the card to a desk. How does a live device's ring
+reach a host, over its WireWeaver API, or as files on a USB disk?
 
 ## Reading over WireWeaver
 
 `` [`TrackStore`] `` turns one track of a mounted ring into a WireWeaver stream. It answers the same `push`, `read`
 and `release` calls any stream server makes on any medium. A host that opens the drive's `can0` stream gets every
-[[record]] the track holds, the way a card image does. The difference: the records keep arriving.
+[[record]] the track holds, the way a card image does, but new records keep arriving.
 
 ```rs
 --8<-- "crates/logring_example/tests/it/live_reading.rs:live_read"
@@ -36,7 +37,8 @@ off a USB cable.
 A passthrough logical unit would carry the card's own exFAT volume alongside it. Its small region of read-write
 files would stay an ordinary Secure Digital (SD) card to the host.
 
-This view is designed, not built: today's reading on a personal computer (PC) goes through a card image, as the
-previous chapter showed.
+This view is designed, not built. Today's reading on a personal computer (PC) still goes through [Reading a log
+on a PC](reading.md)'s sources, never live.
+
 [Tapes and logring](tapes_and_logring.md) comes next: when the device's own reach is enough, and when a host
 recording is the better fit.

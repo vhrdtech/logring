@@ -51,7 +51,8 @@ Trailer, at payload offset 504:
 <figure class="ww-figure" markdown="0">
 --8<-- "docs/plots/trailer.svg"
 <figcaption>A trailer from a ring `logring_figures` writes and reads back: the tag, the flush offset, and the
-CRC-32C over the fields above.</figcaption>
+CRC-32C over the fields above. Drawn from the drive example, with segments of 8 KiB and flushes of 1 KiB instead
+of 64 KiB and 16 KiB. The flush offset of 2 depends on that shrink.</figcaption>
 </figure>
 
 `tag = ((seq ^ (log_id << 20) ^ (role << 60)) * 0x9e3779b97f4a7c15) >> 48`, with `0xffff` replaced by `0x5a5a` and
