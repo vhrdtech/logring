@@ -67,3 +67,6 @@ ww_version = { git = "https://github.com/vhrdtech/ww_base", default-features = f
 [profile.deploy]
 inherits = "release"
 incremental = true
+
+[profile.dev]
+debug = false
