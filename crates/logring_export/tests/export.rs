@@ -106,6 +106,67 @@ fn write_test_ring() -> tempfile::NamedTempFile {
     file
 }
 
+/// The same shape of ring as [write_test_ring], but no bundle: a device that never set `SessionInfo::bundle`.
+/// Its track's records are intact; only their type is unknown.
+fn write_bundle_less_ring() -> tempfile::NamedTempFile {
+    let path = [UNib32(1)];
+    let tracks = [TrackDesc {
+        signature: None,
+        global_id: None,
+        durability: Durability::Normal,
+        rate: None,
+        ..TrackDesc::new(&path)
+    }];
+    let info = SessionInfo {
+        api: FullVersion::new("test_fw", Version::new(1, 0, 0)),
+        device_id: "test",
+        fw: "test_fw 1.0.0",
+        hw: "none",
+        tracks: &tracks,
+        bundle: None,
+    };
+    let cfg = Config {
+        segment_size: 4096,
+        meta_segments: 2,
+        flush_bytes: 1024,
+        flush_interval_ms: 1000,
+        full: FullPolicy::DropOldest,
+        seed: 1,
+        ..Config::default()
+    };
+    let medium = SimSd::from_image(vec![0u8; IMAGE], 1);
+    let mut bufs = Box::new(Buffers::<BUF, TRACKS>::new());
+    let mut lr = Logring::new(medium, &mut bufs, cfg, info).unwrap();
+    block_on(lr.mount()).unwrap();
+    for v in [10u8, 20, 30] {
+        block_on(lr.push(1, &[v, 0, 0, 0], None)).unwrap();
+    }
+    block_on(lr.sync()).unwrap();
+    let image = lr.into_medium().image();
+
+    let file = tempfile::NamedTempFile::new().unwrap();
+    std::fs::write(file.path(), &image).unwrap();
+    file
+}
+
+#[test]
+fn a_track_without_a_bundle_is_unresolved_not_a_decode_error() {
+    let file = write_bundle_less_ring();
+    let log = logring_export::open(file.path()).unwrap();
+    assert_eq!(log.bundles.len(), 0);
+
+    let bundles = logring_export::parse_bundles(&log);
+    let tracks = logring_export::decode::tracks(&log, &bundles);
+    let track = tracks.first().expect("the one track");
+    assert!(track.ty.is_none());
+    assert!(track.items.is_empty());
+    assert_eq!(
+        track.decode_errors, 0,
+        "nothing failed to decode; nothing was ever attempted"
+    );
+    assert_eq!(track.unresolved, 3);
+}
+
 #[test]
 fn decodes_and_exports_a_real_ring() {
     let file = write_test_ring();

@@ -24,8 +24,8 @@ pub struct Item {
 }
 
 /// A track ready for export: its description, resolved type (`None` when no session's bundle describes it),
-/// and every record that decoded cleanly. Malformed or unresolvable records are only counted
-/// ([Track::decode_errors]), never fatal: a card is untrusted input.
+/// and every record that decoded cleanly. Malformed records are only counted ([Track::decode_errors]), never
+/// fatal: a card is untrusted input.
 pub struct Track<'b> {
     pub info: TrackInfo,
     pub ty: Option<&'b TypeOwned>,
@@ -35,9 +35,13 @@ pub struct Track<'b> {
     /// The dotted resource name ([schema::Resolved::name]), or [fallback_name] when `ty` is `None`.
     pub name: String,
     pub items: Vec<Item>,
-    /// Records present on the medium whose item didn't decode against `ty` (or whose type couldn't be
-    /// resolved at all): a torn write, a stale bundle, or a path this tool's resolver doesn't support yet.
+    /// Records on a *resolved* track (`ty` and `bundle` both `Some`) whose item didn't decode against `ty`: a
+    /// torn write, a stale bundle, or a path this tool's resolver doesn't support yet. Real corruption.
     pub decode_errors: u64,
+    /// Records on a track whose type couldn't be resolved from any session's bundle at all (no bundle stored,
+    /// or an older API that dropped the path): present and intact on the medium, simply undecodable without
+    /// more information. Not a decode error, and not by itself a sign anything is wrong with the card.
+    pub unresolved: u64,
 }
 
 /// Every user track (number > 0) of `log`, decoded against the session's bundle; `bundles` are `log.bundles`
@@ -71,6 +75,7 @@ pub fn tracks<'b>(log: &LogFile, bundles: &'b BTreeMap<u64, Bundle>) -> Vec<Trac
                 name,
                 items: Vec::new(),
                 decode_errors: 0,
+                unresolved: 0,
             },
         );
     }
@@ -99,7 +104,7 @@ pub fn tracks<'b>(log: &LogFile, bundles: &'b BTreeMap<u64, Bundle>) -> Vec<Trac
                     Err(_) => track.decode_errors += 1,
                 }
             }
-            _ => track.decode_errors += 1,
+            _ => track.unresolved += 1,
         }
     }
     by_key.into_values().collect()

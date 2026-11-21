@@ -155,6 +155,9 @@
 
 ### Fixed
 
+- `logring info`/`check` no longer call a track's unresolved records "decode errors", and `check` no longer
+  exits 1 for an unresolved track alone (now a warning): a healthy card with no stored bundle was reported as
+  corrupted (PC-1).
 - `Reader::seek_track` stays in one stream of the track: the one current at `from_seq` (its `stream_start`); a
   segment whose entry names a later `stream_start` counts as past it in the binary search, and the walker
   (`OneTrack::in_stream`, `Decode::ended`) stops there. Before, a seek for an older stream's position after a

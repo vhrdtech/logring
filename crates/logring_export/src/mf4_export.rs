@@ -264,6 +264,7 @@ mod tests {
             name: "can.rx".to_string(),
             items: vec![can_item(0x123, [1, 2, 3, 4, 5, 6, 7, 8])],
             decode_errors: 0,
+            unresolved: 0,
         };
         let frames = can_frames(&track).expect("a CAN track");
         assert_eq!(frames.len(), 1);
@@ -281,6 +282,7 @@ mod tests {
             name: "can.rx".to_string(),
             items: vec![can_item(0x123, [1, 2, 3, 4, 5, 6, 7, 8])],
             decode_errors: 0,
+            unresolved: 0,
         };
         let file = tempfile::NamedTempFile::new().unwrap();
         export_track(&track, file.path()).unwrap();

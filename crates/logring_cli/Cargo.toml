@@ -32,5 +32,6 @@ ww_snapshots.workspace = true
 
 [dev-dependencies]
 assert_cmd = "2"
+logring_example = { workspace = true, features = ["std"] }
 predicates = "3"
 tempfile.workspace = true

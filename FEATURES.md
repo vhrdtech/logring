@@ -132,10 +132,13 @@ Status: ✅ done, 🧪 tested on fixtures/images only, 📋 planned (tracked int
   check and CLI-driven end-to-end tests are the CLI's own work, below). Differences from the plan: traits/types
   a bundle leaves out under `Skipped*` (not a device's own, from a published crate) are only resolved through
   `ww_snapshots`/the definition cache, not yet through a second bundle of the same session; a track
-  whose type can't be resolved is counted (`Track::decode_errors`) and left out of export rather than falling
-  back to raw bytes. The `logring` CLI: `info` (sessions, bundles, tracks, system-track counters), `export`
-  (one track, or every resolved one for MCAP), `cat` (decoded JSON lines of one track), `check` (torn
-  blocks/records, unresolved bundles/tracks, non-zero exit on trouble, like fsck) and `make-image` (a fresh
+  whose type can't be resolved is counted (`Track::unresolved`, kept apart from `Track::decode_errors`, which
+  is only a record on a *resolved* track that failed to decode: real corruption, not a missing bundle) and
+  left out of export rather than falling back to raw bytes. The `logring` CLI: `info` (sessions, bundles,
+  tracks, system-track counters), `export` (one track, or every resolved one for MCAP), `cat` (decoded JSON
+  lines of one track), `check` (torn blocks/records, a bundle that didn't decode or a decode error on a
+  resolved track: non-zero exit, like fsck; an unresolved track is only a warning, since a card without a
+  bundle can be perfectly healthy) and `make-image` (a fresh
   image from a simulated multi-track device, for demos and tests, with a genuine small bundle); `--version`
   with git SHA and commit time (`build.rs`); dynamic shell completions (clap_complete `unstable-dynamic`, a
   `wire_weaver_cli`-style bash adapter for quoting) give live file paths and `--format` values; colour off

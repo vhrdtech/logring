@@ -65,18 +65,25 @@ pub(crate) fn info(path: &Path) -> Result<()> {
     }
     println!("{}", color::bold("tracks:"));
     for t in &tracks {
-        let kind = match t.ty {
-            Some(_) => color::good("resolved"),
-            None => color::bad("unresolved"),
-        };
-        println!(
-            "  {:<24} key {:016x}  path {:?}  {} records, {} decode error(s)  [{kind}]",
-            t.name,
-            t.info.key,
-            t.info.path,
-            t.items.len(),
-            t.decode_errors
-        );
+        match t.ty {
+            Some(_) => println!(
+                "  {:<24} key {:016x}  path {:?}  {} record(s), {} decode error(s)  [{}]",
+                t.name,
+                t.info.key,
+                t.info.path,
+                t.items.len(),
+                t.decode_errors,
+                color::good("resolved"),
+            ),
+            None => println!(
+                "  {:<24} key {:016x}  path {:?}  {} record(s), type unresolved  [{}]",
+                t.name,
+                t.info.key,
+                t.info.path,
+                t.unresolved,
+                color::dim("unresolved"),
+            ),
+        }
     }
     println!("{}", color::bold("system track:"));
     let (markers, rec_start, rec_stop, drops, card) =
@@ -199,8 +206,9 @@ pub(crate) fn cat(path: &Path, track: &str) -> Result<()> {
     Ok(())
 }
 
-/// `true` when nothing is wrong (exit 0); `false` on torn blocks/records, a bundle that didn't decode, or an
-/// unresolved track (exit 1, like fsck).
+/// `true` when nothing is wrong (exit 0); `false` on torn blocks/records, a bundle that didn't decode, or a
+/// decode error on a resolved track (exit 1, like fsck). An unresolved track (no bundle stored, or an older
+/// API) is a warning, not an error: the card itself can still be perfectly healthy.
 pub(crate) fn check(path: &Path) -> Result<bool> {
     let (log, bundles) = load(path)?;
     let tracks = decode::tracks(&log, &bundles);
@@ -227,11 +235,11 @@ pub(crate) fn check(path: &Path) -> Result<bool> {
     }
     for t in &tracks {
         if t.ty.is_none() {
-            ok = false;
             println!(
-                "  {} track {} has no resolved type",
-                color::bad("error"),
-                t.name
+                "  {} track {} has no resolved type, {} record(s) left undecoded",
+                color::dim("warning"),
+                t.name,
+                t.unresolved
             );
         }
         if t.decode_errors > 0 {
