@@ -29,14 +29,16 @@ fn can0_reads_back_through_a_track_store() {
         let mut store = TrackStore::new(&shared, track::CAN0).await.unwrap();
 
         // --8<-- [start:live_read]
-        let frame = CanFrame {
-            id: 0x101,
+        let frame = |id: u32| CanFrame {
+            id,
             data: RefVec::Slice {
                 slice: &[1, 2, 3, 4, 5, 6, 7, 8],
             },
         };
         let mut item = [0u8; 32];
-        let bytes = frame.to_ww_bytes(&mut item).unwrap();
+        let mut buf = [0u8; 64];
+
+        let bytes = frame(0x101).to_ww_bytes(&mut item).unwrap();
         shared
             .lock()
             .await
@@ -46,18 +48,34 @@ fn can0_reads_back_through_a_track_store() {
         shared.lock().await.sync().await.unwrap();
 
         // a host reads back only what reached the card, not what the stage buffer still holds
-        let mut buf = [0u8; 64];
         let event = store
             .read(0, &mut buf)
             .await
             .unwrap()
             .expect("the frame is on the card");
-        let got = CanFrame::from_ww_bytes(event.item).unwrap();
-        assert_eq!(got.id, 0x101);
+        assert_eq!(CanFrame::from_ww_bytes(event.item).unwrap().id, 0x101);
+
+        // a second frame, not yet synced: staged in the writer's buffer, invisible to a live reader
+        let bytes = frame(0x102).to_ww_bytes(&mut item).unwrap();
+        shared
+            .lock()
+            .await
+            .push(track::CAN0, bytes, None)
+            .await
+            .unwrap();
         assert!(
             store.read(1, &mut buf).await.unwrap().is_none(),
-            "nothing past what was flushed"
+            "staged, not yet on the card"
         );
+
+        // once it syncs, the same read returns it
+        shared.lock().await.sync().await.unwrap();
+        let event = store
+            .read(1, &mut buf)
+            .await
+            .unwrap()
+            .expect("the frame reached the card");
+        assert_eq!(CanFrame::from_ww_bytes(event.item).unwrap().id, 0x102);
         // --8<-- [end:live_read]
     });
 }

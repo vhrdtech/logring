@@ -17,9 +17,10 @@ and `release` calls any stream server makes on any medium. A host that opens the
 --8<-- "crates/logring_example/tests/it/live_reading.rs:live_read"
 ```
 
-A `` [`TrackStore`] `` read only returns what already reached the card. An event still in the writer's
-`` [`Buffers`] `` stage can vanish in a power cut, even if a host already saw it live. Its position would then go
-to the next event instead. The live view's latency is therefore the [[flush]] interval, not the push rate.
+A `` [`TrackStore`] `` read only returns what already reached the card. The test pushes a second frame without
+syncing: a read at its position comes back empty, because the frame still sits in the writer's `` [`Buffers`] ``
+stage. Once the next sync writes it, the same read returns it. A host watching live therefore lags the push rate
+by however long a frame waits in the stage buffer.
 
 `ww_stream`'s resend buffer wraps the same store for a host that reboots, or loses the link for a while. It resumes
 exactly where it left off: everything that reached the card since, once, in order, across [[sessions]] and power
