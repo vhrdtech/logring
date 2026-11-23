@@ -9,6 +9,7 @@ trait LogringStream {
     fn samples();
 
     /// Device logs `count` samples, values counting on from the last one (the value is the position)
+    #[effect(edit)]
     fn produce(count: u32);
 }
 

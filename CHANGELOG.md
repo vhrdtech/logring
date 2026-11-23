@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Fixed
+
+- `logring_export` takes wire_weaver's mount slots (`ApiItemKind::Mount`, SRV-76): a track path to one is an error (LOG-11).
+
 ### Added
 
 - A book of its own (`just book`, `just book-check`): an introduction, Tapes and logring, the format reference (LOG-11).

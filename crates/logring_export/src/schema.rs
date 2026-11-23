@@ -112,6 +112,10 @@ pub fn resolve_track_type<'b>(bundle: &'b ApiBundleOwned, path: &[u32]) -> Resul
                     name: names.join("."),
                 });
             }
+            ApiItemKindOwned::Mount { .. } => {
+                // a mount slot's level has only `presence` (a property); what is mounted is known at run time
+                bail!("path leads to a mount slot (SRV-76), whose API is not in the bundle")
+            }
             ApiItemKindOwned::Method { .. } | ApiItemKindOwned::Property { .. } => {
                 bail!("path leads to a method or property, not a stream")
             }
@@ -151,6 +155,24 @@ mod tests {
         assert_eq!(resolved.name, "value_keys.keys");
         assert!(resolve_track_type(&bundle, &[2, ww_self::keys::INDEX_OF]).is_err());
         assert!(resolve_track_type(&bundle, &[2]).is_err());
+    }
+
+    /// A mount slot's API is known only at run time: a track path through it resolves to nothing.
+    #[test]
+    fn rejects_a_path_to_a_mount_slot() {
+        let mut bundle = one_stream_bundle();
+        let mut mount = bundle.root.items[0].clone();
+        mount.id = wire_weaver::shrink_wrap::UNib32(2);
+        mount.ident = "hub".to_owned();
+        mount.kind = ApiItemKindOwned::Mount {
+            expects: None,
+            presence_ty: TypeOwned::Bool,
+        };
+        bundle.root.items.push(mount);
+        let Err(err) = resolve_track_type(&bundle, &[2, ww_self::mount::API]) else {
+            panic!("a mount slot resolved to a type");
+        };
+        assert!(err.to_string().contains("mount slot"), "{err}");
     }
 
     #[test]
