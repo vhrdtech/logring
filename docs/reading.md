@@ -29,8 +29,8 @@ logring info drive.wlr
 ```text
 drive.wlr
   17 data segments, 1 meta segments, 1 sessions, 1 bundles
-  session 1: drive-0042 (drive fw 1.4.0 drive rev C), bundle e0c891571a58ab4f
-  bundle e0c891571a58ab4f: 797 bytes, resolved
+  session 1: drive-0042 (drive fw 1.4.0 drive rev C), bundle 1eb8ced7c6bdad9e
+  bundle 1eb8ced7c6bdad9e: 797 bytes, resolved
 tracks:
   log                      key 3aa950c141a0a925  path [0]  31 record(s), 0 decode error(s)  [resolved]
   can0                     key 7a9ea8d1ee0c2247  path [2]  60000 record(s), 0 decode error(s)  [resolved]
