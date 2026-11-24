@@ -9,7 +9,7 @@ export NEXTEST_TEST_THREADS := if jobs != "" { jobs } else { env_var_or_default(
 
 py_venv := "/tmp/logring_py-venv"
 # The book kit, vhrd_zensical (`--name`: the workspace is virtual, the stamp needs a name): one pin for the extensions, the lexers and the `vz` command; it pins the tested Zensical too
-kit := "vhrd-zensical[zensical]==0.2.0"
+kit := "vhrd-zensical[zensical]==0.2.1"
 # The prose lints book-check runs: at deny in spirit_level.toml
 prose_lints := "--only prose-run-words --only page-reading-time --only heading-words --only code-wall --only code-block-language --only passive-voice --only reading-ease --only orphan-pages --only page-title --only abbreviation-first-use --only term-before-definition --only paragraph-sentences --only sentence-words --only emoji --only page-links --only nav-entries"
 
