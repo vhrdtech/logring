@@ -1,0 +1,17 @@
+# The long forms the book shows on hover: abbreviation = long form. Prose spells an abbreviation out once per page
+# (lint abbreviation-first-use); "known" ones in spirit_level.toml need no entry.
+AU = "allocation unit"
+ASAM = "Association for Standardization of Automation and Measuring Systems"
+CAN = "Controller Area Network"
+CRC = "cyclic redundancy check"
+FAT = "file allocation table"
+LBA = "logical block address"
+LE = "little endian"
+MCAP = "a container format for timestamped robotics and log data"
+MCU = "microcontroller unit"
+MF4 = "Measurement Data Format version 4"
+NOR = "not-or flash memory"
+PC = "personal computer"
+QSPI = "quad serial peripheral interface"
+SD = "Secure Digital"
+SPI = "serial peripheral interface"

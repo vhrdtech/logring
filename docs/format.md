@@ -8,10 +8,10 @@ This page describes the on-medium layout that `logring` writes and reads, as it 
 unless the page says varint.
 
 The medium is anything that implements `ww_stream::store::LogMedium` from the wire_weaver crates. Examples are a
-window of a Secure Digital (SD) card, a NOR (logical not-or) flash chip and a simulated card in tests.
+window of an SD card, a NOR (logical not-or) flash chip and a simulated card in tests.
 
 On an SD card the medium is `logring.wlr`, the preallocated ring file of an exFAT volume. Every structure that a
-reader trusts has a cyclic redundancy check (CRC), the CRC-32C (`CRC_32_ISCSI`).
+reader trusts has a CRC, the CRC-32C (`CRC_32_ISCSI`).
 
 ## 1. Layout
 
@@ -22,7 +22,7 @@ segments m+1..   the data ring: n segments, as many as fit (n = data_segments)
 ```
 
 - A **segment** is `segment_size` bytes. The segment size follows these rules:
-    - It is the card's allocation unit (AU), or 4 MB when the card reports none.
+    - It is the card's AU, or 4 MB when the card reports none.
     - It is a multiple of 512 and at least 4 blocks.
     - When the medium needs erasing, it is a multiple of twice the erase size, so the superblock slots sit in
       separate erase units.
@@ -220,12 +220,11 @@ This reader ignores fields that a later version appends inside the entry.
 
 The device has numbers at hand, not names. A track is its path of ids and its item type's signature and global id.
 
-A personal computer (PC) builds the names (`can[1].rx`, `ww_can_bus::Frame` 0.3) from the API bundle stored with the
+A PC builds the names (`can[1].rx`, `ww_can_bus::Frame` 0.3) from the API bundle stored with the
 session, in the meta `Bundle` record (§7). The path leads to the stream in the bundle, and the stream to its item
 type with crate, version and type path.
 
-Exporters recognise kinds of data by the signature and global id, never by the path. Examples are a Controller Area
-Network (CAN) frame of `ww_can_bus` and a defmt frame of `ww_log`.
+Exporters recognise kinds of data by the signature and global id, never by the path. Examples are a CAN frame of `ww_can_bus` and a defmt frame of `ww_log`.
 
 What a position counts (bytes, frames, samples) follows from the item type in the bundle.
 
@@ -234,7 +233,7 @@ What a position counts (bytes, frames, samples) follows from the item type in th
 The **stable key** names the same track across sessions, across firmware updates that keep its path, and across
 split files. The key comes from numbers only.
 
-The key starts as `h = FNV-1a(api_root as u64 LE)`, where LE means little endian. FNV-1a then goes on over every
+The key starts as `h = FNV-1a(api_root as u64 LE)`, where LE is the byte order. FNV-1a then goes on over every
 path id as a little-endian u32.
 
 `api_root` names the device API across firmware updates. It is the FNV-1a of the API root crate's name and its major
@@ -451,7 +450,7 @@ MBR | gap to the first boundary unit | exFAT boot regions | FAT | cluster heap:
 
 At format and at re-create, the device places the ring file this way:
 
-- The ring file is contiguous (`NoFatChain`) and leaves the file allocation table (FAT) untouched.
+- The ring file is contiguous (`NoFatChain`) and leaves the FAT untouched.
 - It starts on the card's allocation unit and on a cluster, and it is whole segments long.
 - It sits at the end of the longest free run of clusters, with `rw_bytes` of all free space left free.
 - Its attributes are read-only + system + hidden (+ archive).
@@ -470,13 +469,13 @@ capacity.
 ### Binding
 
 At format the superblock's `binding` gets the volume serial, the file's first cluster, the cluster count and the start
-logical block address (LBA). A mount (`exfat::open`) checks, in order:
+LBA. A mount (`exfat::open`) checks, in order:
 
 1. The volume mounts (boot checksum and fields).
 2. `logring.wlr` exists, is a file, `NoFatChain`, of whole sectors, with valid data length = data length, and every
    cluster set in the bitmap.
 3. Slot A or B decodes. When A doesn't, the mount searches slot B at half of every AU size from 16 KB to 64 MB.
-4. The binding matches. A different serial means *other card*, a different first cluster or start LBA means *moved*,
+4. The binding matches. A different serial means *other card*, a different first cluster or start block means *moved*,
    and a different cluster count means *resized*.
 5. The superblock's segments fit the file.
 

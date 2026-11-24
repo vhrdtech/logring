@@ -6,7 +6,7 @@ level: basic
 
 An engineer pulls the drive's card off the bench and sets it on a desk. It holds a session of `log`, `mode`,
 `can0` and `vbat`, under one [[recording]] of however long the motor ran. How does the engineer get at what it
-kept, one track or one stretch of time, on a personal computer (PC)?
+kept, one track or one stretch of time, on a PC?
 
 ## Opening the ring
 
@@ -44,13 +44,12 @@ Every track is named and resolved: the bundle lets `logring info` show `can0` by
 
 ## Exporting
 
-The same ring exports to CSV, MCAP (a container format for robotics logs) or MF4 (Measurement Data Format
-version 4).
+The same ring exports to CSV, MCAP or MF4.
 
 <figure class="ww-figure" markdown="0">
 --8<-- "docs/figures/export.svg"
 <figcaption>The same ring exported three ways: CSV writes one file per track, MCAP one file with every resolved
-track as a channel, MF4 plain numbers or, for a track that looks like a Controller Area Network (CAN) bus, ASAM bus
+track as a channel, MF4 plain numbers or, for a track that looks like a CAN bus, ASAM bus
 logging.</figcaption>
 </figure>
 
@@ -61,8 +60,8 @@ logring export drive.wlr --track can0 --format mf4 -o can0.mf4
 can0 -> can0.mf4
 ```
 
-`can0`'s items look like a Controller Area Network (CAN) frame: an `id` field and a byte payload. `export` then
-writes bus logging as the Association for Standardization of Automation and Measuring Systems (ASAM) defines it
+`can0`'s items look like a CAN frame: an `id` field and a byte payload. `export` then
+writes bus logging as the ASAM defines it
 for MF4, not a plain numeric channel. A tool such as CANape or asammdf reads the result as `CAN_DataFrame` frames
 directly.
 

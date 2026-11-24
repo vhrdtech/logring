@@ -40,9 +40,9 @@ and a plain index would let a bare laptop read the files directly. It could pull
 off a USB cable.
 
 A passthrough logical unit would carry the card's own exFAT volume alongside it. Its small region of read-write
-files would stay an ordinary Secure Digital (SD) card to the host.
+files would stay an ordinary SD card to the host.
 
-This view is designed, not built. Today's reading on a personal computer (PC) still goes through [Reading a log
+This view is designed, not built. Today's reading on a PC still goes through [Reading a log
 on a PC](reading.md)'s sources, never live.
 
 [Tapes and logring](tapes_and_logring.md) comes next: when the device's own reach is enough, and when a host

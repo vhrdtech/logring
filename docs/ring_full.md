@@ -28,7 +28,7 @@ seqs 102 to 160 at the end of the run. On the way, the writer overwrote 102 segm
 `segments_reused` counts.
 
 Nothing else changes when the ring goes round. The writer opens and fills segments as before. Every segment still
-starts with its [[track table]], so every segment still decodes on its own. A reader on a personal computer (PC) finds
+starts with its [[track table]], so every segment still decodes on its own. A reader on a PC finds
 the oldest seq on the card and reads from there. The first [[positions|position]] it finds on a track is no longer 0.
 
 ## Refusing new data
@@ -57,7 +57,7 @@ segment opens and every few data segments. In the ten minutes above it wrote the
 ring went up to seq 160 in the same time. The [[meta area]] takes a record at each mount and at each recording start
 and stop.
 
-A Secure Digital (SD) card hides its flash behind a controller, and the host never sees which cells a write goes to.
+An SD card hides its flash behind a controller, and the host never sees which cells a write goes to.
 What the host controls is the pattern of its writes. The ring writes each [[allocation unit]] whole and in order, the
 pattern for which the SD specification rates a card's speed. On a raw flash chip, which has no such controller, the
 writer erases each segment when it opens it. The [format reference](format.md#segment-seqs-on-nor-flash) says how a

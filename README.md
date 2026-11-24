@@ -7,10 +7,9 @@ logring is a power-cut-safe log store for embedded devices, written in Rust (`no
 Firmware writes many tracks of any [shrink_wrap](https://github.com/vhrdtech/wire_weaver) type at once into a ring,
 with sessions, recordings and markers.
 
-A host reads the ring back in three ways: over `wire_weaver`, as a USB disk, or with the `logring` tool on a personal
-computer (PC).
+A host reads the ring back in three ways: over `wire_weaver`, as a USB disk, or with the `logring` tool on a PC.
 
-Its main medium is a Secure Digital (SD) card. The card holds a small normal exFAT region (128 MB by default,
+Its main medium is a SD card. The card holds a small normal exFAT region (128 MB by default,
 configurable) for files that a host reads and writes as usual.
 
 The rest of the card is a preallocated ring file (`logring.wlr`).
@@ -18,7 +17,7 @@ The rest of the card is a preallocated ring file (`logring.wlr`).
 Over USB the device shows up as a normal disk. The read-write files work as usual, and the log appears as read-only
 files split by recording and by time.
 
-The log exports to MF4 (Measurement Data Format version 4), MCAP (a container format for robotics logs) and CSV. The
+The log exports to MF4, MCAP and CSV. The
 device formats the card itself: put in a new card, say yes, done.
 
 | crate | what |
@@ -44,7 +43,7 @@ df = card.track("can1_rx").to_pandas()
 ```
 
 The medium is a trait, `LogMedium`, from the `ww_stream` crate of WireWeaver. Other storage than SD cards can
-therefore follow, such as eMMC or flash chips on a Serial Peripheral Interface (SPI) or quad SPI (QSPI) bus.
+therefore follow, such as eMMC or flash chips on a SPI or QSPI bus.
 
 logring serves more than one product. rePort is its first user, and logring aims to be the base for every logging
 device after it.

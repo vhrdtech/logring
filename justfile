@@ -8,12 +8,8 @@ export CARGO_BUILD_JOBS := if jobs != "" { jobs } else { env_var_or_default('CAR
 export NEXTEST_TEST_THREADS := if jobs != "" { jobs } else { env_var_or_default('NEXTEST_TEST_THREADS', 'num-cpus') }
 
 py_venv := "/tmp/logring_py-venv"
-# The Zensical release the book is built with, so a new release cannot break the build unseen
-zensical := "zensical==0.1.2"
-# The release of spirit_level's book extension (spl_book_ext): the same as the `spl` in use, since `spl book refs`
-# writes the code index the extension reads
-spl := "0.7.5"
-book_ext := "spl-book-ext @ git+https://github.com/romixlab/spirit_level@v" + spl + "#subdirectory=python/spl_book_ext"
+# The book kit, vhrd_zensical (`--name`: the workspace is virtual, the stamp needs a name): one pin for the extensions, the lexers and the `vz` command; it pins the tested Zensical too
+kit := "vhrd-zensical[zensical] @ git+https://github.com/vhrdtech/vhrd_zensical@v0.1.0"
 # The prose lints book-check runs: at deny in spirit_level.toml
 prose_lints := "--only prose-run-words --only page-reading-time --only heading-words --only code-wall --only code-block-language --only passive-voice --only reading-ease --only orphan-pages --only page-title --only abbreviation-first-use --only term-before-definition --only paragraph-sentences --only sentence-words --only emoji --only page-links --only nav-entries"
 
@@ -67,15 +63,15 @@ lint:
 size *args="all":
     cargo run --quiet --release --manifest-path size/report/Cargo.toml -- {{args}}
 
-# Build the book (docs/, zensical.toml) into site/ with Zensical
+# Build the book (docs/, zensical.toml) into site/: `vz prep` writes the code index and the cards' assets, then Zensical
 [group('book')]
-book: book-refs
-    uv run --with {{ zensical }} --with "{{ book_ext }}" zensical build --clean
+book:
+    uv run --with "{{ kit }}" vz build --name logring
 
 # Serve the book at http://localhost:8000 and rebuild it on every change
 [group('book')]
-book-serve: book-refs
-    uv run --with {{ zensical }} --with "{{ book_ext }}" zensical serve
+book-serve:
+    uv run --with "{{ kit }}" vz serve --name logring
 
 # The book's checks: the strict build, then the prose lints, so a broken link or a long page cannot land
 [group('book')]
@@ -83,14 +79,14 @@ book-check: book-strict book-prose
 
 # Build the book with warnings as errors: a link to a missing page, anchor or figure fails; links to other sites are not fetched
 [group('book')]
-book-strict: book-refs
-    uv run --with {{ zensical }} --with "{{ book_ext }}" zensical build --clean --strict
+book-strict:
+    uv run --with "{{ kit }}" vz build --name logring -- --strict
 
 # Check the glossary (docs/glossary.toml) and write what the book's references read: the index of the crates' public
-# items (target/spl-book/code_index.json) and the cards' stylesheet and script (not in git)
+# items (target/vz/code_index.json) and the cards' stylesheets and script (not in git)
 [group('book')]
 book-refs:
-    spl book refs
+    uv run --with "{{ kit }}" vz prep --name logring
 
 # Rewrite the figures of the book pages drawn from the format (docs/plots/*.svg, logring_figures); a test fails until
 # they match what it draws

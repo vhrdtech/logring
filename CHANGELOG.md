@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+- The book builds with the vhrd_zensical kit v0.1.0 (`vz build`) and spl 0.9.0; long forms in `docs/abbreviations.toml` (LOG-11).
+
 ### Fixed
 
 - `logring_export` takes wire_weaver's mount slots (`ApiItemKind::Mount`, SRV-76): a track path to one is an error (LOG-11).

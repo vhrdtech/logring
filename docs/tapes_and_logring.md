@@ -14,7 +14,7 @@ The ww_tape book explains the terms of tapes in [Tape concepts](https://tape.vhr
 
 ## What each is for
 
-A logring runs on the device. It is a power-cut-safe ring on a Secure Digital (SD) card or a flash chip, and firmware
+A logring runs on the device. It is a power-cut-safe ring on an SD card or a flash chip, and firmware
 with no heap writes it (`no_std`, no `alloc`).
 
 The ring has a fixed size, chosen when the card is formatted. When the ring is full, the newest data overwrites the
@@ -23,7 +23,7 @@ oldest.
 A device that stays in the field for months therefore always holds its most recent hours or days.
 
 A host reads the ring over WireWeaver, as a USB disk, or from a card image with the `logring` tool. The tool exports
-CSV, MCAP (a container format for robotics logs) or MF4 (Measurement Data Format version 4).
+CSV, MCAP or MF4.
 
 A tape runs mostly on the host. It is an append-only recording that never drops data by itself: a capture of a link, a
 test run, an analysis result.

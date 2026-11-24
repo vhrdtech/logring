@@ -28,7 +28,7 @@ A chapter ends on its last fact, or on one sentence that leads to the next chapt
 ## The running example
 
 One device runs through the whole book: a motor controller board, the drive. In the field it keeps the last days of
-four streams on its Secure Digital (SD) card, each a track of the ring.
+four streams on its SD card, each a track of the ring.
 
 | Track | What | Rate |
 |---|---|---|
@@ -38,7 +38,7 @@ four streams on its Secure Digital (SD) card, each a track of the ring.
 | `vbat` | the battery voltage in mV | once a second |
 
 The example is code, not prose. The crate `logring_example` holds the drive's API, its logger and a bench run of any
-length, on a card simulated in RAM. It builds for a personal computer (PC) and for the microcontroller (MCU) of the
+length, on a card simulated in RAM. It builds for a PC and for the MCU of the
 drive, `thumbv8m.main-none-eabihf`. The code a chapter shows is thus code a firmware runs.
 
 A number in the story comes from running code, never from a hand calculation. The records in a flush and the bytes a

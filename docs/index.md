@@ -4,16 +4,16 @@ level: basic
 
 # logring
 
-logring is a log store for embedded devices. Firmware writes many streams of typed items onto a Secure Digital (SD)
+logring is a log store for embedded devices. Firmware writes many streams of typed items onto an SD
 card or a flash chip.
 
 A power cut at any moment costs at most the last moments of data.
 
 A host reads the log back over WireWeaver, as a USB disk, or from a card image with the `logring` tool. The tool
-exports CSV, MCAP (a container format for robotics logs) or MF4 (Measurement Data Format version 4).
+exports CSV, MCAP or MF4.
 
 This book explains what logring keeps, how it survives a power cut, and how to read what a device recorded. Its readers
-are firmware engineers who add logging to a device and anyone who reads its logs on a personal computer (PC).
+are firmware engineers who add logging to a device and anyone who reads its logs on a PC.
 
 ## Why a ring
 
@@ -26,7 +26,7 @@ data overwrites the oldest.
 The device therefore always holds its most recent hours or days. These usually matter most when someone asks what
 happened.
 
-For example, a data logger on a vehicle logs its Controller Area Network (CAN) bus traffic, its battery voltage and
+For example, a data logger on a vehicle logs its CAN bus traffic, its battery voltage and
 its error messages. After a fault, a technician takes out the SD card and finds the last few days of all three,
 but nothing older.
 

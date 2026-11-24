@@ -19,7 +19,7 @@ logring builds on three parts of WireWeaver:
 - **shrink_wrap.** Every item in a logring is a shrink_wrap value, so a device logs the same types it sends over its
   API.
 - **API bundles.** A bundle is the compiled description of an API: its types, its resources and their names. logring
-  stores the device's bundle in the ring, so a personal computer (PC) can name every track and decode every item
+  stores the device's bundle in the ring, so a PC can name every track and decode every item
   without the firmware.
 - **Streams and media.** WireWeaver's `ww_stream` crate defines the `LogMedium` trait that logring writes to. A
   WireWeaver stream can also be served from a logring, so a host that reconnects receives what it missed from the

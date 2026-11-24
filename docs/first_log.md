@@ -5,12 +5,12 @@ level: basic
 # A first log
 
 The [[drive]] is a motor controller board. It should keep the last days of its log lines, its mode, its bus frames
-and its battery voltage on its Secure Digital (SD) card. This chapter answers what its firmware has to
+and its battery voltage on its SD card. This chapter answers what its firmware has to
 do for that. The firmware describes the streams once and lends the logger its buffers. It then
 [[mounts|mount]] the ring at boot, pushes each [[item]] as it happens and calls a tick now and then.
 
 All code on this page is the drive's firmware from the crate `logring_example`. It runs on a card simulated in RAM, so
-it runs on a personal computer (PC) as it is. The same code builds for the drive's microcontroller.
+it runs on a PC as it is. The same code builds for the drive's microcontroller.
 
 ## The drive's streams
 
@@ -22,7 +22,7 @@ ring, and each value a stream sends becomes an item of that track:
 ```
 
 The item types are ordinary shrink_wrap types, the same ones the API sends over its link. A log line borrows its text,
-and a frame of the Controller Area Network (CAN) bus borrows its data bytes. Nothing on the way to the card allocates.
+and a frame of the CAN bus borrows its data bytes. Nothing on the way to the card allocates.
 
 ## Describing the tracks
 

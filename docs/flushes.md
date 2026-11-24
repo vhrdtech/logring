@@ -16,7 +16,7 @@ head]], which says where every track's [[positions|position]] stand, and the rec
 of its last block, so the next flush starts on a block of its own.
 
 Every block ends with a small [[trailer]]. Its tag says that the block belongs to this ring and this [[segment]]. Its
-distance leads back to the first block of its flush, and a cyclic redundancy check (CRC) covers the whole block.
+distance leads back to the first block of its flush, and a CRC covers the whole block.
 [The format reference](format.md#2-blocks) gives the trailer byte by byte.
 
 <figure class="ww-figure" markdown="0">

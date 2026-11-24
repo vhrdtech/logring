@@ -49,9 +49,10 @@ nav = [
 ]
 
 # figures.css: the classes of the SVG figures the pages inline from docs/figures and docs/plots, light and dark;
-# spl-refs.css and spl-refs.js: the cards of glossary terms and code links, written by `spl book refs` (`just book-refs`)
-extra_css = ["stylesheets/vhrd.css", "stylesheets/figures.css", "stylesheets/spl-refs.css"]
-extra_javascript = ["javascripts/spl-refs.js"]
+# vz-refs.css and vz-refs.js: the cards of glossary terms and code links, vz-code.css: the code colours; all written by
+# `vz prep` (`just book-refs`)
+extra_css = ["stylesheets/vhrd.css", "stylesheets/figures.css", "stylesheets/vz-refs.css", "stylesheets/vz-code.css"]
+extra_javascript = ["javascripts/vz-refs.js"]
 
 [project.theme]
 # overrides/main.html: the reading level badge above a page's title, from its `level:` front matter (docs/levels.md)
@@ -146,7 +147,9 @@ pymdownx.tasklist = {
 }
 pymdownx.tilde = {}
 # `[[term]]`: a glossary term from docs/glossary.toml, its entry on hover; glossary.md lists every entry
-"spl_book_ext.glossary" = {}
+"vhrd_zensical.glossary" = {}
 # [`Name`], [`file.rs`], [`file.rs:section`]: an item or file of these crates, its code on hover, its lines on GitHub
 # on click; a name that matches nothing fails the build
-"spl_book_ext.code_refs" = { crates = ["logring", "logring_export", "logring_example"] }
+"vhrd_zensical.code_refs" = { crates = ["logring", "logring_export", "logring_example"] }
+# The long forms of abbreviations, shown on hover (docs/abbreviations.toml)
+"vhrd_zensical.abbreviations" = {}

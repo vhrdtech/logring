@@ -4,7 +4,7 @@ level: basic
 
 # The SD card
 
-The [[drive]] in the field logs to a Secure Digital (SD) card of 32 GB. A technician takes the card out after a fault,
+The [[drive]] in the field logs to an SD card of 32 GB. A technician takes the card out after a fault,
 puts it into a laptop and copies the log off it. The laptop must see an ordinary card with files on it, while the
 drive writes the log at the speed of raw sectors. This chapter shows how the drive sets the card up and why the ring's
 [[segments|segment]] match the card's [[allocation unit]]. It also shows how the drive notices what a laptop did.
