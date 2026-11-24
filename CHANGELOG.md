@@ -4,7 +4,7 @@
 
 ### Changed
 
-- The book builds with the vhrd_zensical kit v0.1.0 (`vz build`) and spl 0.9.0; long forms in `docs/abbreviations.toml` (LOG-11).
+- The book builds with the vhrd-zensical kit 0.2.0 from PyPI (`vz build`) and spl 0.9.0; long forms in `docs/abbreviations.toml` (LOG-11).
 
 ### Fixed
 
